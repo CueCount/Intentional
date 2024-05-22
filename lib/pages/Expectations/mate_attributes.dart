@@ -28,19 +28,51 @@ class _MateAttributes extends State<MateAttributes> {
       body: ListView(
         children: <Widget>[
           CustomCheckbox(
-            title: 'Check Option 1',
+            title: 'Physically Strong and Bruiting',
             initialValue: true,
             onChanged: (value) {
               // Handle change
-              print("Option 1: $value");
+              print("Physically Strong and Bruiting: $value");
             },
           ),
           CustomCheckbox(
-            title: 'Check Option 2',
+            title: 'Mature and Thoughtful',
             initialValue: false,
             onChanged: (value) {
               // Handle change
-              print("Option 2: $value");
+              print("Mature and Thoughtful: $value");
+            },
+          ),
+          CustomCheckbox(
+            title: 'Assertive and Leading',
+            initialValue: false,
+            onChanged: (value) {
+              // Handle change
+              print("Assertive and Leading: $value");
+            },
+          ),
+          CustomCheckbox(
+            title: 'Intelligent and Nerdy',
+            initialValue: false,
+            onChanged: (value) {
+              // Handle change
+              print("Intelligent and Nerdy: $value");
+            },
+          ),
+          CustomCheckbox(
+            title: 'Spontaneous and Romantic',
+            initialValue: false,
+            onChanged: (value) {
+              // Handle change
+              print("Spontaneous and Romantic: $value");
+            },
+          ),
+          CustomCheckbox(
+            title: 'High Earning High Status',
+            initialValue: false,
+            onChanged: (value) {
+              // Handle change
+              print("High Earning High Status: $value");
             },
           ),
           MaterialButton(

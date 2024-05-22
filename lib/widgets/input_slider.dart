@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../styles.dart';
 
 class CustomSlider extends StatefulWidget {
   final String label;
@@ -41,7 +42,9 @@ class _CustomSliderState extends State<CustomSlider> {
             padding: const EdgeInsets.all(8.0),
             child: Text("${widget.label}: ${_currentValue.toStringAsFixed(1)}"),
           ),
-        Slider(
+        SliderTheme(      
+          data: AppSliderThemes.sliderTheme,
+          child: Slider(
           value: _currentValue,
           min: widget.min,
           max: widget.max,
@@ -53,9 +56,10 @@ class _CustomSliderState extends State<CustomSlider> {
             });
             if (widget.onChanged != null) {
               widget.onChanged!(newValue);
-            }
-          },
-        ),
+              }
+            },
+          ),
+        )  
       ],
     );
   }

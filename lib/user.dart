@@ -12,7 +12,7 @@ class UserProvider with ChangeNotifier {
 
   void toggleLogin() {
     // Check conditions or just toggle the status
-    isLoggedIn = !isLoggedIn;
+    instance.isLoggedIn = !instance.isLoggedIn;
     notifyListeners(); // Notify widgets that are listening for changes
   }
 }

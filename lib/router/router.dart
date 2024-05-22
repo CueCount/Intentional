@@ -36,6 +36,8 @@ class AppRoutes {
   
   static Route<dynamic>? generateRoute(RouteSettings settings,) {
     switch (settings.name) {
+      case home:
+        return MaterialPageRoute(builder: (_) => UserProvider.instance.isLoggedIn ? DashboardPage(title: 'dash',) : MyHomePage(title: 'Intentional',));
       case qualRelDate:
         return MaterialPageRoute(builder: (_) => QualifierRelDate(title: 'Love Status',));
       case qualIntCas:
@@ -57,10 +59,9 @@ class AppRoutes {
       case tone:
         return MaterialPageRoute(builder: (_) => Tone(title: 'Relatinship Tone',));
     }
+
     if (UserProvider.instance.isLoggedIn) {
       switch (settings.name) {
-        case home:
-          return MaterialPageRoute(builder: (_) => DashboardPage(title: 'dash',));
         case matchChat:
           return MaterialPageRoute(builder: (_) => MatchChat(title: 'Match Chat',));
         case verifications:
@@ -72,8 +73,6 @@ class AppRoutes {
       }
     } else {
       switch (settings.name) {
-        case home:
-          return MaterialPageRoute(builder: (_) => MyHomePage(title: 'Intentional',));
         default:
           throw FormatException("Route not found while logged out");
       }

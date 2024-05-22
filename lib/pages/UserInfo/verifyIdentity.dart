@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 
@@ -36,7 +37,9 @@ class _VerifyIdentity extends State<VerifyIdentity> {
               'Please Verify Your Identity'
             ),
             MaterialButton(
-              onPressed: noOperation,
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.mateAttributes);
+              },
               child: const Text('Connect Facebook'),
               color: Colors.blue,
             ),
