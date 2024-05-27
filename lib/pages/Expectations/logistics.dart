@@ -28,21 +28,54 @@ class _Logistics extends State<Logistics> {
       body: ListView(
         children: <Widget>[
           CustomSlider(
-            label: 'Adjust Value',
+            label: 'Who should plan dates?',
             initialValue: 50,
             min: 0,
             max: 100,
             divisions: 20,
             onChanged: (value) {
               // Handle the change
-              print("Slider Value: $value");
+              print("Who should plan dates?: $value");
+            },
+          ),
+          CustomSlider(
+            label: 'Who should pay for dates?',
+            initialValue: 50,
+            min: 0,
+            max: 100,
+            divisions: 20,
+            onChanged: (value) {
+              // Handle the change
+              print("Who should pay for dates?: $value");
+            },
+          ),
+          CustomSlider(
+            label: 'Who should plan trips together?',
+            initialValue: 50,
+            min: 0,
+            max: 100,
+            divisions: 20,
+            onChanged: (value) {
+              // Handle the change
+              print("Who should plan trips together?: $value");
+            },
+          ),
+          CustomSlider(
+            label: 'Who should pay for trips together?',
+            initialValue: 50,
+            min: 0,
+            max: 100,
+            divisions: 20,
+            onChanged: (value) {
+              // Handle the change
+              print("Who should plan trips together?: $value");
             },
           ),
           MaterialButton(
             onPressed: () {
               Navigator.pushNamed(context, AppRoutes.labor);
             },
-            child: const Text('Begin'),
+            child: const Text('Continue'),
             color: const Color.fromARGB(255, 226, 33, 243),
           ),
         ],

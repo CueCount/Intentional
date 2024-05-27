@@ -24,6 +24,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Color.fromRGBO(183, 58, 85, 1)),
         useMaterial3: true,
+        scaffoldBackgroundColor: Color(0xFFFEF8E8),
       ),
       debugShowCheckedModeBanner: false,  // Add this line
     );

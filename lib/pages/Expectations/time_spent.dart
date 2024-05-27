@@ -28,25 +28,25 @@ class _TimeSpent extends State<TimeSpent> {
       body: ListView(
         children: <Widget>[
           CustomSlider(
-            label: 'Adjust Value',
+            label: 'How much time per week should you spend together in the dating phase?',
             initialValue: 50,
             min: 0,
             max: 100,
             divisions: 20,
             onChanged: (value) {
               // Handle the change
-              print("Slider Value: $value");
+              print("How much time per week should you spend together in the dating phase?: $value");
             },
           ),
           CustomSlider(
-            label: 'Adjust Value',
+            label: 'How much time per week should you spend together in a commited relatinoship?',
             initialValue: 50,
             min: 0,
             max: 100,
             divisions: 20,
             onChanged: (value) {
               // Handle the change
-              print("Slider Value: $value");
+              print("How much time per week should you spend together in a commited relatinoship?: $value");
             },
           ),
           MaterialButton(

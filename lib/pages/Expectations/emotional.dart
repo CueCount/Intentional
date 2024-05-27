@@ -28,14 +28,36 @@ class _EmotionalDynamic extends State<EmotionalDynamic> {
       body: ListView(
         children: <Widget>[
           CustomSlider(
-            label: 'Adjust Value',
+            label: 'Who should be more empathic and sensative?',
             initialValue: 50,
             min: 0,
             max: 100,
             divisions: 20,
             onChanged: (value) {
               // Handle the change
-              print("Slider Value: $value");
+              print("Who should be more empathic and sensative?: $value");
+            },
+          ),
+          CustomSlider(
+            label: 'Who should be more strong-willed and decisive?',
+            initialValue: 50,
+            min: 0,
+            max: 100,
+            divisions: 20,
+            onChanged: (value) {
+              // Handle the change
+              print("Who should be more strong-willed and decisive?: $value");
+            },
+          ),
+          CustomSlider(
+            label: 'Who should be more charismatic and entertaining?',
+            initialValue: 50,
+            min: 0,
+            max: 100,
+            divisions: 20,
+            onChanged: (value) {
+              // Handle the change
+              print("Who should be more charismatic and entertaining?: $value");
             },
           ),
           MaterialButton(

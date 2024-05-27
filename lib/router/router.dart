@@ -57,7 +57,7 @@ class AppRoutes {
       case timeSpent:
         return MaterialPageRoute(builder: (_) => TimeSpent(title: 'Time Spent Together',));
       case tone:
-        return MaterialPageRoute(builder: (_) => Tone(title: 'Relatinship Tone',));
+        return MaterialPageRoute(builder: (_) => Tone(title: 'Relationship Tone',));
     }
 
     if (UserProvider.instance.isLoggedIn) {

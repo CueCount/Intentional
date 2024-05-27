@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../styles.dart';
 
 class MateAttribute {
   String title;
@@ -39,14 +40,20 @@ class _CustomCheckboxState extends State<CustomCheckbox> {
       child: Container(
         padding: EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: widget.attribute.isSelected ? Colors.orangeAccent : Colors.white,
-          border: Border.all(color: Colors.grey),
-          borderRadius: BorderRadius.circular(8),
+          color: widget.attribute.isSelected
+              ? ColorPalette.selectedCheckboxColor
+              : ColorPalette.unselectedCheckboxColor,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(widget.attribute.title, style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(widget.attribute.title, 
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: widget.attribute.isSelected
+                    ? ColorPalette.selectedTextColor
+                    : ColorPalette.unselectedTextColor,)            
+            ),
             SizedBox(height: 8),
             Text(widget.attribute.description),
             SizedBox(height: 8),
