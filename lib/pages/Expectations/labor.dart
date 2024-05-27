@@ -28,14 +28,25 @@ class _Labor extends State<Labor> {
       body: ListView(
         children: <Widget>[
           CustomSlider(
-            label: 'Adjust Value',
+            label: 'Who should do more home chores?',
             initialValue: 50,
             min: 0,
             max: 100,
             divisions: 20,
             onChanged: (value) {
               // Handle the change
-              print("Slider Value: $value");
+              print("Who should do more home chores?: $value");
+            },
+          ),
+          CustomSlider(
+            label: 'Who should earn (significantly) more?',
+            initialValue: 50,
+            min: 0,
+            max: 100,
+            divisions: 20,
+            onChanged: (value) {
+              // Handle the change
+              print("Who should earn (significantly) more?: $value");
             },
           ),
           MaterialButton(

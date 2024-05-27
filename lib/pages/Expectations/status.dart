@@ -28,21 +28,32 @@ class _StatusDynamic extends State<StatusDynamic> {
       body: ListView(
         children: <Widget>[
           CustomSlider(
-            label: 'Adjust Value',
+            label: 'Who should be more generous with their time and energy?',
             initialValue: 50,
             min: 0,
             max: 100,
             divisions: 20,
             onChanged: (value) {
               // Handle the change
-              print("Slider Value: $value");
+              print("Who should be more generous with their time and energy?: $value");
+            },
+          ),
+          CustomSlider(
+            label: 'Who should have a higher social status and life/career accomplishments?',
+            initialValue: 50,
+            min: 0,
+            max: 100,
+            divisions: 20,
+            onChanged: (value) {
+              // Handle the change
+              print("Who should have a higher social status and life/career accomplishments?: $value");
             },
           ),
           MaterialButton(
             onPressed: () {
               Navigator.pushNamed(context, AppRoutes.timeSpent);
             },
-            child: const Text('Begin'),
+            child: const Text('Continue'),
             color: const Color.fromARGB(255, 226, 33, 243),
           ),
         ],

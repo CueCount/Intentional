@@ -10,6 +10,14 @@ class AppStyles {
     color: const Color.fromARGB(255, 255, 160, 160),
   );
 }
+
+class ColorPalette {
+  static const Color unselectedCheckboxColor = Color(0xFFFFE0CC); // Light orange
+  static const Color selectedCheckboxColor = Color(0xFFFB8C00); // Deeper orange
+  static const Color unselectedTextColor = Colors.grey;
+  static const Color selectedTextColor = Colors.white;
+}
+
 // Slider Theme Data
 class AppSliderThemes {
   static SliderThemeData sliderTheme = SliderThemeData(

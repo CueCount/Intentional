@@ -28,21 +28,21 @@ class _Tone extends State<Tone> {
       body: ListView(
         children: <Widget>[
           CustomSlider(
-            label: 'Adjust Value',
+            label: 'What type of tone do you want in a relationship?',
             initialValue: 50,
             min: 0,
             max: 100,
             divisions: 20,
             onChanged: (value) {
               // Handle the change
-              print("Slider Value: $value");
+              print("What type of tone do you want in a relationship?: $value");
             },
           ),
           MaterialButton(
             onPressed: () {
               Navigator.pushNamed(context, AppRoutes.dashBoard);
             },
-            child: const Text('Begin'),
+            child: const Text('Finish'),
             color: const Color.fromARGB(255, 226, 33, 243),
           ),
         ],
