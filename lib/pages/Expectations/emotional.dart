@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
-import '../../widgets/input_slider.dart';  // Ensure you import the CheckboxFormPage
+import '../../widgets/input_slider.dart'; 
 
 class EmotionalDynamic extends StatefulWidget {
   const EmotionalDynamic({super.key, required this.title});
@@ -62,6 +62,7 @@ class _EmotionalDynamic extends State<EmotionalDynamic> {
           ),
           MaterialButton(
             onPressed: () {
+              // SUBMIT DATA TO CACHE
               Navigator.pushNamed(context, AppRoutes.status);
             },
             child: const Text('Begin'),

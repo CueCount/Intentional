@@ -15,6 +15,8 @@ import '../pages/Match/match_chat.dart';
 import '../pages/Verifications/verifications.dart';
 import '../pages/History/history.dart';
 import '../user.dart';
+import '../pages/Expectations/flow_expectations.dart';
+import '../inputs/input_config.dart';
 
 class AppRoutes {
 
@@ -32,7 +34,8 @@ class AppRoutes {
   static const String tone = '/tone';
   static const String matchChat = '/match_chat';
   static const String verifications= '/verifications';
-  static const String history= '/history';
+  static const String history = '/history';
+  static const String expectationsFlow = '/flow_expectations';
   
   static Route<dynamic>? generateRoute(RouteSettings settings,) {
     switch (settings.name) {
@@ -58,6 +61,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => TimeSpent(title: 'Time Spent Together',));
       case tone:
         return MaterialPageRoute(builder: (_) => Tone(title: 'Relationship Tone',));
+      case expectationsFlow:
+        return MaterialPageRoute(builder: (_) => MyPage(pages: inputs));
     }
 
     if (UserProvider.instance.isLoggedIn) {

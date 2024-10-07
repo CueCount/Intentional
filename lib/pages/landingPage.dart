@@ -49,7 +49,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 userProvider.toggleLogin();
                 print(userProvider.isLoggedIn); 
                 Navigator.pushNamed(context, AppRoutes.home);
-                
               },
               child: const Text('Login'),
               color: Colors.blue,

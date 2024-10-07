@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-//import 'pages/landingPage.dart';
 import 'router/router.dart';
 import 'user.dart';
 
