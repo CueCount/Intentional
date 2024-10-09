@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'data.dart';
 
 class AirtableService {
   final String apiKey = 'pathv5g07vtToPW3g.d3cc20dffd1ebaeab0c8c19053a5a8ce0668f838b47dba7909c1fc8b3f571292';
   final String baseUrl = 'https://api.airtable.com/v0/appe11umTCa3q8cg7/tblGb4zcZ3PT6fIjT';
 
-  // Function to fetch data from Airtable
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+  Fetch data from Airtable
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Future<List<Map<String, dynamic>>> fetchData() async {
     final url = Uri.parse(baseUrl);
     final response = await http.get(url, headers: {
@@ -22,7 +23,9 @@ class AirtableService {
     }
   }
 
-  // Function to post data to Airtable
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+  Post data to Airtable
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Future<void> postData(Map<String, dynamic> fields) async {
     final url = Uri.parse(baseUrl);
     final response = await http.post(url, headers: {

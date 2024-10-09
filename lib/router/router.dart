@@ -15,8 +15,7 @@ import '../pages/Match/match_chat.dart';
 import '../pages/Verifications/verifications.dart';
 import '../pages/History/history.dart';
 import '../user.dart';
-import '../pages/Expectations/flow_expectations.dart';
-import '../inputs/input_config.dart';
+import '../controllers/data_inputs.dart';
 
 class AppRoutes {
 
@@ -61,8 +60,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => TimeSpent(title: 'Time Spent Together',));
       case tone:
         return MaterialPageRoute(builder: (_) => Tone(title: 'Relationship Tone',));
-      case expectationsFlow:
-        return MaterialPageRoute(builder: (_) => MyPage(pages: inputs));
+
     }
 
     if (UserProvider.instance.isLoggedIn) {
