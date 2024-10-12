@@ -8,51 +8,31 @@ class DataService {
   static const String cacheKey = 'dynamicData';
   final AirtableService airtableService = AirtableService();
   
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-  Cache data locally
-   
-  Future<void> cacheData(DynamicData data) async {
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+  Data Handling Logic
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+  void storeRecordId(String recordId) async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString(cacheKey, jsonEncode(data.toJson()));
-  }- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    prefs.setString('recordId', recordId);
+  }
 
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-  Load cached data
-  
-  Future<DynamicData> loadCachedData() async {
+  Future<String?> getRecordId() async {
     final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(cacheKey);
-    if (data != null) {
-      final jsonData = jsonDecode(data) as Map<String, dynamic>;
-      return DynamicData.fromJson(jsonData);
-    }
-    return DynamicData(inputs: []);
-  } - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    return prefs.getString('recordId');
+  }
 
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-  Submit data to Airtable
-   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-  Future<void> submitData(DynamicData data) async {
-    try {
-      await airtableService.postData(data.toJson());
-    } catch (e) {
-      print('Failed to submit data: $e');
+  Future<void> handleSubmit(DynamicData data) async {
+    Map<String, dynamic> inputData = data.toJson();
+    String? recordId = await getRecordId();
+
+    if (recordId == null) {
+      recordId = await airtableService.createData(inputData);  // Use instance of airtableService
+      if (recordId != null) {
+        storeRecordId(recordId); 
+      }
+    } else {
+      await airtableService.postData(recordId, inputData);  // Use instance for postData as well
     }
   }
 
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-  Fetch data from Airtable and cache it locally
-   
-  Future<void> fetchDataAndCache() async {
-    try {
-      final records = await airtableService.fetchData();
-      final dynamicData = DynamicData.fromJson({
-        'fields': { for (var record in records) record['fields']['Title']: record['fields'] }
-      });
-      await cacheData(dynamicData);
-    } catch (e) {
-      print('Failed to fetch and cache data: $e');
-    }
-  }- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-  
 }

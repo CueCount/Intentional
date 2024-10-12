@@ -4,6 +4,9 @@ import '../../controllers/airtable.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_checkbox.dart';  
+import '../../controllers/data_functions.dart';
+import '../../controllers/data_object.dart';
+import '../../controllers/data_inputs.dart';
 
 class MateAttributes extends StatefulWidget {
   const MateAttributes({super.key, required this.title});
@@ -60,7 +63,6 @@ class _MateAttributes extends State<MateAttributes> {
         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: MaterialButton(
           onPressed: () {
-            
             Navigator.pushNamed(context, AppRoutes.logistics);
           },
           child: Text('Begin'),

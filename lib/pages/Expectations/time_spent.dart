@@ -78,7 +78,7 @@ class _TimeSpent extends State<TimeSpent> {
           MaterialButton(
             onPressed: () {
               DynamicData data = DynamicData(inputValues: inputValues);
-              dataService.submitData(data);
+              dataService.handleSubmit(data);
               Navigator.pushNamed(context, AppRoutes.tone);
             },
             child: const Text('Continue'),

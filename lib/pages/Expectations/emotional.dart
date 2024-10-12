@@ -76,7 +76,7 @@ class _EmotionalDynamic extends State<EmotionalDynamic> {
           MaterialButton(
             onPressed: () {
               DynamicData data = DynamicData(inputValues: inputValues);
-              dataService.submitData(data);
+              dataService.handleSubmit(data);
               Navigator.pushNamed(context, AppRoutes.status);
             },
             child: const Text('Continue'),

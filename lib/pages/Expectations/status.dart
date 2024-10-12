@@ -77,7 +77,7 @@ class _StatusDynamic extends State<StatusDynamic> {
           MaterialButton(
             onPressed: () {
               DynamicData data = DynamicData(inputValues: inputValues);
-              dataService.submitData(data);
+              dataService.handleSubmit(data);
               Navigator.pushNamed(context, AppRoutes.timeSpent);
             },
             child: const Text('Continue'),

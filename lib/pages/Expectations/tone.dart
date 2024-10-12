@@ -78,7 +78,7 @@ class _Tone extends State<Tone> {
           MaterialButton(
             onPressed: () {
               DynamicData data = DynamicData(inputValues: inputValues);
-              dataService.submitData(data);
+              dataService.handleSubmit(data);
               Navigator.pushNamed(context, AppRoutes.dashBoard);
             },
             child: const Text('Finish'),

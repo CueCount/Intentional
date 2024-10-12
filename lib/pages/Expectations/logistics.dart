@@ -75,7 +75,7 @@ class _Logistics extends State<Logistics> {
           MaterialButton(
             onPressed: () {
               DynamicData data = DynamicData(inputValues: inputValues);
-              dataService.submitData(data);
+              dataService.handleSubmit(data);
               Navigator.pushNamed(context, AppRoutes.labor);
             },
             child: const Text('Continue'),
