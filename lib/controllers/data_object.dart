@@ -4,7 +4,7 @@ This file holds functions that take input data and convert it to and from JSON
  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
  
 class DynamicData {
-  final Map<String, double> inputValues;
+  final Map<String, dynamic> inputValues;
   DynamicData({required this.inputValues,});
 
   Map<String, dynamic> toJson() {

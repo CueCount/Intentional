@@ -11,6 +11,7 @@ class GridItem extends StatelessWidget {
     required this.title,
     required this.imagePath,
     required this.routeName,
+    
   }) : super(key: key);
 
   @override

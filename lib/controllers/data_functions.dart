@@ -4,7 +4,6 @@ import 'data_object.dart';
 import 'airtable.dart';
 
 class DataService {
-  
   static const String cacheKey = 'dynamicData';
   final AirtableService airtableService = AirtableService();
   

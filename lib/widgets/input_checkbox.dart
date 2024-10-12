@@ -15,12 +15,14 @@ class MateAttribute {
 
 class CustomCheckbox extends StatefulWidget {
   final MateAttribute attribute;
+  final bool isSelected;
   final Function(bool) onChanged;
 
-  CustomCheckbox({
+  const CustomCheckbox({
     Key? key,
     required this.attribute,
     required this.onChanged,
+    required this.isSelected, 
   }) : super(key: key);
 
   @override

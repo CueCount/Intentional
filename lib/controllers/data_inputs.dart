@@ -13,11 +13,17 @@ class Input {
   }
 }
 
-// Example configurations
 List<Input> mateAttInputs = [
   Input(
     title: "MateAttribute",
-    possibleValues: ["Physically Strong and Bruiting", "Mature and Thoughtful", "Assertive and Leading"],
+    possibleValues: [
+      "Physically Strong and Bruiting",
+      "Mature and Thoughtful",
+      "Assertive and Leading",
+      "Intelligent and Nerdy",
+      "Spontaneous and Romantic",
+      "High Earning High Status",
+      ],
     type: "checkbox"),
 ];
 

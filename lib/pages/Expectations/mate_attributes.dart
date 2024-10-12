@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '/router/router.dart';
-import '../../controllers/airtable.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_checkbox.dart';  
@@ -10,26 +9,43 @@ import '../../controllers/data_inputs.dart';
 
 class MateAttributes extends StatefulWidget {
   const MateAttributes({super.key, required this.title});
-
   final String title;
-
   @override
   State<MateAttributes> createState() => _MateAttributes();
 }
 
 class _MateAttributes extends State<MateAttributes> {
-  List<MateAttribute> attributes = [
-    MateAttribute(title: 'Physically Strong', description: 'Have your specific needs and expectations met'),
-    MateAttribute(title: 'Mature and Thoughtful', description: 'Have your specific needs and expectations met'),
-    MateAttribute(title: 'Assertive and Leading', description: 'Have your specific needs and expectations met'),
-    MateAttribute(title: 'Intelligent and Nerdy', description: 'Have your specific needs and expectations met'),
-    MateAttribute(title: 'Spontaneous and Romantic', description: 'Have your specific needs and expectations met'),
-    MateAttribute(title: 'High Earning High Status', description: 'Have your specific needs and expectations met'),
-  ];
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  VALUES
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+  Map<String, dynamic> inputValues = {};
+  DataService dataService = DataService();
+  Map<String, bool> selectedValues = {};
+  @override
+  void initState() {
+    super.initState();
+    for (var input in mateAttInputs) {
+      for (var value in input.possibleValues) {
+        selectedValues[value] = false;
+      }
+    }
+  }
 
+  // Function to gather selected values and prepare them as an array
+  Map<String, dynamic> getSelectedAttributes() {
+    return {
+      "MateAttribute": selectedValues.entries
+          .where((entry) => entry.value)  // Only selected entries
+          .map((entry) => entry.key)       // Get the selected keys
+          .toList(),                       // Convert to a list
+    };
+  }
+
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  SCAFFOLD
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   @override
   Widget build(BuildContext context) { 
-
     return Scaffold( 
       appBar: CustomAppBar(
         title: widget.title,
@@ -46,15 +62,22 @@ class _MateAttributes extends State<MateAttributes> {
           mainAxisSpacing: 10,
           childAspectRatio: 1.0,
         ),
-        itemCount: attributes.length,
+        itemCount: mateAttInputs[0].possibleValues.length,
         itemBuilder: (context, index) {
+          String attribute = mateAttInputs[0].possibleValues[index];  // Get the individual attribute
+
           return CustomCheckbox(
-            attribute: attributes[index],
+            attribute: MateAttribute(
+              title: attribute,
+              description: '',  // Description can be left empty or adjusted
+              isSelected: selectedValues[attribute] ?? false,
+            ),
             onChanged: (isSelected) {
               setState(() {
-                attributes[index].isSelected = isSelected;
+                selectedValues[attribute] = isSelected;
               });
             },
+            isSelected: selectedValues[attribute] ?? false,
           );
         },
       ),
@@ -63,6 +86,8 @@ class _MateAttributes extends State<MateAttributes> {
         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: MaterialButton(
           onPressed: () {
+            Map<String, dynamic> inputData = getSelectedAttributes();
+            dataService.handleSubmit(DynamicData(inputValues: inputData));
             Navigator.pushNamed(context, AppRoutes.logistics);
           },
           child: Text('Begin'),
