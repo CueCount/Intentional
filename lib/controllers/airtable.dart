@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'airtable_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AirtableService {
-  final String apiKey = 'pathv5g07vtToPW3g.d3cc20dffd1ebaeab0c8c19053a5a8ce0668f838b47dba7909c1fc8b3f571292';
-  final String baseUrl = 'https://api.airtable.com/v0/appe11umTCa3q8cg7/tblGb4zcZ3PT6fIjT';
+  final String apiKey = airtableApiKey;
+  final String baseUrl = 'https://api.airtable.com/v0/$airtableBaseId/$airtableTableName';
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
   CREATE NEW ROW AIRTABLE
