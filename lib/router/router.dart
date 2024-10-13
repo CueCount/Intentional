@@ -15,7 +15,6 @@ import '../pages/Match/match_chat.dart';
 import '../pages/Verifications/verifications.dart';
 import '../pages/History/history.dart';
 import '../user.dart';
-import '../controllers/data_inputs.dart';
 
 class AppRoutes {
 
