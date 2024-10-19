@@ -44,4 +44,5 @@ app.*.map.json
 
 # Airtable Auth Information
 /lib/controllers/airtable_auth.dart
+/lib/controllers/auth0_auth.dart
 

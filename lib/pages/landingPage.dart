@@ -14,14 +14,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   @override
   Widget build(BuildContext context) {
-    
-    void noOperation() {
-      // This is an intentionally empty function that does nothing.
-    }
-
+    void noOperation() {/* This is an intentionally empty function that does nothing.*/}
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     return Scaffold(
@@ -41,15 +36,16 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () {
                 Navigator.pushNamed(context, AppRoutes.qualRelDate);
               },
-              child: const Text('Begin'),
+              child: const Text('Sign Up'),
               color: const Color.fromARGB(255, 226, 33, 243),
             ),
             MaterialButton(
               onPressed: () {
                 userProvider.toggleLogin();
                 print(userProvider.isLoggedIn); 
-                Navigator.pushNamed(context, AppRoutes.home);
+                Navigator.pushNamed(context, AppRoutes.login);
               },
+            
               child: const Text('Login'),
               color: Colors.blue,
             ),

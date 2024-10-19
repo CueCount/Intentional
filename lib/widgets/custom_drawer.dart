@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:auth0_flutter/auth0_flutter.dart';
 
 class CustomDrawer extends StatelessWidget {
   final bool isLoggedIn;
@@ -46,9 +47,9 @@ class CustomDrawer extends StatelessWidget {
               ListTile(
                 leading: Icon(Icons.exit_to_app),
                 title: Text('Logout'),
-                onTap: () {
-                  // Handle logout
-                  Navigator.pop(context);  // Close the drawer
+                onTap: () async {
+                  //await logout();  // Call the logout function
+                  Navigator.pushReplacementNamed(context, '/login');  // Close the drawer
                 },
               ),
           ],

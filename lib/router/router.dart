@@ -15,6 +15,7 @@ import '../pages/Match/match_chat.dart';
 import '../pages/Verifications/verifications.dart';
 import '../pages/History/history.dart';
 import '../user.dart';
+import '../login.dart';
 
 class AppRoutes {
 
@@ -34,6 +35,7 @@ class AppRoutes {
   static const String verifications= '/verifications';
   static const String history = '/history';
   static const String expectationsFlow = '/flow_expectations';
+  static const String login = '/login';
   
   static Route<dynamic>? generateRoute(RouteSettings settings,) {
     switch (settings.name) {
@@ -59,7 +61,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => TimeSpent(title: 'Time Spent Together',));
       case tone:
         return MaterialPageRoute(builder: (_) => Tone(title: 'Relationship Tone',));
-
+      case login:
+        return MaterialPageRoute(builder: (_) => LoginPage());
     }
 
     if (UserProvider.instance.isLoggedIn) {

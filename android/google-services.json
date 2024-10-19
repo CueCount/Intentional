@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "750332568734",
+    "project_id": "intentional-dating-app",
+    "storage_bucket": "intentional-dating-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:750332568734:android:bf80647f3658547a53078f",
+        "android_client_info": {
+          "package_name": "com.intentional.demo01"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWKygmlRrzCrPYnEm7E4ud88J0qKvzjqA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
