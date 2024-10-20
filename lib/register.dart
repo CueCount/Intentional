@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
-class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({Key? key}) : super(key: key);
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -17,7 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: const Text('Register')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -37,16 +36,16 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
-                await login();
+                await register();
               },
-              child: const Text('Login'),
+              child: const Text('Register'),
             ),
             const SizedBox(height: 10),
             TextButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/register'); // For registration page
+                Navigator.pop(context); // Go back to LoginPage
               },
-              child: const Text('Create an Account'),
+              child: const Text('Already have an account? Login'),
             ),
           ],
         ),
@@ -54,18 +53,19 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> login() async {
+  Future<void> register() async {
     try {
-      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      print('User: ${userCredential.user?.email}');
+      print('Registered User: ${userCredential.user?.email}');
+      
       Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
-      print('Login failed: $e');
+      print('Registration failed: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed: $e')),
+        SnackBar(content: Text('Registration failed: $e')),
       );
     }
   }

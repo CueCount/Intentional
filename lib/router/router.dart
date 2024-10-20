@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/landingPage.dart';
 import '../pages/UserInfo/qualifierIntCas.dart';
 import '../pages/UserInfo/qualifierRelDate.dart';
@@ -16,9 +17,9 @@ import '../pages/Verifications/verifications.dart';
 import '../pages/History/history.dart';
 import '../user.dart';
 import '../login.dart';
+import '../register.dart';
 
 class AppRoutes {
-
   static const String home = '/';
   static const String qualRelDate = '/qualifierRelDate';
   static const String qualIntCas = '/qualifierIntCas';
@@ -36,51 +37,77 @@ class AppRoutes {
   static const String history = '/history';
   static const String expectationsFlow = '/flow_expectations';
   static const String login = '/login';
+  static const String register = '/register';
   
-  static Route<dynamic>? generateRoute(RouteSettings settings,) {
-    switch (settings.name) {
-      case home:
-        return MaterialPageRoute(builder: (_) => UserProvider.instance.isLoggedIn ? DashboardPage(title: 'dash',) : MyHomePage(title: 'Intentional',));
-      case qualRelDate:
-        return MaterialPageRoute(builder: (_) => QualifierRelDate(title: 'Love Status',));
-      case qualIntCas:
-        return MaterialPageRoute(builder: (_) => QualifierIntCas(title: 'Dating',));
-      case verID:
-        return MaterialPageRoute(builder: (_) => VerifyIdentity(title: 'Verify Identity',));
-      case mateAttributes:
-        return MaterialPageRoute(builder: (_) => MateAttributes(title: 'Mate Attributes',));
-      case logistics:
-        return MaterialPageRoute(builder: (_) => Logistics(title: 'Logistics',));
-      case labor:
-        return MaterialPageRoute(builder: (_) => Labor(title: 'Labor Dynamic',));
-      case emotional:
-        return MaterialPageRoute(builder: (_) => EmotionalDynamic(title: 'Emotional Dynamic',));
-      case status:
-        return MaterialPageRoute(builder: (_) => StatusDynamic(title: 'Status Dynamic',));
-      case timeSpent:
-        return MaterialPageRoute(builder: (_) => TimeSpent(title: 'Time Spent Together',));
-      case tone:
-        return MaterialPageRoute(builder: (_) => Tone(title: 'Relationship Tone',));
-      case login:
-        return MaterialPageRoute(builder: (_) => LoginPage());
-    }
+  static Route<dynamic> generateRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (_) => _buildAuthWrapper(settings),
+    );
+  }
 
-    if (UserProvider.instance.isLoggedIn) {
-      switch (settings.name) {
-        case matchChat:
-          return MaterialPageRoute(builder: (_) => MatchChat(title: 'Match Chat',));
-        case verifications:
-          return MaterialPageRoute(builder: (_) => Verifications(title: 'Verifications',));
-        case history:
-          return MaterialPageRoute(builder: (_) => History(title: 'History',));
-        default:
-          throw FormatException("Route not found while logged in");
-      }
-    } else {
-      switch (settings.name) {
-        default:
-          throw FormatException("Route not found while logged out");
-      }
+  static Widget _loggedInRoutes(String? routeName) {
+    switch (routeName) {
+      case matchChat:
+        return MatchChat(title: 'Match Chat',);
+      case verifications:
+        return Verifications(title: 'Verifications',);
+      case history:
+        return History(title: 'History',);
+      case dashBoard:
+        return DashboardPage(title: 'Dashboard');
+      default:
+        throw FormatException("Route not found while LOGGED IN");
     }
+  }
+
+  static Widget _loggedOutRoutes(String? routeName) {
+    switch (routeName) {
+      case qualRelDate:
+        return QualifierRelDate(title: 'Love Status',);
+      case qualIntCas:
+        return QualifierIntCas(title: 'Dating',);
+      case verID:
+        return VerifyIdentity(title: 'Verify Identity',);
+      case mateAttributes:
+        return MateAttributes(title: 'Mate Attributes',);
+      case logistics:
+        return Logistics(title: 'Logistics',);
+      case labor:
+        return Labor(title: 'Labor Dynamic',);
+      case emotional:
+        return EmotionalDynamic(title: 'Emotional Dynamic',);
+      case status:
+        return StatusDynamic(title: 'Status Dynamic',);
+      case timeSpent:
+        return TimeSpent(title: 'Time Spent Together',);
+      case tone:
+        return Tone(title: 'Relationship Tone',);
+      case login:
+        return LoginPage();
+      case register:
+        return RegisterPage();
+      case home:
+        return MyHomePage(title: 'Landing Page',);
+      default:
+        throw FormatException("Route not found while LOGGED OUT");
+    }
+  }
+
+  static Widget _buildAuthWrapper(RouteSettings settings) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasData) {
+          return _loggedInRoutes(settings.name);
+        } else {
+          return _loggedOutRoutes(settings.name);
+        }
+      },
+    );
   }
 }
