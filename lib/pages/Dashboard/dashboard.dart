@@ -5,15 +5,12 @@ import '../../widgets/grid_item.dart';  // Import your GridItem class
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key, required this.title});
-
   final String title;
-
   @override
   State<DashboardPage> createState() => _DashboardPage();
 }
 
 class _DashboardPage extends State<DashboardPage> {
-
   @override
   Widget build(BuildContext context) {
     

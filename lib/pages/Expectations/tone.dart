@@ -79,7 +79,7 @@ class _Tone extends State<Tone> {
             onPressed: () {
               DynamicData data = DynamicData(inputValues: inputValues);
               dataService.handleSubmit(data);
-              Navigator.pushNamed(context, AppRoutes.dashBoard);
+              Navigator.pushNamed(context, AppRoutes.register);
             },
             child: const Text('Finish'),
             color: const Color.fromARGB(255, 226, 33, 243),

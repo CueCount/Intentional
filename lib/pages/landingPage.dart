@@ -36,17 +36,14 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () {
                 Navigator.pushNamed(context, AppRoutes.qualRelDate);
               },
-              child: const Text('Sign Up'),
+              child: const Text('Find Someone'),
               color: const Color.fromARGB(255, 226, 33, 243),
             ),
             MaterialButton(
               onPressed: () {
-                userProvider.toggleLogin();
-                print(userProvider.isLoggedIn); 
                 Navigator.pushNamed(context, AppRoutes.login);
               },
-            
-              child: const Text('Login'),
+              child: const Text('Go to My Profile'),
               color: Colors.blue,
             ),
           ],

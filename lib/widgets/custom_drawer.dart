@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:auth0_flutter/auth0_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CustomDrawer extends StatelessWidget {
-  final bool isLoggedIn;
-  final bool hasSubmittedForm;
-
-  CustomDrawer({this.isLoggedIn = true, this.hasSubmittedForm = true,});
+  const CustomDrawer({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -25,33 +22,63 @@ class CustomDrawer extends StatelessWidget {
                 ),
               ),
             ),
-            if (isLoggedIn)
-              ListTile(
-                leading: Icon(Icons.account_circle),
-                title: Text('Profile'),
-                onTap: () {
-                  // Handle Profile tap
-                  Navigator.pop(context);  // Close the drawer
-                },
-              ),
-            if (isLoggedIn && hasSubmittedForm)
-              ListTile(
-                leading: Icon(Icons.analytics),
-                title: Text('View Results'),
-                onTap: () {
-                  // Handle Results tap
-                  Navigator.pop(context);  // Close the drawer
-                },
-              ),
-            if (isLoggedIn)
-              ListTile(
-                leading: Icon(Icons.exit_to_app),
-                title: Text('Logout'),
-                onTap: () async {
-                  //await logout();  // Call the logout function
-                  Navigator.pushReplacementNamed(context, '/login');  // Close the drawer
-                },
-              ),
+
+            StreamBuilder<User?>( 
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (context, snapshot) { 
+                final isLoggedIn = snapshot.hasData;
+                return Column(
+                  children: [
+                    if (isLoggedIn) ...[
+                    ListTile(
+                        leading: const Icon(Icons.account_circle),
+                        title: const Text('Your Profile'),
+                        onTap: () {
+                          Navigator.pushNamed(context, '/profile');
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.analytics),
+                        title: const Text('Your Match'),
+                        onTap: () {
+                          Navigator.pushNamed(context, '/dashboard');
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.analytics),
+                        title: const Text('Your Needs'),
+                        onTap: () {
+                          Navigator.pushNamed(context, '/needs');
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.exit_to_app),
+                        title: const Text('Logout'),
+                        onTap: () async {
+                          await FirebaseAuth.instance.signOut();
+                          Navigator.pushReplacementNamed(context, '/login');
+                        },
+                      ),
+                    ] else ...[
+                      ListTile(
+                        leading: const Icon(Icons.login),
+                        title: const Text('Login'),
+                        onTap: () {
+                          Navigator.pushNamed(context, '/login');
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.person_add),
+                        title: const Text('Register'),
+                        onTap: () {
+                          Navigator.pushNamed(context, '/register');
+                        },
+                      ),
+                    ],
+                  ],
+                );
+              }
+            ),
           ],
         ),
     );
