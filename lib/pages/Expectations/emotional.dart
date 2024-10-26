@@ -34,7 +34,6 @@ class _EmotionalDynamic extends State<EmotionalDynamic> {
   @override
   Widget build(BuildContext context) { 
     return Scaffold( 
-      appBar: CustomAppBar(title: widget.title, isLoggedIn: true, hasSubmittedForm: true,),
       endDrawer: CustomDrawer(), 
       body: ListView(
         children: <Widget>[
@@ -69,20 +68,11 @@ class _EmotionalDynamic extends State<EmotionalDynamic> {
                 ],
               ], // Children
             ),
-
-          /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-          Submit
-           - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-          MaterialButton(
-            onPressed: () {
-              DynamicData data = DynamicData(inputValues: inputValues);
-              dataService.handleSubmit(data);
-              Navigator.pushNamed(context, AppRoutes.status);
-            },
-            child: const Text('Continue'),
-            color: const Color.fromARGB(255, 226, 33, 243),
-          ),
         ],
+      ),
+      bottomNavigationBar: CustomAppBar(
+        route: AppRoutes.status, 
+        inputValues: inputValues,
       ),
     );
   }

@@ -35,3 +35,5 @@ class DataService {
   }
 
 }
+
+final dataService = DataService();

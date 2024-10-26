@@ -31,11 +31,6 @@ class _Labor extends State<Labor> {
   @override
   Widget build(BuildContext context) { 
     return Scaffold( 
-      appBar: CustomAppBar(
-        title: widget.title,
-        isLoggedIn: true,
-        hasSubmittedForm: true,
-      ),
       endDrawer: CustomDrawer(), 
       body: ListView(
         children: <Widget>[
@@ -70,17 +65,11 @@ class _Labor extends State<Labor> {
                 ],
               ], // Children
             ),
-          
-          MaterialButton(
-            onPressed: () {
-              DynamicData data = DynamicData(inputValues: inputValues);
-              dataService.handleSubmit(data);
-              Navigator.pushNamed(context, AppRoutes.emotional);
-            },
-            child: const Text('Begin'),
-            color: const Color.fromARGB(255, 226, 33, 243),
-          ),
         ],
+      ),
+      bottomNavigationBar: CustomAppBar(
+        route: AppRoutes.emotional, 
+        inputValues: inputValues,
       ),
     );
   }

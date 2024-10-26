@@ -4,37 +4,35 @@ import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 
-class Verifications extends StatefulWidget {
-  const Verifications({super.key, required this.title});
+class History extends StatefulWidget {
+  const History({super.key, required this.title});
 
   final String title;
 
   @override
-  State<Verifications> createState() => _Verifications();
+  State<History> createState() => _History();
 }
 
-class _Verifications extends State<Verifications> {
+class _History extends State<History> {
 
   @override
   Widget build(BuildContext context) { 
 
     return Scaffold( 
       appBar: CustomAppBar(
-        title: widget.title,
-        isLoggedIn: true,
-        hasSubmittedForm: true,
+        route: AppRoutes.home,
       ),
       endDrawer: CustomDrawer(), 
       body: ListView(
         children: <Widget>[
           Column(
             children: [
-              Text('THIS IS THE VERIFICATIONS PAGE'), // Correctly using the Text widget
+              Text('THIS IS THE HISTORY PAGE'), // Correctly using the Text widget
             ],
           ),
           MaterialButton(
             onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.dashBoard);
+              //Navigator.pushNamed(context, AppRoutes.dashBoard);
             },
             child: const Text('Begin'),
             color: const Color.fromARGB(255, 226, 33, 243),

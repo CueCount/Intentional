@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'verifyIdentity.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
+import '/router/router.dart';
 
 class QualifierIntCas extends StatefulWidget {
   final String title;
   const QualifierIntCas({super.key, required this.title});
-
   @override
   State<QualifierIntCas> createState() => _QualifierIntCas();
 }
@@ -15,17 +14,10 @@ class _QualifierIntCas extends State<QualifierIntCas> {
 
   @override
   Widget build(BuildContext context) {
-    
-    void noOperation() {
-      // This is an intentionally empty function that does nothing.
-    }
+    void noOperation() {}
     
     return Scaffold(
-      appBar: CustomAppBar(
-        title: widget.title,
-        isLoggedIn: true,
-        hasSubmittedForm: true,
-      ),
+      appBar: CustomAppBar(route: AppRoutes.mateAttributes),
       endDrawer: CustomDrawer(), 
       body: Center(
     
@@ -37,10 +29,7 @@ class _QualifierIntCas extends State<QualifierIntCas> {
             ),
             MaterialButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => VerifyIdentity(title: 'Verify Identity',)),
-                );
+                Navigator.pushNamed(context, AppRoutes.mateAttributes);
               },
               child: const Text('Intentionally'),
               color: Colors.blue,

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'router/router.dart';
-import 'user.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
@@ -10,12 +8,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => UserProvider(),
-      child: MyApp(),
-    ),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -25,9 +18,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       onGenerateRoute: AppRoutes.generateRoute,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Color.fromRGBO(183, 58, 85, 1)),
         useMaterial3: true,
-        scaffoldBackgroundColor: Color(0xFFFEF8E8),
+        scaffoldBackgroundColor: Color.fromRGBO(250, 235, 235, 0),
       ),
       debugShowCheckedModeBanner: false,
     );

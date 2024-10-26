@@ -24,7 +24,7 @@ class _TimeSpent extends State<TimeSpent> {
   void initState() {
     super.initState();
     for (var input in timeSpentInputs) {
-      inputValues[input.title] = (input.possibleValues[0] + input.possibleValues[1]) / 2; // Set initial value to the midpoint
+      inputValues[input.title] = (input.possibleValues[0] + input.possibleValues[1]) / 2; 
     }
   }
 
@@ -35,11 +35,6 @@ class _TimeSpent extends State<TimeSpent> {
   Widget build(BuildContext context) { 
 
     return Scaffold( 
-      appBar: CustomAppBar(
-        title: widget.title,
-        isLoggedIn: true,
-        hasSubmittedForm: true,
-      ),
       endDrawer: CustomDrawer(), 
       body: ListView(
         children: <Widget>[
@@ -74,19 +69,12 @@ class _TimeSpent extends State<TimeSpent> {
                 ],
               ], // Children
             ),
-
-          MaterialButton(
-            onPressed: () {
-              DynamicData data = DynamicData(inputValues: inputValues);
-              dataService.handleSubmit(data);
-              Navigator.pushNamed(context, AppRoutes.tone);
-            },
-            child: const Text('Continue'),
-            color: const Color.fromARGB(255, 226, 33, 243),
-          ),
         ],
       ),
-
+      bottomNavigationBar: CustomAppBar(
+        route: AppRoutes.tone, 
+        inputValues: inputValues,
+      ),
     );
 
   }

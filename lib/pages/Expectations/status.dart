@@ -34,11 +34,6 @@ class _StatusDynamic extends State<StatusDynamic> {
   Widget build(BuildContext context) { 
 
     return Scaffold( 
-      appBar: CustomAppBar(
-        title: widget.title,
-        isLoggedIn: true,
-        hasSubmittedForm: true,
-      ),
       endDrawer: CustomDrawer(), 
       body: ListView(
         children: <Widget>[
@@ -73,20 +68,12 @@ class _StatusDynamic extends State<StatusDynamic> {
                 ],
               ], // Children
             ),
-
-          MaterialButton(
-            onPressed: () {
-              DynamicData data = DynamicData(inputValues: inputValues);
-              dataService.handleSubmit(data);
-              Navigator.pushNamed(context, AppRoutes.timeSpent);
-            },
-            child: const Text('Continue'),
-            color: const Color.fromARGB(255, 226, 33, 243),
-          ),
         ],
       ),
-
+      bottomNavigationBar: CustomAppBar(
+        route: AppRoutes.timeSpent, 
+        inputValues: inputValues,
+      ),
     );
-
   }
 }

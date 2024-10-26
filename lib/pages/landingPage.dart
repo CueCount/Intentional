@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '/router/router.dart';
-import '../user.dart';
-import '../widgets/appBar.dart';
 import '../widgets/custom_drawer.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -17,13 +14,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     void noOperation() {/* This is an intentionally empty function that does nothing.*/}
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     return Scaffold(
-      appBar: CustomAppBar(
-        title: "Intentional",
-        isLoggedIn: UserProvider.instance.isLoggedIn,
-      ),
       endDrawer: CustomDrawer(), 
       body: Center(
         child: Column(
