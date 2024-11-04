@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../router/router.dart';
+import '../../widgets/input_text.dart';
+import '../../controllers/firestore_service.dart'; // Add this import
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
-
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirestoreService _firestoreService = FirestoreService();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,16 +32,18 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
+            CustomTextInput(
+              labelText: 'Email',
               controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
               keyboardType: TextInputType.emailAddress,
+              suffixIcon: const Icon(Icons.email),
             ),
             const SizedBox(height: 10),
-            TextField(
+            CustomTextInput(
+              labelText: 'Password',
               controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
               obscureText: true,
+              suffixIcon: const Icon(Icons.lock),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -43,7 +55,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Go back to LoginPage
+                Navigator.pop(context); 
               },
               child: const Text('Already have an account? Login'),
             ),
@@ -54,19 +66,30 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> register() async {
-    try {
-      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      print('Registered User: ${userCredential.user?.email}');
+  final navigator = Navigator.of(context);
+  final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+  try {
+    final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+    
+    if (userCredential.user != null) {
+      await _firestoreService.associateWithAuthUser(userCredential.user!.uid);
+      print('Associated temp document with auth user: ${userCredential.user!.uid}');
       
-      Navigator.pushReplacementNamed(context, '/dashboard');
-    } catch (e) {
-      print('Registration failed: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (mounted) {
+        navigator.pushNamed(AppRoutes.basicInfo);
+      }
+    }
+  } catch (e) {
+    print('Registration failed: $e');
+    if (mounted) {
+      scaffoldMessenger.showSnackBar(
         SnackBar(content: Text('Registration failed: $e')),
       );
     }
   }
+}
 }

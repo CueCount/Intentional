@@ -13,6 +13,31 @@ class Input {
   }
 }
 
+List<Input> qual = [
+  Input(
+    title: "Gender",
+    possibleValues: [
+      "Man",
+      "Woman",
+    ],
+    type: "checkbox"),
+
+  Input(
+    title: "Seeking",
+    possibleValues: [
+      "Man",
+      "Woman",
+    ],
+    type: "checkbox"),
+];
+
+List<Input> location = [
+  Input(
+    title: "Location",
+    possibleValues: [],
+    type: "geopoint",)
+];
+
 List<Input> mateAttInputs = [
   Input(
     title: "MateAttribute",
@@ -117,5 +142,20 @@ List<Input> toneInputs = [
     title: "Expectations",
     possibleValues: [0, 100],
     type: "slider",
+  ),
+];
+
+List<Input> prompts = [
+  Input(
+    title: "Prompts",
+    possibleValues: [
+      "Your favorite band",
+      "Your favorite travel destination",
+      "Your typical weekend",
+      "Your favorite car you owned",
+      "Dream home location",
+      // ... other prompts
+    ],
+    type: "text"
   ),
 ];

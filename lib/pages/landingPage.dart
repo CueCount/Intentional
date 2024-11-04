@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import '/router/router.dart';
 import '../widgets/custom_drawer.dart';
+import '../styles.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
-
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
@@ -13,32 +14,114 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    void noOperation() {/* This is an intentionally empty function that does nothing.*/}
-
+    void noOperation() {}
     return Scaffold(
       endDrawer: CustomDrawer(), 
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'The only dating app with 87% relationship success rate within the first 3 months for both men and women.'
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.fromRGBO(255, 93, 93, 1),
+                Color.fromRGBO(255, 93, 198, 1),
+              ],
             ),
-            MaterialButton(
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.qualRelDate);
-              },
-              child: const Text('Find Someone'),
-              color: const Color.fromARGB(255, 226, 33, 243),
-            ),
-            MaterialButton(
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.login);
-              },
-              child: const Text('Go to My Profile'),
-              color: Colors.blue,
-            ),
-          ],
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 0),
+          child: Column(
+            children: <Widget>[
+              Container(
+                width: 60,  
+                height: 60,
+                margin: const EdgeInsets.only(
+                  top: 20,    
+                  bottom: 60, 
+                ),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(255, 213, 213, 1), 
+                  borderRadius: BorderRadius.circular(16), 
+                ),
+                child: SvgPicture.asset(
+                  'lib/assets/Int.svg',
+                  color: const Color.fromRGBO(255, 93, 93, 1),
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.only(bottom: 20,),
+                child: Text(
+                  'Let Us Sort\n Through the Mess,\n and Find You\n Your Person',
+                  style: AppTextStyles.headingLarge,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.only(bottom: 60,),
+                child: Text(
+                  'Start Dating Intentionally.',
+                  style: AppTextStyles.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 150, 
+                    height: 150,
+                    margin: const EdgeInsets.all(10),
+                    child: MaterialButton(
+                      onPressed: () {Navigator.pushNamed(context, AppRoutes.qual);},
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4),),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Get Started',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Icon(Icons.arrow_forward, size: 18),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 150, 
+                    height: 150, 
+                    margin: const EdgeInsets.all(10),
+                    child: MaterialButton(
+                      onPressed: () {Navigator.pushNamed(context, AppRoutes.login);},
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4),),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Login',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: 8), 
+                          Icon(Icons.login, size: 18),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );

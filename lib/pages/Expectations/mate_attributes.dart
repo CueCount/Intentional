@@ -44,10 +44,10 @@ class _MateAttributes extends State<MateAttributes> {
   SCAFFOLD
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   @override
-  Widget build(BuildContext context) { 
+  Widget build(BuildContext context) {
     Map<String, dynamic> inputData = getSelectedAttributes();
-    return Scaffold( 
-      endDrawer: CustomDrawer(), 
+    return Scaffold(
+      endDrawer: CustomDrawer(),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: GridView.builder(

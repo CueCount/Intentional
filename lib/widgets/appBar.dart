@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../controllers/data_object.dart';
 import '../../controllers/data_functions.dart';
+import '../../controllers/firestore_service.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final dynamic route;
@@ -18,36 +19,74 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
+          decoration: BoxDecoration(
+            color: Color(0xFFFFE5E5),  // Light pink background
+            borderRadius: BorderRadius.circular(32),  // Rounded corners
+          ),
+          margin: EdgeInsets.all(16),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SafeArea(
             top: false,
-            child: AppBar(
-              title: ElevatedButton(
-                onPressed: () {
-                  if (inputValues != null) {
-                    DynamicData data = DynamicData(inputValues: inputValues!);
-                    dataService.handleSubmit(data);
-                  }
-                  Navigator.pushNamed(context, route);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back),
+                  color: Colors.black,
+                  onPressed: () => Navigator.pop(context),
                 ),
-                child: Text(
-                  'CTA Text Var Here', // CTA button label
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (inputValues != null) {
+                      try {
+                        FirestoreService firestoreService = FirestoreService();
+                        await firestoreService.handleSubmit(inputValues!);
+                        Navigator.pushNamed(context, route);
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error saving data: $e')),
+                        );
+                      }
+                    } else {
+                      Navigator.pushNamed(context, route);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF5D5D),  // Coral pink
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Continue',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                    ],
+                  ),
                 ),
-              ),
-              actions: <Widget>[
                 IconButton(
                   icon: Icon(Icons.menu),
+                  color: Colors.black,
                   onPressed: () => Scaffold.of(context).openEndDrawer(),
                 ),
               ],
-            )
-        ))]);
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(60); 
+  Size get preferredSize => const Size.fromHeight(88);  // Adjusted height for padding
 }

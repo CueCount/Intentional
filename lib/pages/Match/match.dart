@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/grid_item.dart';  // Import your GridItem class
-import '/router/router.dart';
+import '../../router/router.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key, required this.title});

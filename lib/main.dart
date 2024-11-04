@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
       onGenerateRoute: AppRoutes.generateRoute,
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: Color.fromRGBO(250, 235, 235, 0),
+        scaffoldBackgroundColor: Color.fromRGBO(250, 235, 235, 100),
       ),
       debugShowCheckedModeBanner: false,
     );

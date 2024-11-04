@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/landingPage.dart';
-import '../pages/Qualifiers/qualifierIntCas.dart';
-import '../pages/Qualifiers/qualifierRelDate.dart';
+import '../pages/Qualifiers/location.dart';
+import '../pages/Qualifiers/qual.dart';
 import '../pages/Match/match.dart';
 import '../pages/Expectations/mate_attributes.dart';
 import '../pages/Expectations/logistics.dart';
@@ -15,11 +15,14 @@ import '../pages/Chat/chat.dart';
 import '../pages/Profile/profile.dart';
 import '../login.dart';
 import '../pages/Registration/register.dart';
+import '../pages/Registration/basic_info.dart';
+import '../pages/Registration/photos.dart';
+import '../pages/Registration/prompts.dart';
 
 class AppRoutes {
   static const String home = '/';
-  static const String qualRelDate = '/qualifierRelDate';
-  static const String qualIntCas = '/qualifierIntCas';
+  static const String qual = '/qual';
+  static const String location = '/location';
   static const String match = '/match';
   static const String mateAttributes = '/mate_attributes';
   static const String logistics = '/logistics';
@@ -34,6 +37,9 @@ class AppRoutes {
   static const String expectationsFlow = '/flow_expectations';
   static const String login = '/login';
   static const String register = '/register';
+  static const String basicInfo = '/basic_info';
+  static const String photos = '/photos';
+  static const String prompts = '/prompts';
   
   static Route<dynamic> generateRoute(RouteSettings settings) {
     return MaterialPageRoute(
@@ -43,23 +49,29 @@ class AppRoutes {
 
   static Widget _loggedInRoutes(String? routeName) {
     switch (routeName) {
+      case basicInfo:    
+        return const BasicProfilePage();
       case chat:
-        return MatchChat(title: 'Chat',);
+        return const MatchChat(title: 'Chat',);
       case profile:
-        return History(title: 'Profile',);
+        return const History(title: 'Profile',);
       case match:
-        return DashboardPage(title: 'Match');
+        return const DashboardPage(title: 'Match');
+      case photos:
+        return const PhotoUploadPage();
+      case prompts:
+        return const PromptsPage();
       default:
-        throw FormatException("Route not found while LOGGED IN");
+        return const DashboardPage(title: 'Match');
     }
   }
 
   static Widget _loggedOutRoutes(String? routeName) {
     switch (routeName) {
-      case qualRelDate:
-        return QualifierRelDate(title: 'Love Status',);
-      case qualIntCas:
-        return QualifierIntCas(title: 'Dating',);
+      case qual:
+        return QualifierRelDate(title: 'Qualifiers',);
+      case location:
+        return QualifierIntCas(title: 'Location',);
       case mateAttributes:
         return MateAttributes(title: 'Mate Attributes',);
       case logistics:
@@ -81,21 +93,35 @@ class AppRoutes {
       case home:
         return MyHomePage(title: 'Landing Page',);
       default:
-        throw FormatException("Route not found while LOGGED OUT");
+        return MyHomePage(title: 'Landing Page',);
     }
   }
 
   static Widget _buildAuthWrapper(RouteSettings settings) {
+    print('Current route requested: ${settings.name}');
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        print('Auth state: ${snapshot.hasData ? 'Logged in' : 'Logged out'}');
+        // Handle loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
+        // Handle auth state
         if (snapshot.hasData) {
-          return _loggedInRoutes(settings.name);
+          // Check if this is a new registration
+          if (settings.name == AppRoutes.register || settings.name == AppRoutes.basicInfo) {
+            return _loggedInRoutes(AppRoutes.basicInfo);
+          }
+          // Normal logged in navigation
+          try {
+            return _loggedInRoutes(settings.name);
+          } catch (e) {
+            // Only default to match if not in registration flow
+            return DashboardPage(title: 'Match');
+          }
         } else {
           return _loggedOutRoutes(settings.name);
         }

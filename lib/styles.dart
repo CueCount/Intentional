@@ -6,8 +6,26 @@ class AppStyles {
     fontSize: 18,
   );
 
-  static BoxDecoration boxDecoration = BoxDecoration(
-    color: const Color.fromARGB(255, 255, 160, 160),
+  static const BoxDecoration boxDecoration = BoxDecoration(
+    color:  Color.fromARGB(255, 255, 160, 160),
+  );
+}
+
+class AppTextStyles {
+  static TextStyle headingLarge = const TextStyle(
+    fontFamily: 'Bitter',
+    fontSize: 32,
+    fontWeight: FontWeight.w500,
+    color: Colors.white,
+    height: 1.2,
+  );
+
+  static TextStyle bodyLarge = const TextStyle(
+    fontFamily: 'Barlow',
+    fontSize: 18,
+    fontWeight: FontWeight.w500,
+    color: Colors.white,
+    height: 1.2,
   );
 }
 
