@@ -4,7 +4,6 @@ import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_checkbox.dart';  
 import '../../controllers/data_functions.dart';
-import '../../controllers/data_object.dart';
 import '../../controllers/data_inputs.dart';
 
 class MateAttributes extends StatefulWidget {
@@ -57,8 +56,11 @@ class _MateAttributes extends State<MateAttributes> {
             mainAxisSpacing: 10,
             childAspectRatio: 1.0,
           ),
-          itemCount: mateAttInputs[0].possibleValues.length,
+          itemCount: mateAttInputs.isNotEmpty ? mateAttInputs[0].possibleValues.length : 0,
           itemBuilder: (context, index) {
+            if (mateAttInputs.isEmpty || index >= mateAttInputs[0].possibleValues.length) {
+              return const SizedBox.shrink();
+            }
             String attribute = mateAttInputs[0].possibleValues[index];  
             return CustomCheckbox(
               attribute: MateAttribute(

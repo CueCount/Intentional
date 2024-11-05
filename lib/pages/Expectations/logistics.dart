@@ -4,7 +4,6 @@ import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_slider.dart';
 import '../../controllers/data_functions.dart';
-import '../../controllers/data_object.dart';
 import '../../controllers/data_inputs.dart';
 
 class Logistics extends StatefulWidget {
@@ -24,7 +23,7 @@ class _Logistics extends State<Logistics> {
   void initState() {
     super.initState();
     for (var input in logisticsInputs) {
-      inputValues[input.title] = input.possibleValues[1]; // Set initial value to the midpoint
+      inputValues[input.title] = input.possibleValues[1].toDouble(); // Set initial value to the midpoint
     }
   }
 
