@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '/router/router.dart';
-import '../../controllers/data_inputs.dart';
+import '../../data/data_inputs.dart';
 import '../../widgets/input_text.dart';
 
 class PromptsPage extends StatefulWidget {

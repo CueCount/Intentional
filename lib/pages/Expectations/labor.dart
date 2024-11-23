@@ -3,9 +3,7 @@ import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_slider.dart';
-import '../../controllers/data_functions.dart';
-import '../../controllers/data_object.dart';
-import '../../controllers/data_inputs.dart';
+import '../../data/data_inputs.dart';
 
 class Labor extends StatefulWidget {
   const Labor({super.key, required this.title});
@@ -19,7 +17,6 @@ class _Labor extends State<Labor> {
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, double> inputValues = {};
-  DataService dataService = DataService();
   @override
   void initState() {
     super.initState();
@@ -68,7 +65,7 @@ class _Labor extends State<Labor> {
         ],
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.emotional, 
+        route: AppRoutes.home, 
         inputValues: inputValues,
       ),
     );

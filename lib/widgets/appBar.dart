@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../controllers/data_object.dart';
-import '../../controllers/data_functions.dart';
-import '../../controllers/firestore_service.dart';
+import '../data/firestore_service.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final dynamic route;
@@ -23,8 +21,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             color: Color(0xFFFFE5E5),  // Light pink background
             borderRadius: BorderRadius.circular(32),  // Rounded corners
           ),
-          margin: EdgeInsets.all(16),
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SafeArea(
             top: false,
             child: Row(
@@ -58,7 +56,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
@@ -75,7 +73,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.menu),
+                  icon: const Icon(Icons.menu),
                   color: Colors.black,
                   onPressed: () => Scaffold.of(context).openEndDrawer(),
                 ),

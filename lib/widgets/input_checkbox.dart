@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import '../styles.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class MateAttribute {
+class CheckboxAttribute {
   String title;
   String description;
   bool isSelected;
 
-  MateAttribute({
+  CheckboxAttribute({
     required this.title,
     required this.description,
     this.isSelected = false,
@@ -14,7 +15,7 @@ class MateAttribute {
 }
 
 class CustomCheckbox extends StatefulWidget {
-  final MateAttribute attribute;
+  final CheckboxAttribute attribute;
   final bool isSelected;
   final Function(bool) onChanged;
 
@@ -40,27 +41,29 @@ class _CustomCheckboxState extends State<CustomCheckbox> {
         widget.onChanged(widget.attribute.isSelected);
       },
       child: Container(
-        padding: EdgeInsets.all(10),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: widget.attribute.isSelected
-              ? ColorPalette.selectedCheckboxColor
-              : ColorPalette.unselectedCheckboxColor,
+              ? ColorPalette.peach
+              : ColorPalette.white,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(widget.attribute.title, 
-            style: TextStyle(
-                fontWeight: FontWeight.bold,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.bitter(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
                 color: widget.attribute.isSelected
-                    ? ColorPalette.selectedTextColor
-                    : ColorPalette.unselectedTextColor,)            
+                    ? ColorPalette.white
+                    : ColorPalette.dark,)            
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(widget.attribute.description),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             if (widget.attribute.isSelected)
-              Icon(Icons.check_circle, color: Colors.green, size: 24),
+              const Icon(Icons.check, color: ColorPalette.white, size: 20),
           ],
         ),
       ),

@@ -16,7 +16,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     void noOperation() {}
     return Scaffold(
-      endDrawer: CustomDrawer(), 
+      endDrawer: const CustomDrawer(), 
       body: Center(
         child: Container(
           decoration: BoxDecoration(
@@ -61,7 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 margin: const EdgeInsets.only(bottom: 60,),
                 child: Text(
                   'Start Dating Intentionally.',
-                  style: AppTextStyles.bodyLarge,
+                  style: AppTextStyles.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
               ),

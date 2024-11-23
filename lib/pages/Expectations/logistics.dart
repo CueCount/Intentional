@@ -3,8 +3,7 @@ import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_slider.dart';
-import '../../controllers/data_functions.dart';
-import '../../controllers/data_inputs.dart';
+import '../../data/data_inputs.dart';
 
 class Logistics extends StatefulWidget {
   const Logistics({super.key, required this.title});
@@ -18,7 +17,6 @@ class _Logistics extends State<Logistics> {
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, double> inputValues = {};
-  DataService dataService = DataService();
   @override
   void initState() {
     super.initState();
@@ -67,7 +65,7 @@ class _Logistics extends State<Logistics> {
         ],
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.labor, 
+        route: AppRoutes.home, 
         inputValues: inputValues,
       ),
     );

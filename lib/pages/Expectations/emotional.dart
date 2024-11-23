@@ -3,9 +3,7 @@ import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_slider.dart'; 
-import '../../controllers/data_functions.dart';
-import '../../controllers/data_object.dart';
-import '../../controllers/data_inputs.dart';
+import '../../data/data_inputs.dart';
 
 class EmotionalDynamic extends StatefulWidget {
   const EmotionalDynamic({super.key, required this.title});
@@ -19,7 +17,6 @@ class _EmotionalDynamic extends State<EmotionalDynamic> {
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, double> inputValues = {};
-  DataService dataService = DataService();
   @override
   void initState() {
     super.initState();
@@ -71,7 +68,7 @@ class _EmotionalDynamic extends State<EmotionalDynamic> {
         ],
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.status, 
+        route: AppRoutes.home, 
         inputValues: inputValues,
       ),
     );

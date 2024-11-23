@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '/router/router.dart';
-import '../../controllers/data_functions.dart';
-import '../../controllers/data_inputs.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -42,7 +40,6 @@ class _QualifierIntCas extends State<QualifierIntCas> {
         });
       }
     } catch (e) {
-      print('Error searching cities: $e');
       setState(() {
         _suggestions = [];
         _isLoading = false;
@@ -53,7 +50,7 @@ class _QualifierIntCas extends State<QualifierIntCas> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      endDrawer: CustomDrawer(),
+      endDrawer: const CustomDrawer(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -81,7 +78,7 @@ class _QualifierIntCas extends State<QualifierIntCas> {
               ),
               child: TextField(
                 controller: _searchController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Enter your city',
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(16),
@@ -138,7 +135,7 @@ class _QualifierIntCas extends State<QualifierIntCas> {
         ),
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.mateAttributes,
+        route: AppRoutes.emotionalNeeds,
         inputValues: {
           'location': _selectedCity != null 
               ? GeoPoint(

@@ -3,9 +3,7 @@ import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_slider.dart';
-import '../../controllers/data_functions.dart';
-import '../../controllers/data_object.dart';
-import '../../controllers/data_inputs.dart';
+import '../../data/data_inputs.dart';
 
 class Tone extends StatefulWidget {
   const Tone({super.key, required this.title});
@@ -19,7 +17,6 @@ class _Tone extends State<Tone> {
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, double> inputValues = {};
-  DataService dataService = DataService();
   @override
   void initState() {
     super.initState();

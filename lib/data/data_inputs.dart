@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class Input {
   final String title;
   final List<dynamic> possibleValues; 
@@ -30,14 +28,12 @@ List<Input> qual = [
     ],
     type: "checkbox"),
 ];
-
 List<Input> location = [
   Input(
     title: "Location",
     possibleValues: [],
     type: "geopoint",)
 ];
-
 List<Input> mateAttInputs = [
   Input(
     title: "MateAttribute",
@@ -51,7 +47,6 @@ List<Input> mateAttInputs = [
       ],
     type: "checkbox"),
 ];
-
 List<Input> logisticsInputs = [
   Input(
     title: "Plan Dates",
@@ -74,7 +69,6 @@ List<Input> logisticsInputs = [
     type: "slider",
   ),
 ];
-
 List<Input> laborInputs = [
   Input(
     title: "Do More Home Chores",
@@ -87,7 +81,6 @@ List<Input> laborInputs = [
     type: "slider",
   ),
 ];
-
 List<Input> emotionalInputs = [
   Input(
     title: "More Empathic",
@@ -105,7 +98,6 @@ List<Input> emotionalInputs = [
     type: "slider",
   ),
 ];
-
 List<Input> statusInputs = [
   Input(
     title: "Generous Time",
@@ -118,7 +110,6 @@ List<Input> statusInputs = [
     type: "slider",
   ),
 ];
-
 List<Input> timeSpentInputs = [
   Input(
     title: "Time Spend During Dating",
@@ -131,7 +122,6 @@ List<Input> timeSpentInputs = [
     type: "slider",
   ),
 ];
-
 List<Input> toneInputs = [
   Input(
     title: "Tone",
@@ -145,6 +135,98 @@ List<Input> toneInputs = [
   ),
 ];
 
+
+List<Input> emotionalNeeds = [
+  Input(
+    title: "Emotional Needs",
+    possibleValues: [
+      "High Empathy and Sensitivity",
+      "Exceptionally Proactive, Takes Action",
+      "Introspective and Self Aware",
+      "Socially Commanding and Experienced",
+      "Sweet, Romantic, and Affectionate",
+      "Book Smart and Highly Intelligent"
+    ],
+    type: "checkbox"
+  ),
+];
+
+List<Input> physicalNeeds = [
+  Input(
+    title: "How Tall?",
+    possibleValues: [0, 100],
+    type: "rangeSlider",
+  ),
+  Input(
+    title: "Body Type?",
+    possibleValues: [0, 100],
+    type: "rangeSlider",
+  ),
+  Input(
+    title: "Muscles?",
+    possibleValues: [0, 100],
+    type: "rangeSlider",
+  ),
+  Input(
+    title: "Age?",
+    possibleValues: [0, 100],
+    type: "rangeSlider",
+  ),
+];
+
+List<Input> chemistryNeeds = [
+  Input(
+    title: "Chemistry Needs",
+    possibleValues: [
+      "Best Friends",
+      "Power Couple",
+      "The Provider and Provided For",
+      "Romantic Lovers",
+      "Feisty Sex Freaks",
+      "Wanderlust Explorers"
+    ],
+    type: "checkbox"
+  ),
+];
+
+List<Input> logisticNeeds = [
+  Input(
+    title: "How much time per week should you spend together in a committed relationship?",
+    possibleValues: [0, 100],
+    type: "slider",
+  ),
+  Input(
+    title: "Who should do more chores?",
+    possibleValues: [0, 100],
+    type: "slider",
+  ),
+  Input(
+    title: "Who should earn (significantly) more?",
+    possibleValues: [0, 100],
+    type: "slider",
+  ),
+  Input(
+    title: "How often should each partner plan dates, trips and other events together?",
+    possibleValues: [0, 100],
+    type: "slider",
+  ),
+];
+
+List<Input> lifeGoalNeeds = [
+  Input(
+    title: "Prompts",
+    possibleValues: [
+      "Travel Frequently and Extensively",
+      "Own a Nice Home, Car, and Toys",
+      "Maximize Freedom and Flexibility",
+      "Maximize Financial and Retirement Security",
+      "Build a Business, An Empire",
+      "Be Supported While You Pursue Your Dream"
+    ],
+    type: "checkbox"
+  ),
+];
+
 List<Input> prompts = [
   Input(
     title: "Prompts",
@@ -154,7 +236,6 @@ List<Input> prompts = [
       "Your typical weekend",
       "Your favorite car you owned",
       "Dream home location",
-      // ... other prompts
     ],
     type: "text"
   ),

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/photogrid.dart';
 import '/router/router.dart';
 import '../../functions/functions_photo.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class PhotoUploadPage extends StatefulWidget {
   const PhotoUploadPage({Key? key}) : super(key: key);
@@ -33,14 +31,24 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
       },
       photoUrls: _photoUrls,
     );
-    _photoHelper.fetchExistingPhotos();
+    _fetchPhotosForUpload();
+  }
+
+  Future<void> _fetchPhotosForUpload() async {
+    try {
+      // Fetch all photos for the current user
+      final photos = await PhotoUploadHelper.fetchExistingPhotos(selection: "all");
+      _photoHelper.onPhotosUpdated(photos);
+    } catch (e) {
+      print("Error fetching photos: $e");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     print('Building with photoUrls: $_photoUrls');
     return Scaffold(
-      endDrawer: CustomDrawer(),
+      endDrawer: const CustomDrawer(),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

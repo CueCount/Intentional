@@ -3,9 +3,7 @@ import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_slider.dart';  
-import '../../controllers/data_functions.dart';
-import '../../controllers/data_object.dart';
-import '../../controllers/data_inputs.dart';
+import '../../data/data_inputs.dart';
 class StatusDynamic extends StatefulWidget {
   const StatusDynamic({super.key, required this.title});
   final String title;
@@ -18,7 +16,6 @@ class _StatusDynamic extends State<StatusDynamic> {
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, double> inputValues = {};
-  DataService dataService = DataService();
   @override
   void initState() {
     super.initState();
@@ -71,7 +68,7 @@ class _StatusDynamic extends State<StatusDynamic> {
         ],
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.timeSpent, 
+        route: AppRoutes.home, 
         inputValues: inputValues,
       ),
     );

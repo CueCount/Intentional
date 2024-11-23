@@ -25,13 +25,11 @@ class CustomSlider extends StatefulWidget {
 
 class _CustomSliderState extends State<CustomSlider> {
   late double _currentValue;
-
   @override
   void initState() {
     super.initState();
     _currentValue = widget.initialValue;
   }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -40,7 +38,15 @@ class _CustomSliderState extends State<CustomSlider> {
         if (widget.label.isNotEmpty)
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text("${widget.label}: ${_currentValue.toStringAsFixed(1)}"),
+            child: Center(
+              child: Text(
+                "${_currentValue.toStringAsFixed(1)}",
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: ColorPalette.dark,
+                ),
+              ),
+            ),
           ),
         SliderTheme(      
           data: AppSliderThemes.sliderTheme,

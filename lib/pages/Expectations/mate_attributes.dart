@@ -3,8 +3,7 @@ import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_checkbox.dart';  
-import '../../controllers/data_functions.dart';
-import '../../controllers/data_inputs.dart';
+import '../../data/data_inputs.dart';
 
 class MateAttributes extends StatefulWidget {
   const MateAttributes({super.key, required this.title});
@@ -18,7 +17,6 @@ class _MateAttributes extends State<MateAttributes> {
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, dynamic> inputValues = {};
-  DataService dataService = DataService();
   Map<String, bool> selectedValues = {};
   @override
   void initState() {
@@ -46,7 +44,7 @@ class _MateAttributes extends State<MateAttributes> {
   Widget build(BuildContext context) {
     Map<String, dynamic> inputData = getSelectedAttributes();
     return Scaffold(
-      endDrawer: CustomDrawer(),
+      endDrawer: const CustomDrawer(),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: GridView.builder(
@@ -63,7 +61,7 @@ class _MateAttributes extends State<MateAttributes> {
             }
             String attribute = mateAttInputs[0].possibleValues[index];  
             return CustomCheckbox(
-              attribute: MateAttribute(
+              attribute: CheckboxAttribute(
                 title: attribute,
                 description: '',  
                 isSelected: selectedValues[attribute] ?? false,
@@ -79,7 +77,7 @@ class _MateAttributes extends State<MateAttributes> {
         ),
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.logistics, 
+        route: AppRoutes.home, 
         inputValues: inputData,
       ),
     );

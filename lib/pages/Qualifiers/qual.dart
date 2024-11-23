@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '/router/router.dart';
-import '../../widgets/input_checkbox.dart';  
 import '../../widgets/input_slider.dart';
 import '../../styles.dart';
-import '../../controllers/data_functions.dart';
-import '../../controllers/data_object.dart';
-import '../../controllers/data_inputs.dart';
+import '../../data/data_inputs.dart';
 
 class QualifierRelDate extends StatefulWidget {
   const QualifierRelDate({super.key, required this.title});
@@ -21,7 +18,6 @@ class _QualifierRelDate extends State<QualifierRelDate> {
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, dynamic> inputValues = {};
-  DataService dataService = DataService();
   Map<String, Map<String, bool>> groupSelectedValues = {};
 
   @override
@@ -49,7 +45,7 @@ class _QualifierRelDate extends State<QualifierRelDate> {
   Widget build(BuildContext context) {
     Map<String, dynamic> inputData = getSelectedAttributes();
     return Scaffold( 
-      endDrawer: CustomDrawer(), 
+      endDrawer: const CustomDrawer(), 
       body: ListView(
         children: <Widget>[
           for (var input in qual)

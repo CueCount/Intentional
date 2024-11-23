@@ -4,13 +4,6 @@ import '../pages/landingPage.dart';
 import '../pages/Qualifiers/location.dart';
 import '../pages/Qualifiers/qual.dart';
 import '../pages/Match/match.dart';
-import '../pages/Expectations/mate_attributes.dart';
-import '../pages/Expectations/logistics.dart';
-import '../pages/Expectations/labor.dart';
-import '../pages/Expectations/emotional.dart';
-import '../pages/Expectations/status.dart';
-import '../pages/Expectations/time_spent.dart';
-import '../pages/Expectations/tone.dart';
 import '../pages/Chat/chat.dart';
 import '../pages/Profile/profile.dart';
 import '../login.dart';
@@ -18,28 +11,32 @@ import '../pages/Registration/register.dart';
 import '../pages/Registration/basic_info.dart';
 import '../pages/Registration/photos.dart';
 import '../pages/Registration/prompts.dart';
+import '../pages/Needs/emotionalNeeds.dart';
+import '../pages/Needs/physicalNeeds.dart';
+import '../pages/Needs/chemistryNeeds.dart';
+import '../pages/Needs/logisticNeeds.dart';
+import '../pages/Needs/lifeGoalNeeds.dart';
 
 class AppRoutes {
   static const String home = '/';
   static const String qual = '/qual';
   static const String location = '/location';
   static const String match = '/match';
-  static const String mateAttributes = '/mate_attributes';
-  static const String logistics = '/logistics';
-  static const String labor = '/labor';
-  static const String emotional = '/emotional';  
-  static const String status = '/status';
-  static const String timeSpent = '/time_spent';
   static const String tone = '/tone';
   static const String chat = '/chat';
   static const String verifications= '/verifications';
   static const String profile = '/profile';
-  static const String expectationsFlow = '/flow_expectations';
   static const String login = '/login';
   static const String register = '/register';
   static const String basicInfo = '/basic_info';
   static const String photos = '/photos';
   static const String prompts = '/prompts';
+  static const String emotionalNeeds = '/emotionalNeeds';
+  static const String physicalNeeds = '/physicalNeeds';
+  static const String chemistryNeeds = '/chemistryNeeds';
+  static const String logisticNeeds = '/logisticNeeds';
+  static const String lifeGoalNeeds = '/lifeGoalNeeds';
+
   
   static Route<dynamic> generateRoute(RouteSettings settings) {
     return MaterialPageRoute(
@@ -56,49 +53,44 @@ class AppRoutes {
       case profile:
         return const History(title: 'Profile',);
       case match:
-        return const DashboardPage(title: 'Match');
+        return const Matches(title: 'Match');
       case photos:
         return const PhotoUploadPage();
       case prompts:
         return const PromptsPage();
       default:
-        return const DashboardPage(title: 'Match');
+        return const Matches(title: 'Match');
     }
   }
 
   static Widget _loggedOutRoutes(String? routeName) {
     switch (routeName) {
       case qual:
-        return QualifierRelDate(title: 'Qualifiers',);
+        return const QualifierRelDate(title: 'Qualifiers',);
       case location:
-        return QualifierIntCas(title: 'Location',);
-      case mateAttributes:
-        return MateAttributes(title: 'Mate Attributes',);
-      case logistics:
-        return Logistics(title: 'Logistics',);
-      case labor:
-        return Labor(title: 'Labor Dynamic',);
-      case emotional:
-        return EmotionalDynamic(title: 'Emotional Dynamic',);
-      case status:
-        return StatusDynamic(title: 'Status Dynamic',);
-      case timeSpent:
-        return TimeSpent(title: 'Time Spent Together',);
-      case tone:
-        return Tone(title: 'Relationship Tone',);
+        return const QualifierIntCas(title: 'Location',);
+      case emotionalNeeds:
+        return const EmotionalNeeds(title: 'EmotionalNeeds',);
+      case physicalNeeds:
+        return const PhysicalNeeds(title: 'PhysicalNeeds',);
+      case chemistryNeeds:
+        return const ChemistryNeeds(title: 'ChemistryNeeds',);
+      case logisticNeeds:
+        return const LogisticNeeds(title: 'LogisticNeeds',);
+      case lifeGoalNeeds:
+        return const LifeGoalNeeds(title: 'LogisticNeeds',);
       case login:
-        return LoginPage();
+        return const LoginPage();
       case register:
-        return RegisterPage();
+        return const RegisterPage();
       case home:
-        return MyHomePage(title: 'Landing Page',);
+        return const MyHomePage(title: 'Landing Page',);
       default:
-        return MyHomePage(title: 'Landing Page',);
+        return const MyHomePage(title: 'Landing Page',);
     }
   }
 
   static Widget _buildAuthWrapper(RouteSettings settings) {
-    print('Current route requested: ${settings.name}');
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -120,7 +112,7 @@ class AppRoutes {
             return _loggedInRoutes(settings.name);
           } catch (e) {
             // Only default to match if not in registration flow
-            return DashboardPage(title: 'Match');
+            return const Matches(title: 'Match');
           }
         } else {
           return _loggedOutRoutes(settings.name);

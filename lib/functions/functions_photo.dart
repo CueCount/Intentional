@@ -20,6 +20,7 @@ class PhotoUploadHelper {
     required this.photoUrls,
   });
 
+/*
   Future<void> fetchExistingPhotos() async {
     try {
       onLoadingChanged(true);
@@ -62,6 +63,7 @@ class PhotoUploadHelper {
       onLoadingChanged(false);
     }
   }
+*/
 
   Future<void> pickAndUploadImage() async {
     final ImagePicker picker = ImagePicker();
@@ -138,6 +140,46 @@ class PhotoUploadHelper {
     }
   }
 
+  static Future<List<String>> fetchExistingPhotos({
+    String? targetUid,
+    dynamic selection = "all",
+  }) async {
+    try {
+      // Use the provided UID, or default to the current user's UID
+      final userId = targetUid ?? FirebaseAuth.instance.currentUser!.uid;
+      print('Fetching photos for user: $userId');
+
+      // Fetch the user's document from Firestore
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      // Check if photos exist in the user's document
+      if (userDoc.exists && userDoc.data()!.containsKey('photos')) {
+        final photos = List<String>.from(userDoc.data()!['photos'] ?? []);
+        
+        // Return based on the selection parameter
+        if (selection == "all") {
+          return photos; // Return all photos
+        } else if (selection == "last_uploaded") {
+          return photos.isNotEmpty ? [photos.last] : [];
+        } else if (selection is int && selection >= 0 && selection < photos.length) {
+          return [photos[selection]]; 
+        } else {
+          print('Invalid selection parameter: $selection');
+          return [];
+        }
+      } else {
+        print('No photos found in document');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching photos: $e');
+      throw Exception('Error loading photos: $e');
+    }
+  }
+  
   Future<void> removePhoto(int index) async {
     try {
       if (index < 0 || index >= photoUrls.length) {

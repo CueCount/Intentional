@@ -3,9 +3,7 @@ import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_slider.dart';
-import '../../controllers/data_functions.dart';
-import '../../controllers/data_object.dart';
-import '../../controllers/data_inputs.dart';
+import '../../data/data_inputs.dart';
 
 class TimeSpent extends StatefulWidget {
   const TimeSpent({super.key, required this.title});
@@ -19,7 +17,6 @@ class _TimeSpent extends State<TimeSpent> {
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, double> inputValues = {};
-  DataService dataService = DataService();
   @override
   void initState() {
     super.initState();
@@ -35,7 +32,7 @@ class _TimeSpent extends State<TimeSpent> {
   Widget build(BuildContext context) { 
 
     return Scaffold( 
-      endDrawer: CustomDrawer(), 
+      endDrawer: const CustomDrawer(), 
       body: ListView(
         children: <Widget>[
           for (var input in timeSpentInputs)
