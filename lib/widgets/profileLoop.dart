@@ -53,10 +53,14 @@ class ProfileGrid extends StatelessWidget {
                 final user = displayedUsers[index];
                 return CircleAvatar(
                   radius: 30,
-                  backgroundImage: NetworkImage(user['photo']),
-                  onBackgroundImageError: (error, stackTrace) {print('Error loading image: $error');},
+                  backgroundImage: user['photo'] != null ? NetworkImage(user['photo']) : null,
+                  onBackgroundImageError: (error, stackTrace) {
+                    print('Error loading image: $error');
+                  },
                   backgroundColor: Colors.grey[200],
-                  child: const Icon(Icons.broken_image, color: Colors.grey), // Fallback icon
+                  child: user['photo'] == null || user['photo'].isEmpty
+                      ? const Icon(Icons.broken_image, color: Colors.grey)
+                      : null, // Remove fallback icon if the image is loadin
                 );
               } else {
                 return CircleAvatar(

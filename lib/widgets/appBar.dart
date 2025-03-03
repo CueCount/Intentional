@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import '../../data/data_inputs.dart';
+import 'package:provider/provider.dart';
 import '../data/firestore_service.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final dynamic route;
-  final Map<String, dynamic>? inputValues; 
+  final Map<String, dynamic>? inputValues;
+  final bool submitToFirestore;
 
   const CustomAppBar({
     Key? key,
     required this.route,
     this.inputValues,
+    this.submitToFirestore = false,
   }) : super(key: key);
 
   @override
@@ -18,8 +22,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: Color(0xFFFFE5E5),  // Light pink background
-            borderRadius: BorderRadius.circular(32),  // Rounded corners
+            color: const Color(0xFFFFE5E5),
+            borderRadius: BorderRadius.circular(32),
           ),
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -29,28 +33,33 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  icon: Icon(Icons.arrow_back),
+                  icon: const Icon(Icons.arrow_back),
                   color: Colors.black,
                   onPressed: () => Navigator.pop(context),
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    if (inputValues != null) {
-                      try {
-                        FirestoreService firestoreService = FirestoreService();
-                        await firestoreService.handleSubmit(inputValues!);
-                        Navigator.pushNamed(context, route);
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error saving data: $e')),
-                        );
+                    try {
+                      final inputState = Provider.of<InputState>(context, listen: false);
+                      if (inputValues != null) {
+                        inputState.cacheInputs(inputValues!);
+                        if (submitToFirestore) {
+                          FirestoreService firestoreService = FirestoreService();
+                          await firestoreService.handleSubmit(inputState.getCachedInputs());
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Data successfully saved!')),
+                          );
+                        }
                       }
-                    } else {
-                      Navigator.pushNamed(context, route);
+                      Navigator.pushNamed(context, route, arguments: inputValues);
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error saving data: $e')),
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF5D5D),  // Coral pink
+                    backgroundColor: const Color(0xFFFF5D5D), // Coral pink
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -86,5 +95,5 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(88);  // Adjusted height for padding
+  Size get preferredSize => const Size.fromHeight(88); // Adjusted height for padding
 }

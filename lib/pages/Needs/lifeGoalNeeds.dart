@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
@@ -6,6 +7,7 @@ import '../../widgets/input_checkbox.dart';
 import '../../data/data_inputs.dart';
 import '../../styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../widgets/profileLoop.dart';
 
 class LifeGoalNeeds extends StatefulWidget {
   const LifeGoalNeeds({super.key, required this.title});
@@ -23,11 +25,15 @@ class _lifeGoalNeeds extends State<LifeGoalNeeds> {
   @override
   void initState() {
     super.initState();
-    for (var input in lifeGoalNeeds) {
-      for (var value in input.possibleValues) {
-        selectedValues[value] = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final inputState = Provider.of<InputState>(context, listen: false); 
+      for (var input in inputState.lifeGoalNeeds) {
+        for (var value in input.possibleValues) {
+          selectedValues[value] = false; 
+        }
       }
-    }
+      setState(() {});
+    });
   }
 
   Map<String, dynamic> getSelectedAttributes() {
@@ -44,6 +50,7 @@ class _lifeGoalNeeds extends State<LifeGoalNeeds> {
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   @override
   Widget build(BuildContext context) {
+    final inputState = Provider.of<InputState>(context);
     Map<String, dynamic> inputData = getSelectedAttributes();
     return Scaffold(
       endDrawer: const CustomDrawer(),
@@ -63,24 +70,20 @@ class _lifeGoalNeeds extends State<LifeGoalNeeds> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Stack(
                         children: [
                           Positioned(
-                            left: 16,
-                            top: 16,
+                            left: 16.0,
+                            top: 16.0,
                             child: SvgPicture.asset(
                               'lib/assets/Int.svg',
                               height: 20,
                               width: 20,
                             ),
                           ),
-                          Container(
-                            width: 250,  
-                            height: 60,
-                            decoration: const BoxDecoration(
-                              // Optional decoration for visualizing the container
-                            ),
+                          const Align(
+                            alignment: Alignment.topCenter,
+                            child: ProfileGrid(),
                           ),
                         ],
                       ),
@@ -112,12 +115,12 @@ class _lifeGoalNeeds extends State<LifeGoalNeeds> {
                           mainAxisSpacing: 10,
                           childAspectRatio: 1.0,
                         ),
-                        itemCount: lifeGoalNeeds.isNotEmpty ? lifeGoalNeeds[0].possibleValues.length : 0,
+                        itemCount: inputState.lifeGoalNeeds.isNotEmpty ? inputState.lifeGoalNeeds[0].possibleValues.length : 0,
                         itemBuilder: (context, index) {
-                          if (lifeGoalNeeds.isEmpty || index >= lifeGoalNeeds[0].possibleValues.length) {
+                          if (inputState.lifeGoalNeeds.isEmpty || index >= inputState.lifeGoalNeeds[0].possibleValues.length) {
                             return const SizedBox.shrink();
                           }
-                          String attribute = lifeGoalNeeds[0].possibleValues[index];
+                          String attribute = inputState.lifeGoalNeeds[0].possibleValues[index];
                           return CustomCheckbox(
                             attribute: CheckboxAttribute(
                               title: attribute,

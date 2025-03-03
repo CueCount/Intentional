@@ -7,7 +7,6 @@ class FirestoreService {
 
   Future<void> handleSubmit(Map<String, dynamic> inputValues) async {
     try {
-      // Check if user is authenticated
       final currentUser = FirebaseAuth.instance.currentUser;
       String documentId;
 

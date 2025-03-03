@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '/router/router.dart';
@@ -19,20 +20,25 @@ class _QualifierRelDate extends State<QualifierRelDate> {
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, dynamic> inputValues = {};
   Map<String, Map<String, bool>> groupSelectedValues = {};
-
   @override
   void initState() {
     super.initState();
-    for (var input in qual) {
-      groupSelectedValues[input.title] = {};
-      for (var value in input.possibleValues) {
-        groupSelectedValues[input.title]![value] = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final inputState = Provider.of<InputState>(context, listen: false); 
+      for (var input in inputState.qual) {
+        groupSelectedValues[input.title] = {};
+        for (var value in input.possibleValues) {
+          groupSelectedValues[input.title]![value] = false;
+        }
       }
-    }
+      setState(() {});
+    });
   }
+
   Map<String, dynamic> getSelectedAttributes() {
+    final inputState = Provider.of<InputState>(context);
     Map<String, List<String>> selections = {};
-    for (var input in qual) {
+    for (var input in inputState.qual) {
       selections[input.title] = groupSelectedValues[input.title]!.entries
           .where((entry) => entry.value)
           .map((entry) => entry.key)
@@ -43,12 +49,13 @@ class _QualifierRelDate extends State<QualifierRelDate> {
 
   @override
   Widget build(BuildContext context) {
+    final inputState = Provider.of<InputState>(context);
     Map<String, dynamic> inputData = getSelectedAttributes();
     return Scaffold( 
       endDrawer: const CustomDrawer(), 
       body: ListView(
         children: <Widget>[
-          for (var input in qual)
+          for (var input in inputState.qual)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

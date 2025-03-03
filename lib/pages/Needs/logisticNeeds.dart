@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
@@ -6,6 +7,7 @@ import '../../widgets/input_slider.dart';
 import '../../data/data_inputs.dart';
 import '../../styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../widgets/profileLoop.dart';
 
 class LogisticNeeds extends StatefulWidget {
   const LogisticNeeds({super.key, required this.title});
@@ -18,17 +20,25 @@ class _logisticNeeds extends State<LogisticNeeds> {
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-  Map<String, double> inputValues = {};
+  Map<String, dynamic> inputValues = {};
+  Map<String, bool> selectedValues = {};
   @override
   void initState() {
     super.initState();
-    for (var input in logisticNeeds) {
-      inputValues[input.title] = input.possibleValues[1].toDouble(); 
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final inputState = Provider.of<InputState>(context, listen: false); 
+      for (var input in inputState.logisticNeeds) {
+        for (var value in input.possibleValues) {
+          selectedValues[value] = input.possibleValues[1].toDouble(); 
+        }
+      }
+      setState(() {});
+    });
   }
 
   @override
   Widget build(BuildContext context) { 
+    final inputState = Provider.of<InputState>(context);
     return Scaffold( 
       endDrawer: const CustomDrawer(),
       body: SafeArea(
@@ -47,24 +57,20 @@ class _logisticNeeds extends State<LogisticNeeds> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Stack(
                         children: [
                           Positioned(
-                            left: 16,
-                            top: 16,
+                            left: 16.0,
+                            top: 16.0,
                             child: SvgPicture.asset(
                               'lib/assets/Int.svg',
                               height: 20,
                               width: 20,
                             ),
                           ),
-                          Container(
-                            width: 250,  
-                            height: 60,
-                            decoration: const BoxDecoration(
-                              // Optional decoration for visualizing the container
-                            ),
+                          const Align(
+                            alignment: Alignment.topCenter,
+                            child: ProfileGrid(),
                           ),
                         ],
                       ),
@@ -92,7 +98,7 @@ class _logisticNeeds extends State<LogisticNeeds> {
                           textAlign: TextAlign.left,
                         ),
                         const SizedBox(height: 30),
-                        for (var input in logisticNeeds)
+                        for (var input in inputState.logisticNeeds)
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

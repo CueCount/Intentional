@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
 import '/router/router.dart';
@@ -12,15 +13,20 @@ class PromptsPage extends StatefulWidget {
 }
 
 class _PromptsPageState extends State<PromptsPage> {
+  Map<String, dynamic> inputValues = {};
   final Map<String, TextEditingController> _controllers = {};
   @override
   void initState() {
     super.initState();
-    for (var input in prompts) {  
-      for (var value in input.possibleValues) {
-        _controllers[value] = TextEditingController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final inputState = Provider.of<InputState>(context, listen: false); 
+      for (var input in inputState.prompts) {
+        for (var value in input.possibleValues) {
+          _controllers[value] = TextEditingController();
+        }
       }
-    }
+      setState(() {});
+    });
   }
 
   @override
@@ -47,6 +53,7 @@ class _PromptsPageState extends State<PromptsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final inputState = Provider.of<InputState>(context);
     return Scaffold(
       endDrawer: CustomDrawer(),
       body: SafeArea(
@@ -87,9 +94,9 @@ class _PromptsPageState extends State<PromptsPage> {
               const SizedBox(height: 16),
               Expanded(
                 child: ListView.builder(
-                  itemCount: prompts[0].possibleValues.length,
+                  itemCount: inputState.prompts[0].possibleValues.length,
                   itemBuilder: (context, index) {
-                    final prompt = prompts[0].possibleValues[index];
+                    final prompt = inputState.prompts[0].possibleValues[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Container(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
@@ -21,16 +22,25 @@ class _physicalNeeds extends State<PhysicalNeeds> {
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, dynamic> inputValues = {};
+  Map<String, bool> selectedValues = {};
   @override
   void initState() {
     super.initState();
-    for (var input in physicalNeeds) {
-      inputValues[input.title] = input.possibleValues[1].toDouble();
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final inputState = Provider.of<InputState>(context, listen: false); 
+      for (var input in inputState.physicalNeeds) {
+        for (var value in input.possibleValues) {
+          selectedValues[value] = input.possibleValues[1].toDouble();
+        }
+      }
+      setState(() {});
+    });
+
   }
 
   @override
   Widget build(BuildContext context) { 
+    final inputState = Provider.of<InputState>(context);
     return Scaffold( 
       endDrawer: const CustomDrawer(), 
       body: SafeArea(
@@ -90,7 +100,7 @@ class _physicalNeeds extends State<PhysicalNeeds> {
                           textAlign: TextAlign.left,
                         ),
                         const SizedBox(height: 30),  
-                        for (var input in physicalNeeds)
+                        for (var input in inputState.physicalNeeds)
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -152,8 +162,9 @@ class _physicalNeeds extends State<PhysicalNeeds> {
         ),
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.chemistryNeeds, 
+        route: AppRoutes.chemistryNeeds,
         inputValues: inputValues,
+        submitToFirestore: false,
       ),
     );
   }

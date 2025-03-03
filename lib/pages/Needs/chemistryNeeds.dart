@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/custom_drawer.dart';
@@ -6,6 +7,7 @@ import '../../widgets/input_checkbox.dart';
 import '../../data/data_inputs.dart';
 import '../../styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../widgets/profileLoop.dart';
 
 class ChemistryNeeds extends StatefulWidget {
   const ChemistryNeeds({super.key, required this.title});
@@ -23,11 +25,15 @@ class _chemistryNeeds extends State<ChemistryNeeds> {
   @override
   void initState() {
     super.initState();
-    for (var input in chemistryNeeds) {
-      for (var value in input.possibleValues) {
-        selectedValues[value] = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final inputState = Provider.of<InputState>(context, listen: false); 
+      for (var input in inputState.chemistryNeeds) {
+        for (var value in input.possibleValues) {
+          selectedValues[value] = false; 
+        }
       }
-    }
+      setState(() {});
+    });
   }
 
   Map<String, dynamic> getSelectedAttributes() {
@@ -44,6 +50,7 @@ class _chemistryNeeds extends State<ChemistryNeeds> {
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   @override
   Widget build(BuildContext context) {
+    final inputState = Provider.of<InputState>(context);
     Map<String, dynamic> inputData = getSelectedAttributes();
     return Scaffold(
       endDrawer: const CustomDrawer(),
@@ -64,24 +71,20 @@ class _chemistryNeeds extends State<ChemistryNeeds> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Stack(
                         children: [
                           Positioned(
-                            left: 16,
-                            top: 16,
+                            left: 16.0,
+                            top: 16.0,
                             child: SvgPicture.asset(
                               'lib/assets/Int.svg',
                               height: 20,
                               width: 20,
                             ),
                           ),
-                          Container(
-                            width: 250,  
-                            height: 60,
-                            decoration: const BoxDecoration(
-                              // Optional decoration for visualizing the container
-                            ),
+                          const Align(
+                            alignment: Alignment.topCenter,
+                            child: ProfileGrid(),
                           ),
                         ],
                       ),
@@ -119,12 +122,12 @@ class _chemistryNeeds extends State<ChemistryNeeds> {
                               mainAxisSpacing: 10,
                               childAspectRatio: 1.0,
                             ),
-                            itemCount: chemistryNeeds.isNotEmpty ? chemistryNeeds[0].possibleValues.length : 0,
+                            itemCount: inputState.chemistryNeeds.isNotEmpty ? inputState.chemistryNeeds[0].possibleValues.length : 0,
                             itemBuilder: (context, index) {
-                              if (chemistryNeeds.isEmpty || index >= chemistryNeeds[0].possibleValues.length) {
+                              if (inputState.chemistryNeeds.isEmpty || index >= inputState.chemistryNeeds[0].possibleValues.length) {
                                 return const SizedBox.shrink();
                               }
-                              String attribute = chemistryNeeds[0].possibleValues[index];
+                              String attribute = inputState.chemistryNeeds[0].possibleValues[index];
                               return CustomCheckbox(
                                 attribute: CheckboxAttribute(
                                   title: attribute,
