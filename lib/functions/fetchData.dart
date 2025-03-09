@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 Future<dynamic> fetchUserField(String field) async {
   try {
@@ -28,42 +29,38 @@ Future<List<Map<String, dynamic>>> fetchUsersWithPhotos() async {
     final querySnapshot = await FirebaseFirestore.instance
         .collection('users')
         .where('Gender', arrayContains: 'Woman')
-        .where('photos', isNotEqualTo: null) 
         .get();
+
+    print("Fetched ${querySnapshot.docs.length} users from Firestore.");
+
+    if (querySnapshot.docs.isEmpty) {
+      print("❌ No users found in Firestore. Check if 'Gender' is stored correctly.");
+    }
 
     List<Map<String, dynamic>> usersWithPhotos = [];
 
     for (var doc in querySnapshot.docs) {
       final data = doc.data();
 
-      // Validate 'photos' field
-      if (data['photos'] != null &&
-          data['photos'] is List &&
-          (data['photos'] as List).isNotEmpty) {
-        final validPhotos = (data['photos'] as List)
-            .where((photo) => photo is String && Uri.tryParse(photo)?.isAbsolute == true)
-            .toList();
+      if (data.containsKey('photos') && data['photos'] is List && data['photos'].isNotEmpty) {
+        print("✅ Photos found for user ${doc.id}: ${data['photos']}");
 
-        if (validPhotos.isNotEmpty) {
-          usersWithPhotos.add({
-            'UID': doc.id,
-            'photo': validPhotos[0], // Pass the first valid photo URL
-          });
-          
-        } else {
-          print("Invalid or empty photo URLs for UID: ${doc.id}");
-        }
+        // Directly use the first URL from Firestore
+        String freshUrl = data['photos'][0]; 
+
+        usersWithPhotos.add({
+          'UID': doc.id,
+          'photo': freshUrl,  // Use stored URL directly
+        });
       } else {
-        //print("Missing or null 'photos' field for UID: ${doc.id}");
+        print("⚠ No valid photos for ${doc.id}");
       }
     }
 
-    /*print("Filtered users with first photo:");
-    usersWithPhotos.forEach((user) {print("UID: ${user['UID']}, Photo: ${user['photo']}");});*/
-
+    print("✅ Successfully fetched ${usersWithPhotos.length} users with photos.");
     return usersWithPhotos;
   } catch (e) {
-    print("Error fetching users: $e");
+    print("❌ Error fetching users: $e");
     return [];
   }
 }

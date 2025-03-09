@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
-import '../../widgets/custom_drawer.dart';
-import '../../widgets/input_slider.dart';
+import '../../widgets/input_checkbox.dart';
 import '../../data/data_inputs.dart';
 import '../../styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../widgets/profileLoop.dart';
+import '../../widgets/navigation.dart';
 
 class LogisticNeeds extends StatefulWidget {
   const LogisticNeeds({super.key, required this.title});
@@ -37,119 +36,73 @@ class _logisticNeeds extends State<LogisticNeeds> {
   }
 
   @override
-  Widget build(BuildContext context) { 
-    final inputState = Provider.of<InputState>(context);
-    return Scaffold( 
-      endDrawer: const CustomDrawer(),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                height: 120,
-                decoration: const BoxDecoration(
-                  gradient: ColorPalette.peachGradient,
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30)),
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            left: 16.0,
-                            top: 16.0,
-                            child: SvgPicture.asset(
-                              'lib/assets/Int.svg',
-                              height: 20,
-                              width: 20,
-                            ),
-                          ),
-                          const Align(
-                            alignment: Alignment.topCenter,
-                            child: ProfileGrid(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+Widget build(BuildContext context) {
+  final inputState = Provider.of<InputState>(context);
+  return Scaffold(
+    body: SafeArea(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          gradient: ColorPalette.brandGradient,
+        ),
+        child: Column(
+          children: [
+            const CustomStatusBar(
+              messagesCount: 2,
+              likesCount: 5,
+            ),
+            Text(
+              'Interests',
+              style: AppTextStyles.headingMedium.copyWith(
+                color: ColorPalette.dark,
               ),
-      
-              Container(
-                decoration: const BoxDecoration(color: ColorPalette.peach),
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: ColorPalette.lite, 
-                    borderRadius: BorderRadius.only(topRight: Radius.circular(30)),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 20.0),
-                    child: Column(
-                      children: <Widget>[
-                        Text(
-                          'What are the Logistics of your ideal relationship?',
-                          style: AppTextStyles.headingMedium.copyWith(
-                            color: ColorPalette.dark,
-                          ),
-                          textAlign: TextAlign.left,
-                        ),
-                        const SizedBox(height: 30),
-                        for (var input in inputState.logisticNeeds)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Center(
-                                child: Text(
-                                  input.title, 
-                                  textAlign: TextAlign.center,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: ColorPalette.dark,
-                                  ),
-                                ),
-                              ), 
-                              if (input.type == "slider") ...[
-                                CustomSlider(
-                                  label: input.title,
-                                  initialValue: inputValues[input.title]!,
-                                  min: input.possibleValues[0].toDouble(),
-                                  max: input.possibleValues[1].toDouble(),
-                                  divisions: 20,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      inputValues[input.title] = value; 
-                                    });
-                                  },
-                                ),
-                              ] else if (input.type == "checkbox") ...[
-                                CheckboxListTile(
-                                  title: Text(input.title),
-                                  value: inputValues[input.title] == 1,
-                                  onChanged: (bool? value) {
-                                    setState(() {
-                                      inputValues[input.title] = value! ? 1 : 0;
-                                    });
-                                  },
-                                ),
-                              ],
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
+              textAlign: TextAlign.left,
+            ),
+            const SizedBox(height: 20),
+            // Wrapping GridView in Expanded allows scrolling
+            Expanded(
+              child: GridView.builder(
+                physics: const BouncingScrollPhysics(), // Enable scrolling
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 3,
                 ),
+                itemCount: inputState.logisticNeeds.isNotEmpty
+                    ? inputState.logisticNeeds[0].possibleValues.length
+                    : 0,
+                itemBuilder: (context, index) {
+                  if (inputState.logisticNeeds.isEmpty ||
+                      index >= inputState.logisticNeeds[0].possibleValues.length) {
+                    return const SizedBox.shrink();
+                  }
+                  String attribute = inputState.logisticNeeds[0].possibleValues[index];
+                  return CustomCheckbox(
+                    attribute: CheckboxAttribute(
+                      title: attribute,
+                      description: '',
+                      isSelected: selectedValues[attribute] ?? false,
+                    ),
+                    onChanged: (isSelected) {
+                      setState(() {
+                        selectedValues[attribute] = isSelected;
+                      });
+                    },
+                    isSelected: selectedValues[attribute] ?? false,
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-      bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.lifeGoalNeeds, 
-        inputValues: inputValues,
-      ),
-    );
-  }
+    ),
+    bottomNavigationBar: CustomAppBar(
+      route: AppRoutes.lifeGoalNeeds,
+      inputValues: inputValues,
+    ),
+  );
+}
+
 }

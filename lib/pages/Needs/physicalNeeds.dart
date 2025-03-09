@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
-import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_slider.dart';
 import '../../widgets/CustomRangeSlider.dart';
 import '../../data/data_inputs.dart';
 import '../../styles.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import '../../widgets/profileLoop.dart';
+import '../../widgets/navigation.dart';
 
 class PhysicalNeeds extends StatefulWidget {
   const PhysicalNeeds({super.key, required this.title});
@@ -35,70 +33,35 @@ class _physicalNeeds extends State<PhysicalNeeds> {
       }
       setState(() {});
     });
-
   }
 
   @override
   Widget build(BuildContext context) { 
     final inputState = Provider.of<InputState>(context);
     return Scaffold( 
-      endDrawer: const CustomDrawer(), 
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: SingleChildScrollView(            
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              gradient: ColorPalette.brandGradient,
+            ),
           child: Column(
+            
             children: [
-              Container(
-                width: double.infinity,
-                height: 120,
-                decoration: const BoxDecoration(
-                  gradient: ColorPalette.peachGradient,
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30)),
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            left: 16.0,
-                            top: 16.0,
-                            child: SvgPicture.asset(
-                              'lib/assets/Int.svg',
-                              height: 20,
-                              width: 20,
-                            ),
-                          ),
-                          const Align(
-                            alignment: Alignment.topCenter,
-                            child: ProfileGrid(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+
+              const CustomStatusBar(
+                messagesCount: 2,
+                likesCount: 5,
               ),
 
               Container(
-                decoration: const BoxDecoration(color: ColorPalette.peach),
                 child: Container (
-                  decoration: const BoxDecoration(
-                    color: ColorPalette.lite, 
-                    borderRadius: BorderRadius.only(topRight: Radius.circular(30)),
-                  ),
+                 
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 20.0),
                     child: Column(
                       children: <Widget>[
-                        Text(
-                          'What Physical Needs do you have from a partner?',
-                          style: AppTextStyles.headingMedium.copyWith(
-                            color: ColorPalette.dark,
-                          ),
-                          textAlign: TextAlign.left,
-                        ),
                         const SizedBox(height: 30),  
                         for (var input in inputState.physicalNeeds)
                           Column(
@@ -126,16 +89,6 @@ class _physicalNeeds extends State<PhysicalNeeds> {
                                     });
                                   },
                                 ),
-                              ] else if (input.type == "checkbox") ...[
-                                CheckboxListTile(
-                                  title: Text(input.title),
-                                  value: inputValues[input.title] == 1,
-                                  onChanged: (bool? value) {
-                                    setState(() {
-                                      inputValues[input.title] = value! ? 1 : 0;
-                                    });
-                                  },
-                                ),
                               ] else if (input.type == "rangeSlider") ...[
                                 CustomRangeSlider(
                                   label: input.title,
@@ -160,6 +113,7 @@ class _physicalNeeds extends State<PhysicalNeeds> {
             ],
           ),
         ),
+      ),
       ),
       bottomNavigationBar: CustomAppBar(
         route: AppRoutes.chemistryNeeds,

@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/landingPage.dart';
-import '../pages/Qualifiers/location.dart';
 import '../pages/Qualifiers/qual.dart';
-import '../pages/Match/match.dart';
+import '../pages/Discover/discover.dart';
 import '../pages/Chat/chat.dart';
-import '../pages/Profile/profile.dart';
+import '../pages/Match/Match.dart';
 import '../login.dart';
 import '../pages/Registration/register.dart';
 import '../pages/Registration/basic_info.dart';
 import '../pages/Registration/photos.dart';
-import '../pages/Registration/prompts.dart';
 import '../pages/Needs/emotionalNeeds.dart';
 import '../pages/Needs/physicalNeeds.dart';
 import '../pages/Needs/chemistryNeeds.dart';
@@ -20,12 +18,11 @@ import '../pages/Needs/lifeGoalNeeds.dart';
 class AppRoutes {
   static const String home = '/';
   static const String qual = '/qual';
-  static const String location = '/location';
   static const String match = '/match';
   static const String tone = '/tone';
   static const String chat = '/chat';
   static const String verifications= '/verifications';
-  static const String profile = '/profile';
+  static const String matches = '/discover';
   static const String login = '/login';
   static const String register = '/register';
   static const String basicInfo = '/basic_info';
@@ -50,14 +47,12 @@ class AppRoutes {
         return const BasicProfilePage();
       case chat:
         return const MatchChat(title: 'Chat',);
-      case profile:
-        return const History(title: 'Profile',);
+      case matches:
+        return const Matches(title: 'Discover',);
       case match:
-        return const Matches(title: 'Match');
+        return const Match(title: 'Match');
       case photos:
         return const PhotoUploadPage();
-      case prompts:
-        return const PromptsPage();
       default:
         return const Matches(title: 'Match');
     }
@@ -67,8 +62,6 @@ class AppRoutes {
     switch (routeName) {
       case qual:
         return const QualifierRelDate(title: 'Qualifiers',);
-      case location:
-        return const QualifierIntCas(title: 'Location',);
       case emotionalNeeds:
         return const EmotionalNeeds(title: 'EmotionalNeeds',);
       case physicalNeeds:
@@ -79,6 +72,8 @@ class AppRoutes {
         return const LogisticNeeds(title: 'LogisticNeeds',);
       case lifeGoalNeeds:
         return const LifeGoalNeeds(title: 'LogisticNeeds',);
+      case matches:
+        return const Matches(title: 'Discover',);
       case login:
         return const LoginPage();
       case register:

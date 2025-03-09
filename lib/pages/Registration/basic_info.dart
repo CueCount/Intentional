@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../widgets/appBar.dart';
-import '../../widgets/custom_drawer.dart';
 import '/router/router.dart';
 import '../../widgets/input_text.dart';
+import '../../styles.dart';
+import '../../widgets/navigation.dart';
 
 class BasicProfilePage extends StatefulWidget {
  const BasicProfilePage({Key? key}) : super(key: key);
@@ -13,6 +14,8 @@ class BasicProfilePage extends StatefulWidget {
 
 class _BasicProfilePageState extends State<BasicProfilePage> {
  final TextEditingController _nameController = TextEditingController();
+ final TextEditingController _careerController = TextEditingController();
+ final TextEditingController _schoolController = TextEditingController();
  DateTime? _selectedDate;
 
  @override
@@ -45,54 +48,95 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
 
  @override
  Widget build(BuildContext context) {
-   Map<String, dynamic> inputData = getInputData();
+  Map<String, dynamic> inputData = getInputData();
    
-   return Scaffold(
-     endDrawer: CustomDrawer(),
-     body: SafeArea(
-       child: Padding(
-         padding: const EdgeInsets.all(16.0),
-         child: Column(
-           crossAxisAlignment: CrossAxisAlignment.start,
+    return Scaffold(
+      body: Container (
+        padding: const EdgeInsets.all(20), // 20px padding on all sides
+        decoration: const BoxDecoration(
+          gradient: ColorPalette.brandGradient,
+        ),
+     child: SafeArea(
+      
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center, // Ensures horizontal alignment remains proper
+            mainAxisAlignment: MainAxisAlignment.start,
            children: [
-             const Text(
-               'Verify Identity',
-               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-             ),
-             const SizedBox(height: 24),
+
+            const CustomStatusBar(
+                  messagesCount: 2,
+                  likesCount: 5,
+                ),
+
+              const SizedBox(height: 20),
+              
+              Text(
+               'Your Information',
+               style: AppTextStyles.headingMedium.copyWith(
+                  color: ColorPalette.white,
+                ),
+              ),
+
+             const SizedBox(height: 20),
+
              CustomTextInput(
               labelText: 'First Name',
               controller: _nameController,
               suffixIcon: Icon(Icons.mail)
              ),
-             const SizedBox(height: 16),
+
+             const SizedBox(height: 10),
+
              InkWell(
-               onTap: () => _selectDate(context),
-               child: Container(
-                 padding: const EdgeInsets.all(16),
-                 decoration: BoxDecoration(
-                   border: Border.all(color: Colors.grey),
-                   borderRadius: BorderRadius.circular(4),
-                 ),
-                 child: Row(
-                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                   children: [
-                     Text(
-                       _selectedDate == null
-                           ? 'Birthday'
-                           : '${_selectedDate!.month}/${_selectedDate!.day}/${_selectedDate!.year}',
-                     ),
-                     const Icon(Icons.calendar_today),
-                   ],
-                 ),
-               ),
-             ),
+              onTap: () => _selectDate(context),
+              child: Container(
+                height: 50, // Match the height of text input fields
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white, // Match text field background
+                  borderRadius: BorderRadius.circular(10), // Match rounded corners
+                  
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedDate == null
+                          ? 'Birthday'
+                          : '${_selectedDate!.month}/${_selectedDate!.day}/${_selectedDate!.year}',
+                      style: const TextStyle(
+                        fontSize: 16, 
+                        color: Colors.black54, // Match text input placeholder color
+                      ),
+                    ),
+                    const Icon(Icons.calendar_today, color: Colors.black54),
+                  ],
+                ),
+              ),
+            ),
+
+              const SizedBox(height: 10),
+
+              CustomTextInput(
+                labelText: 'Career',
+                controller: _nameController,
+                suffixIcon: Icon(Icons.mail)
+              ),
+              
+              const SizedBox(height: 10),
+
+              CustomTextInput(
+                labelText: 'School',
+                controller: _nameController,
+                suffixIcon: Icon(Icons.mail)
+              ),
            ],
          ),
-       ),
+       
      ),
+    ),
      bottomNavigationBar: CustomAppBar(
-       route: AppRoutes.photos, // Your next route
+       route: AppRoutes.match, 
        inputValues: inputData,
      ),
    );

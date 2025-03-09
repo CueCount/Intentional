@@ -116,24 +116,25 @@ class InputState extends ChangeNotifier {
 
   List<Input> logisticNeeds = [
     Input(
-      title: "How much time per week should you spend together in a committed relationship?",
-      possibleValues: [0, 100],
-      type: "slider",
-    ),
-    Input(
-      title: "Who should do more chores?",
-      possibleValues: [0, 100],
-      type: "slider",
-    ),
-    Input(
-      title: "Who should earn (significantly) more?",
-      possibleValues: [0, 100],
-      type: "slider",
-    ),
-    Input(
-      title: "How often should each partner plan dates, trips and other events together?",
-      possibleValues: [0, 100],
-      type: "slider",
+      title: "Chemistry Needs",
+      possibleValues: [
+        "Bar Hopping",
+        "Playing Sports",
+        "Foodie",
+        "Arts and Crafts",
+        "Binge Watching",
+        "Gaming",
+        "Music",
+        "Nature",
+        "Traveling",
+        "Reading",
+        "Cooking",
+        "Shopping",
+        "Volunteering",
+        "Fitness",
+        "Meditation",
+      ],
+      type: "checkbox"
     ),
   ];
 

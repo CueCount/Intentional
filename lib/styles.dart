@@ -53,10 +53,10 @@ class ColorPalette {
     end: Alignment.bottomRight,
   );
   static const LinearGradient brandGradient = LinearGradient(
-    colors: [Color(0xFFFF5D5D), Color(0xFFFF5DC6)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+            colors: [Color(0xFFDC1C56), Color(0xFFFF294C)], // Colors from the screenshot
+            begin: Alignment.topLeft, // Adjust as needed
+            end: Alignment.bottomRight,
+          );
 }
 
 /* - - - - - - - - - - - - - - - - - - - - -  

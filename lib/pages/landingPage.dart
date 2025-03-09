@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '/router/router.dart';
-import '../widgets/custom_drawer.dart';
 import '../styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -16,7 +15,6 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     void noOperation() {}
     return Scaffold(
-      endDrawer: const CustomDrawer(), 
       body: Center(
         child: Container(
           decoration: BoxDecoration(
@@ -98,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     height: 150, 
                     margin: const EdgeInsets.all(10),
                     child: MaterialButton(
-                      onPressed: () {Navigator.pushNamed(context, AppRoutes.login);},
+                      onPressed: () {Navigator.pushNamed(context, AppRoutes.register);},
                       color: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4),),
                       child: const Column(

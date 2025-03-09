@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
-import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_checkbox.dart';  
 import '../../data/data_inputs.dart';
 import '../../styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../widgets/profileLoop.dart';
+import '../../widgets/navigation.dart';
 
 class EmotionalNeeds extends StatefulWidget {
   const EmotionalNeeds({super.key, required this.title});
@@ -53,58 +52,27 @@ class _emotionalNeeds extends State<EmotionalNeeds> {
     final inputState = Provider.of<InputState>(context);
     Map<String, dynamic> inputData = getSelectedAttributes();
     return Scaffold(
-      endDrawer: const CustomDrawer(),
       body: SafeArea(
         child: SingleChildScrollView(
+          child: Container (
+            padding: const EdgeInsets.all(20), // 20px padding on all sides
+            decoration: const BoxDecoration(
+              gradient: ColorPalette.brandGradient,
+            ),
           child: Column(
             children: [
-              Container(
-                width: double.infinity,
-                height: 120,
-                decoration: const BoxDecoration(
-                  gradient: ColorPalette.peachGradient,
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30)),
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            left: 16,
-                            top: 16,
-                            child: SvgPicture.asset(
-                              'lib/assets/Int.svg',
-                              height: 20,
-                              width: 20,
-                            ),
-                          ),
-                          const Align(
-                            alignment: Alignment.topCenter,
-                            child: ProfileGrid(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              const CustomStatusBar(
+                messagesCount: 2,
+                likesCount: 5,
               ),
-
               Container (
-                decoration: const BoxDecoration(color: ColorPalette.peach),
                 child: Container (
-                  decoration: const BoxDecoration(
-                    color: ColorPalette.lite, 
-                    borderRadius: BorderRadius.only(topRight: Radius.circular(30)),
-                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
                       children: [
                         Text(
-                          'What Emotional Qualities do you prioritize in a partner?',
+                          'Emotional Qualities',
                           style: AppTextStyles.headingMedium.copyWith(
                             color: ColorPalette.dark,
                           ),
@@ -115,10 +83,10 @@ class _emotionalNeeds extends State<EmotionalNeeds> {
                           shrinkWrap: true, // Important!
                           physics: const NeverScrollableScrollPhysics(), // Important!
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
+                            crossAxisCount: 1,
                             crossAxisSpacing: 10,
                             mainAxisSpacing: 10,
-                            childAspectRatio: 1.0,
+                            childAspectRatio: 5,
                           ),
                           itemCount: inputState.emotionalNeeds.isNotEmpty ? inputState.emotionalNeeds[0].possibleValues.length : 0,
                           itemBuilder: (context, index) {
@@ -147,6 +115,7 @@ class _emotionalNeeds extends State<EmotionalNeeds> {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),

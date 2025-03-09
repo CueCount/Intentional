@@ -47,7 +47,7 @@ class _CustomCheckboxState extends State<CustomCheckbox> {
               ? ColorPalette.peach
               : ColorPalette.white,
         ),
-        child: Column(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(widget.attribute.title, 

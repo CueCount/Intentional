@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
-import '../../widgets/custom_drawer.dart';
-
 class MatchChat extends StatefulWidget {
   const MatchChat({super.key, required this.title});
   final String title;
@@ -20,7 +18,6 @@ class _MatchChat extends State<MatchChat> {
       appBar: CustomAppBar(
         route: AppRoutes.home,
       ),
-      endDrawer: CustomDrawer(), 
       body: ListView(
         children: <Widget>[
           Column(

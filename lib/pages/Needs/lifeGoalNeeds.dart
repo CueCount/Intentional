@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
-import '../../widgets/custom_drawer.dart';
 import '../../widgets/input_checkbox.dart';  
 import '../../data/data_inputs.dart';
 import '../../styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../widgets/profileLoop.dart';
+import '../../widgets/navigation.dart';
 
 class LifeGoalNeeds extends StatefulWidget {
   const LifeGoalNeeds({super.key, required this.title});
@@ -53,52 +52,29 @@ class _lifeGoalNeeds extends State<LifeGoalNeeds> {
     final inputState = Provider.of<InputState>(context);
     Map<String, dynamic> inputData = getSelectedAttributes();
     return Scaffold(
-      endDrawer: const CustomDrawer(),
       body: SafeArea(
         child: SingleChildScrollView(
+
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              gradient: ColorPalette.brandGradient,
+            ),
+
           child: Column(
             children: [
-              Container(
-                width: double.infinity,
-                height: 120,
-                decoration: const BoxDecoration(
-                  gradient: ColorPalette.peachGradient,
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30)),
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            left: 16.0,
-                            top: 16.0,
-                            child: SvgPicture.asset(
-                              'lib/assets/Int.svg',
-                              height: 20,
-                              width: 20,
-                            ),
-                          ),
-                          const Align(
-                            alignment: Alignment.topCenter,
-                            child: ProfileGrid(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
 
+              const CustomStatusBar(
+                messagesCount: 2,
+                likesCount: 5,
+              ),
 
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
                     Text(
-                      'What Life Goals do you prioritize in a partner?',
+                      'Life Goals',
                       style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.dark,
                       ),
@@ -110,10 +86,10 @@ class _lifeGoalNeeds extends State<LifeGoalNeeds> {
                       child: GridView.builder(
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
+                          crossAxisCount: 1,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
-                          childAspectRatio: 1.0,
+                          childAspectRatio: 5.0,
                         ),
                         itemCount: inputState.lifeGoalNeeds.isNotEmpty ? inputState.lifeGoalNeeds[0].possibleValues.length : 0,
                         itemBuilder: (context, index) {
@@ -142,10 +118,11 @@ class _lifeGoalNeeds extends State<LifeGoalNeeds> {
               ),
             ],
           ),
+          ),
         ),
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.register, 
+        route: AppRoutes.matches, 
         inputValues: inputData,
       ),
     );

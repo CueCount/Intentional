@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../widgets/appBar.dart';
-import '../../widgets/custom_drawer.dart';
 import '../../widgets/photogrid.dart';
 import '/router/router.dart';
 import '../../functions/functions_photo.dart';
+import '../../styles.dart';
+import '../../widgets/navigation.dart';
 
 class PhotoUploadPage extends StatefulWidget {
   const PhotoUploadPage({Key? key}) : super(key: key);
@@ -48,21 +49,33 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
   Widget build(BuildContext context) {
     print('Building with photoUrls: $_photoUrls');
     return Scaffold(
-      endDrawer: const CustomDrawer(),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+      body: Container (
+        padding: const EdgeInsets.all(20), // 20px padding on all sides
+        decoration: const BoxDecoration(
+          gradient: ColorPalette.brandGradient,
+        ),
+      child: SafeArea(
+
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
+
+              const CustomStatusBar(
+                  messagesCount: 2,
+                  likesCount: 5,
+                ),
+              
+              const SizedBox(height: 20),
+              
+              Text(
                 'Photos',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w500,
+                style: AppTextStyles.headingMedium.copyWith(
+                  color: ColorPalette.white,
                 ),
               ),
+
               const SizedBox(height: 20),
+
               Expanded(
                 child: PhotoGrid(
                   photoUrls: _photoUrls,
@@ -82,10 +95,11 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
               ),
             ],
           ),
-        ),
+        
+      ),
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.prompts,
+        route: AppRoutes.basicInfo,
         inputValues: {'photos': _photoUrls},
       ),
     );

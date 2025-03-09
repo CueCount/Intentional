@@ -48,6 +48,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
+  carousel_slider: ^5.0.0
   # auth0_flutter: ^1.7.2
 
 dev_dependencies:
@@ -73,7 +74,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - lib/assets/Int.svg
+    - assets/int.png
 
   fonts:
     - family: Bitter

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../router/router.dart';
 import '../../widgets/input_text.dart';
-import '../../widgets/custom_drawer.dart';
 import '../../data/firestore_service.dart'; 
 import '../../styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../widgets/navigation.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -30,150 +30,112 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      endDrawer: const CustomDrawer(), 
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                height: 120,
-                decoration: const BoxDecoration(
-                  gradient: ColorPalette.peachGradient,
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30)),
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Positioned(
-                            left: 16,
-                            top: 16,
-                            child: SvgPicture.asset(
-                              'lib/assets/Int.svg',
-                              height: 20,
-                              width: 20,
-                            ),
-                          ),
-                          Container(
-                            width: 250,  
-                            height: 60,
-                            decoration: const BoxDecoration(
-                              // Optional decoration for visualizing the container
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-      
-              Container (
-                decoration: const BoxDecoration(color: ColorPalette.peach),
-                child: Container (
-                  decoration: const BoxDecoration(
-                    color: ColorPalette.lite, 
-                    borderRadius: BorderRadius.only(topRight: Radius.circular(30)),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Quick Start',
-                          style: AppTextStyles.headingMedium.copyWith(
-                            color: ColorPalette.dark,
-                          ),
-                          textAlign: TextAlign.left,
-                        ),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity, child:
-                          ElevatedButton(
-                            onPressed: () async {},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFF5D5D),  // Coral pink
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Verify Through Facebook',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Or',
-                          style: AppTextStyles.headingMedium.copyWith(
-                            color: ColorPalette.dark,
-                          ),
-                          textAlign: TextAlign.left,
-                        ),
-                        const SizedBox(height: 10),
-                        CustomTextInput(
-                          labelText: 'Email',
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          suffixIcon: const Icon(Icons.email),
-                        ),
-                        const SizedBox(height: 10),
-                        CustomTextInput(
-                          labelText: 'Password',
-                          controller: _passwordController,
-                          obscureText: true,
-                          suffixIcon: const Icon(Icons.lock),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-            ],
-          ),
+      body: Container(
+        width: double.infinity, // Ensures full width
+        height: double.infinity,
+        padding: const EdgeInsets.all(20), // 20px padding on all sides
+        decoration: const BoxDecoration(
+          gradient: ColorPalette.brandGradient,
         ),
-      ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Color(0xFFFFE5E5),  
-              borderRadius: BorderRadius.circular(32),  
-            ),
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: SafeArea(
-              top: false,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_back),
-                    color: Colors.black,
-                    onPressed: () => Navigator.pop(context),
-                  ),
+    
+      child: SafeArea(
+        child: SingleChildScrollView(
+            
+            child: Column(
+              children: [
+                const CustomStatusBar(
+                  messagesCount: 2,
+                  likesCount: 5,
+                ),
+        
+                
+                Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Verify Yourself',
+                        style: AppTextStyles.headingMedium.copyWith(
+                          color: ColorPalette.white,
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      SizedBox(
+                        width: double.infinity, child:
+                        ElevatedButton(
+                          onPressed: () async {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: ColorPalette.white,  // Coral pink
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Verify Through Facebook',
+                                style: TextStyle(
+                                  color: ColorPalette.peach,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      SizedBox(
+                        width: double.infinity, child:
+                        ElevatedButton(
+                          onPressed: () async {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: ColorPalette.white,  // Coral pink
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Verify Through Google',
+                                style: TextStyle(
+                                  color: ColorPalette.peach,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 10),
+                      CustomTextInput(
+                        labelText: 'Email',
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        suffixIcon: const Icon(Icons.email),
+                      ),
+                      const SizedBox(height: 10),
+                      CustomTextInput(
+                        labelText: 'Password',
+                        controller: _passwordController,
+                        obscureText: true,
+                        suffixIcon: const Icon(Icons.lock),
+                      ),
+                      const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () async {
                       await register();
@@ -201,16 +163,13 @@ class _RegisterPageState extends State<RegisterPage> {
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.menu),
-                    color: Colors.black,
-                    onPressed: () => Scaffold.of(context).openEndDrawer(),
+                    ],
                   ),
-                ],
-              ),
+                
+              ],
             ),
-          ),
-        ],
+        ),
+      ),
       ),
     );
   }
@@ -230,7 +189,7 @@ class _RegisterPageState extends State<RegisterPage> {
         print('Associated temp document with auth user: ${userCredential.user!.uid}');
         
         if (mounted) {
-          navigator.pushNamed(AppRoutes.basicInfo);
+          navigator.pushNamed(AppRoutes.photos);
         }
       }
     } catch (e) {
