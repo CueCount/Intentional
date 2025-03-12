@@ -58,7 +58,6 @@ class _Matches extends State<Matches> {
 
             const SizedBox(height: 20),
 
-          
           ],
         ),
       ),

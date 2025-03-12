@@ -42,79 +42,135 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     }
 
     return isLoading
-      ? const Center(child: CircularProgressIndicator())
-      : CarouselSlider(
-          options: CarouselOptions(
-            height: 600,
-            autoPlay: false,
-            enlargeCenterPage: true,
-            onPageChanged: (index, reason) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
-          ),
+    ? const Center(child: CircularProgressIndicator())
+    : CarouselSlider(
+        options: CarouselOptions(
+          height: 600,
+          autoPlay: false,
+          enlargeCenterPage: true,
+          onPageChanged: (index, reason) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+        ),
 
-          items: profiles.isNotEmpty
-              ? profiles.map((profile) {
-                  String? imageUrl = profile['photo'];
-                  int index = profiles.indexOf(profile);
+        items: profiles.isNotEmpty
+            ? profiles.map((profile) {
+                String? imageUrl = profile['photo'];
+                int index = profiles.indexOf(profile);
 
-                  Future.delayed(Duration.zero, () {
-                    if (imageUrl != null && imageUrl.isNotEmpty) {
-                      precacheImage(NetworkImage(imageUrl), context).then((_) {
-                        print("🟢 Image successfully preloaded: $imageUrl");
-                      }).catchError((error) {
-                        print("🚨 Preloading failed: $error \nURL: $imageUrl");
-                      });
-                    }
-                  });
+                Future.delayed(Duration.zero, () {
+                  if (imageUrl != null && imageUrl.isNotEmpty) {
+                    precacheImage(NetworkImage(imageUrl), context).then((_) {
+                      print("🟢 Image successfully preloaded: $imageUrl");
+                    }).catchError((error) {
+                      print("🚨 Preloading failed: $error \nURL: $imageUrl");
+                    });
+                  }
+                });
 
-                  return Align(
-                    alignment: Alignment.center,
+                return Align(
+                  alignment: Alignment.center,
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 10),
-                    
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                     ),
+
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+
                         ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: imageUrl != null && imageUrl.isNotEmpty
-                        ? Image.network(
-                            
-                            imageUrl,
-                            width: double.infinity,
-                            height: 300,
-                            fit: BoxFit.cover,
-                            headers: {"Cache-Control": "no-cache"}, // Try forcing fresh requests
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return const Center(child: CircularProgressIndicator());
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              print("🚨 Image failed to load: $error \nURL: $imageUrl");
-                              return Container(
-                                width: double.infinity,
-                                height: 300, // Set the same height as the image
-                                color: Colors.grey[300], // Background color when image fails
-                                alignment: Alignment.center,
-                                child: const Text(
-                                  "Image Unavailable",
-                                  style: TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              );
-                            },
-                          )
-                        : const Center(child: Text("No Image Available")),
-                      ),
+  borderRadius: BorderRadius.circular(12),
+  child: Stack(
+    children: [
+      // Profile Image
+      imageUrl != null && imageUrl.isNotEmpty
+          ? Image.network(
+              imageUrl,
+              width: double.infinity,
+              height: 300,
+              fit: BoxFit.cover,
+              headers: {"Cache-Control": "no-cache"}, 
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(child: CircularProgressIndicator());
+              },
+              errorBuilder: (context, error, stackTrace) {
+                print("🚨 Image failed to load: $error \nURL: $imageUrl");
+                return Container(
+                  width: double.infinity,
+                  height: 300, 
+                  color: Colors.grey[300], 
+                  alignment: Alignment.center,
+                  child: const Text(
+                    "Image Unavailable",
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              },
+            )
+          : const Center(child: Text("No Image Available")),
+
+      // Gradient Overlay
+      Positioned.fill(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.black.withOpacity(0.5), Colors.transparent],
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+            ),
+          ),
+        ),
+      ),
+
+      // Name & Age
+      Positioned(
+        bottom: 20,
+        left: 20,
+        child: Text(
+          "Alice, 36",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+
+      // Expand Button
+      Positioned(
+        bottom: 20,
+        right: 20,
+        child: GestureDetector(
+          onTap: () {
+            print("Expand Profile Clicked");
+          },
+          child: Container(
+            padding: EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: const Icon(
+              Icons.open_in_full,
+              color: Colors.redAccent,
+              size: 24,
+            ),
+          ),
+        ),
+      ),
+    ],
+  ),
+),
+
 
                       const SizedBox(height: 40),
 
@@ -128,7 +184,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                             print("Saved input: $value");
                           },
                           onNextPressed: () {
-                            Navigator.pushNamed(context, AppRoutes.photos);
+                            Navigator.pushNamed(context, AppRoutes.profile);
                           },
                         ),
                       ),

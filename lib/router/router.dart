@@ -4,7 +4,7 @@ import '../pages/landingPage.dart';
 import '../pages/Qualifiers/qual.dart';
 import '../pages/Discover/discover.dart';
 import '../pages/Chat/chat.dart';
-import '../pages/Match/Match.dart';
+import '../pages/Profile/profile.dart';
 import '../login.dart';
 import '../pages/Registration/register.dart';
 import '../pages/Registration/basic_info.dart';
@@ -18,7 +18,7 @@ import '../pages/Needs/lifeGoalNeeds.dart';
 class AppRoutes {
   static const String home = '/';
   static const String qual = '/qual';
-  static const String match = '/match';
+  static const String profile = '/profile';
   static const String tone = '/tone';
   static const String chat = '/chat';
   static const String verifications= '/verifications';
@@ -49,8 +49,17 @@ class AppRoutes {
         return const MatchChat(title: 'Chat',);
       case matches:
         return const Matches(title: 'Discover',);
-      case match:
-        return const Match(title: 'Match');
+      case profile:
+        return Match(
+          title: 'profile',
+          imageUrls: [],
+          name: 'name',
+          age: 'age',
+          profession: 'profession',
+          university: 'university',
+          matchMetrics: [],
+          sharedInterests: [],
+          );
       case photos:
         return const PhotoUploadPage();
       default:

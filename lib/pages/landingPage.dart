@@ -96,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     height: 150, 
                     margin: const EdgeInsets.all(10),
                     child: MaterialButton(
-                      onPressed: () {Navigator.pushNamed(context, AppRoutes.register);},
+                      onPressed: () {Navigator.pushNamed(context, AppRoutes.login);},
                       color: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4),),
                       child: const Column(

@@ -136,7 +136,7 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
      ),
     ),
      bottomNavigationBar: CustomAppBar(
-       route: AppRoutes.match, 
+       route: AppRoutes.matches, 
        inputValues: inputData,
      ),
    );

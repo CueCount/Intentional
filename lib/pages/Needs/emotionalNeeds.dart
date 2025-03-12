@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
-import '../../widgets/input_checkbox.dart';  
+import '../../widgets/input_checkbox.dart';
 import '../../data/data_inputs.dart';
 import '../../styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
