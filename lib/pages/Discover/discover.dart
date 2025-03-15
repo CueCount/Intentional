@@ -3,33 +3,37 @@ import '../../widgets/ProfileCarousel.dart';
 import '../../router/router.dart';
 import '../../styles.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../functions/fetchData.dart';
+import '../../data/firestore_service.dart';
 import '../../widgets/navigation.dart';
 
 class Matches extends StatefulWidget {
   const Matches({super.key, required this.title});
   final String title;
+
   @override
   State<Matches> createState() => _Matches();
 }
 
 class _Matches extends State<Matches> {
-  String? photoUrl;
-  String? firstName;
+  List<Map<String, dynamic>> users = [];
+  bool isLoading = true;
+
   @override
   void initState() {
     super.initState();
-    _fetchUserData();
+    _fetchUsers();
   }
 
-  Future<void> _fetchUserData() async {
-    try {
-      firstName = await fetchUserField("firstName");
+  Future<void> _fetchUsers() async {
+    FirestoreService firestoreService = FirestoreService();
+    List<Map<String, dynamic>> fetchedUsers = await firestoreService.fetchUsers();
+
+    if (mounted) { 
       setState(() {
-        firstName = firstName;
+        users = fetchedUsers;
+        isLoading = false;
       });
-    } catch (e) {
-      print("Error loading user name: $e");
+      print("🚀 profiles type: ${users.runtimeType}, length: ${users.length}");
     }
   }
 
@@ -37,7 +41,7 @@ class _Matches extends State<Matches> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        padding: const EdgeInsets.all(20), // 20px padding on all sides
+        padding: const EdgeInsets.all(20), 
         decoration: const BoxDecoration(
           gradient: ColorPalette.brandGradient,
         ),
@@ -50,11 +54,19 @@ class _Matches extends State<Matches> {
             ),
 
             const SizedBox(height: 20),
-
-            SizedBox(
-              height: 600, // Ensures the carousel has space to render
-              child: ProfileCarousel(),
-            ),
+            
+            isLoading 
+              ? const Expanded(
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              : Expanded(
+                  child: ProfileCarousel(
+                    key: ValueKey(users.length), // Forces a rebuild when users change
+                    userData: users,
+                  ),
+                ),
 
             const SizedBox(height: 20),
 

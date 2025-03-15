@@ -1,200 +1,174 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import '../functions/fetchData.dart'; 
 import '../widgets/input_message.dart';
 import '../router/router.dart';
-import '../../styles.dart';
+import 'package:firebase_storage/firebase_storage.dart'; // Make sure this is imported
 
 class ProfileCarousel extends StatefulWidget {
+  final List<Map<String, dynamic>> userData; // Accepts user data list
+  const ProfileCarousel({Key? key, required this.userData}) : super(key: key);
+
   @override
-  _ProfileCarouselState createState() => _ProfileCarouselState();
+  State<ProfileCarousel> createState() => _ProfileCarouselState();
 }
 
 class _ProfileCarouselState extends State<ProfileCarousel> {
   List<Map<String, dynamic>> profiles = [];
+  Map<String, String> updatedImageUrls = {};
   bool isLoading = true;
-  String _inputValue = '';
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    loadProfiles();
-  }
 
-  bool hasLoaded = false;
+    print("ProfileCarousel received userData: ${widget.userData.length} users");
 
-  Future<void> loadProfiles() async {
-    if (hasLoaded) return;
-    hasLoaded = true;
-    final fetchedProfiles = await fetchUsersWithPhotos();
-    if (!mounted) return;
-    setState(() {
-      profiles = fetchedProfiles.take(10).toList();
-      isLoading = false;
-    });
+    if (widget.userData.isNotEmpty) {
+      setState(() {
+        profiles = widget.userData;
+        isLoading = false;
+      });
+
+      print("Profiles assigned: ${profiles.length} users");
+      
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+
+      print("No users found in userData.");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (profiles.isEmpty && !isLoading) {
-      return const Center(child: Text("No matches found."));
-    }
+    return CarouselSlider(
+      options: CarouselOptions(
+        height: 600,
+        autoPlay: false,
+        enlargeCenterPage: true,
+        onPageChanged: (index, reason) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+      ),
+      items: profiles.isEmpty
+  ? [const Center(child: Text("No matches found."))]
+  : List<Widget>.from(profiles.map<Widget>((profile) {
+      // More robust check for photo URL
+      String? imageUrl;
+      if (profile['photos'] != null) {
+        if (profile['photos'] is List && (profile['photos'] as List).isNotEmpty) {
+          imageUrl = (profile['photos'] as List)[0];
+          print("Getting URL: $imageUrl");
+        } else if (profile['photos'] is Map && (profile['photos'] as Map).containsKey(0)) {
+          imageUrl = (profile['photos'] as Map)[0];
+        } else if (profile['photos'] is String) {
+          imageUrl = profile['photos'];
+        }
+      }
 
-    return isLoading
-    ? const Center(child: CircularProgressIndicator())
-    : CarouselSlider(
-        options: CarouselOptions(
-          height: 600,
-          autoPlay: false,
-          enlargeCenterPage: true,
-          onPageChanged: (index, reason) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-        ),
+      int index = profiles.indexOf(profile);
 
-        items: profiles.isNotEmpty
-            ? profiles.map((profile) {
-                String? imageUrl = profile['photo'];
-                int index = profiles.indexOf(profile);
-
-                Future.delayed(Duration.zero, () {
-                  if (imageUrl != null && imageUrl.isNotEmpty) {
-                    precacheImage(NetworkImage(imageUrl), context).then((_) {
-                      print("🟢 Image successfully preloaded: $imageUrl");
-                    }).catchError((error) {
-                      print("🚨 Preloading failed: $error \nURL: $imageUrl");
-                    });
-                  }
-                });
-
-                return Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-
-                        ClipRRect(
-  borderRadius: BorderRadius.circular(12),
-  child: Stack(
-    children: [
-      // Profile Image
-      imageUrl != null && imageUrl.isNotEmpty
-          ? Image.network(
-              imageUrl,
-              width: double.infinity,
-              height: 300,
-              fit: BoxFit.cover,
-              headers: {"Cache-Control": "no-cache"}, 
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return const Center(child: CircularProgressIndicator());
-              },
-              errorBuilder: (context, error, stackTrace) {
-                print("🚨 Image failed to load: $error \nURL: $imageUrl");
-                return Container(
-                  width: double.infinity,
-                  height: 300, 
-                  color: Colors.grey[300], 
-                  alignment: Alignment.center,
-                  child: const Text(
-                    "Image Unavailable",
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                );
-              },
-            )
-          : const Center(child: Text("No Image Available")),
-
-      // Gradient Overlay
-      Positioned.fill(
+      return Align(
+        alignment: Alignment.center,
         child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.black.withOpacity(0.5), Colors.transparent],
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-            ),
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-      ),
-
-      // Name & Age
-      Positioned(
-        bottom: 20,
-        left: 20,
-        child: Text(
-          "Alice, 36",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-
-      // Expand Button
-      Positioned(
-        bottom: 20,
-        right: 20,
-        child: GestureDetector(
-          onTap: () {
-            print("Expand Profile Clicked");
-          },
-          child: Container(
-            padding: EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: const Icon(
-              Icons.open_in_full,
-              color: Colors.redAccent,
-              size: 24,
-            ),
-          ),
-        ),
-      ),
-    ],
-  ),
-),
-
-
-                      const SizedBox(height: 40),
-
-                      if (_currentIndex == index)
-                      AnimatedOpacity(
-                        opacity: _currentIndex == index ? 1.0 : 0.0, // Fully visible when active
-                        duration: const Duration(milliseconds: 500), // 0.5 sec fade-in effect
-                        curve: Curves.easeInOut,
-                        child: MessageInputBox(
-                          onSaved: (value) {
-                            print("Saved input: $value");
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  children: [
+                    // ✅ Profile Image with simpler handling
+                    imageUrl != null
+                      ? Image.network(
+                          imageUrl,
+                          width: double.infinity,
+                          height: 300,
+                          fit: BoxFit.cover,
+                                                  
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: double.infinity,
+                              height: 300,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                            );
                           },
-                          onNextPressed: () {
-                            Navigator.pushNamed(context, AppRoutes.profile);
+                        )
+                      : Container(
+                          width: double.infinity,
+                          height: 300,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.no_photography, size: 50, color: Colors.grey),
+                        ),
+
+                      // Name & Age Display
+                      Positioned(
+                        bottom: 20,
+                        left: 20,
+                        child: Text(
+                          "${profile['firstName']}, ${profile['birthDate']}",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                          ),
+                        ),
+                      ),
+
+                      // Expand Button
+                      Positioned(
+                        bottom: 20,
+                        right: 20,
+                        child: GestureDetector(
+                          onTap: () {
+                            print("Expand Profile Clicked");
                           },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: const Icon(
+                              Icons.open_in_full,
+                              color: Colors.redAccent,
+                              size: 24,
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              );
-            }).toList()
-          : [const Center(child: Text("No profiles found."))], // Prevents crashing when empty
-      );
-    }
 
+                const SizedBox(height: 40),
+
+                // Message Input Box for the Active Profile
+                (_currentIndex == index)
+                ? MessageInputBox(
+                    onSaved: (value) {
+                      print("Saved input: $value");
+                    },
+                    onNextPressed: () {
+                      Navigator.pushNamed(context, AppRoutes.profile);
+                    },
+                  )
+                : const SizedBox.shrink(),
+              ],
+            ),
+          ),
+        );
+      })).toList(),
+    );
+  }
 }

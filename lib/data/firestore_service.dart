@@ -68,4 +68,38 @@ class FirestoreService {
       }
     }
   }
+
+  /// Fetch users based on optional filters.
+  /// Default: Only users with at least one photo.
+  Future<List<Map<String, dynamic>>> fetchUsers({
+    bool onlyWithPhotos = false,
+    List<String>? userIds,
+  }) async {
+    try {
+      Query query = _firestore.collection('users');
+
+      // Filter users by a specific list of user IDs if provided
+      if (userIds != null && userIds.isNotEmpty) {
+        query = query.where(FieldPath.documentId, whereIn: userIds);
+      }
+
+      // Default behavior: Only fetch users with at least one photo
+      if (onlyWithPhotos) {
+        query = query.where('photos' != null);
+      }
+
+      QuerySnapshot snapshot = await query.get();
+
+      return snapshot.docs
+          .map((doc) => {
+                'id': doc.id,
+                ...doc.data() as Map<String, dynamic>,
+              })
+          .toList();
+    } catch (e) {
+      print('Error fetching users: $e');
+      return [];
+    }
+  }
+
 }

@@ -20,51 +20,6 @@ class PhotoUploadHelper {
     required this.photoUrls,
   });
 
-/*
-  Future<void> fetchExistingPhotos() async {
-    try {
-      onLoadingChanged(true);
-      final userId = FirebaseAuth.instance.currentUser!.uid;
-      print('Fetching photos for user: $userId');
-      
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-      
-      print('Got user document: ${userDoc.exists}');
-      print('Document data: ${userDoc.data()}');
-      
-      if (userDoc.exists && userDoc.data()!.containsKey('photos')) {
-        final photos = List<String>.from(userDoc.data()!['photos'] ?? []);
-        print('Fetched photos: $photos');
-        
-        // Verify each URL
-        for (String url in photos) {
-          try {
-            final response = await http.head(Uri.parse(url));
-            print('URL $url status: ${response.statusCode}');
-          } catch (e) {
-            print('Error verifying URL $url: $e');
-          }
-        }
-        
-        onPhotosUpdated(photos);
-      } else {
-        print('No photos found in document');
-        onPhotosUpdated([]);
-      }
-    } catch (e) {
-      print('Error fetching photos: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading photos: $e')),
-      );
-    } finally {
-      onLoadingChanged(false);
-    }
-  }
-*/
-
   Future<void> pickAndUploadImage() async {
     final ImagePicker picker = ImagePicker();
     try {
