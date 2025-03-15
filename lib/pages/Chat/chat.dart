@@ -3,8 +3,7 @@ import 'package:flutter/widgets.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
 class MatchChat extends StatefulWidget {
-  const MatchChat({super.key, required this.title});
-  final String title;
+  const MatchChat({super.key});
   @override
   State<MatchChat> createState() => _MatchChat();
 }

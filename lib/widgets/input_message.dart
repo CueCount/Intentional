@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../router/router.dart';
 import '../styles.dart';
 
 class MessageInputBox extends StatefulWidget {
@@ -17,6 +18,7 @@ class MessageInputBox extends StatefulWidget {
 
 class _MessageInputBoxState extends State<MessageInputBox> {
   String _inputValue = '';
+  Map<String, dynamic>? profile;
 
   @override
   Widget build(BuildContext context) {
@@ -67,14 +69,24 @@ class _MessageInputBoxState extends State<MessageInputBox> {
           ),
           const SizedBox(height: 20),
           TextButton(
-            onPressed: widget.onNextPressed,
+            onPressed: () {
+              widget.onNextPressed(); // Retains existing logic
+
+              // Navigate to Profile Page
+              Navigator.pushNamed(
+                context,
+                AppRoutes.profile, // Ensure this route is registered in MaterialApp
+                
+              );
+            },
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 20),
-              minimumSize: Size.zero, // Ensures no default button size
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Reduces extra padding
+              minimumSize: Size.zero, 
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: const Text('Next'),
           ),
+
         ],
       ),
     );

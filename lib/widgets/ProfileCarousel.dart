@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import '../widgets/input_message.dart';
 import '../router/router.dart';
-import 'package:firebase_storage/firebase_storage.dart'; // Make sure this is imported
+import 'package:firebase_storage/firebase_storage.dart';
 
 class ProfileCarousel extends StatefulWidget {
   final List<Map<String, dynamic>> userData; // Accepts user data list
@@ -17,26 +16,21 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
   Map<String, String> updatedImageUrls = {};
   bool isLoading = true;
   int _currentIndex = 0;
+  String _inputMessage = '';
 
   @override
   void initState() {
     super.initState();
-
-    print("ProfileCarousel received userData: ${widget.userData.length} users");
-
     if (widget.userData.isNotEmpty) {
       setState(() {
         profiles = widget.userData;
         isLoading = false;
       });
-
       print("Profiles assigned: ${profiles.length} users");
-      
     } else {
       setState(() {
         isLoading = false;
       });
-
       print("No users found in userData.");
     }
   }
@@ -119,8 +113,6 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            shadows: [Shadow(color: Colors.black, blurRadius: 4)],
                           ),
                         ),
                       ),
@@ -147,23 +139,60 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                           ),
                         ),
                       ),
+                      
                     ],
                   ),
                 ),
+                const SizedBox(height: 20),
 
-                const SizedBox(height: 40),
-
-                // Message Input Box for the Active Profile
+                // Message Input Box (Embedded Here Instead of Separate File)
                 (_currentIndex == index)
-                ? MessageInputBox(
-                    onSaved: (value) {
-                      print("Saved input: $value");
-                    },
-                    onNextPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.profile);
-                    },
-                  )
-                : const SizedBox.shrink(),
+                  ? Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            decoration: const InputDecoration(
+                              hintText: 'Optional Message Here',
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _inputMessage = value;
+                              });
+                            },
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          TextButton(
+                            onPressed: () {
+                              if (profiles.isNotEmpty && _currentIndex < profiles.length) {
+                                final selectedProfile = profiles[_currentIndex];
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.profile,
+                                  arguments: selectedProfile,
+                                );
+                              } else {
+                                print("❌ Error: Trying to navigate with a null or invalid profile.");
+                              }
+                            },
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                            ),
+                            child: const Text('Next'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+                const SizedBox(height: 40),
               ],
             ),
           ),

@@ -4,36 +4,36 @@ import '/router/router.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../../widgets/appBar.dart';
 import '../../styles.dart';
-import '../../widgets/appBar.dart';
 import '../../widgets/navigation.dart';
 
 class Match extends StatefulWidget {
-  Match({
-    super.key, 
-    required this.title,
-    required this.imageUrls,
-    required this.name,
-    required this.age,
-    required this.profession,
-    required this.university,
-    required this.matchMetrics,
-    required this.sharedInterests,
-  });
-
-  final List<String> imageUrls;
-  final String name;
-  final String age;
-  final String profession;
-  final String university;
-  final List<Map<String, String>> matchMetrics;
-  final List<String> sharedInterests;
-  final String title;
-
+  const Match({super.key});
   @override
   State<Match> createState() => _Match();
 }
 
 class _Match extends State<Match> {
+  Map<String, dynamic>? profile; // Store the selected profile
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final Map<String, dynamic>? profileData = 
+      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+
+      if (profileData == null) {
+        print("❌ Error: Profile data is null!");
+        return;
+      }
+
+      setState(() {
+        profile = profileData;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,8 +56,8 @@ class _Match extends State<Match> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text('${widget.name}, ${widget.age}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), // ✅ Fix: Use widget.name and widget.age
-                  Text('${widget.profession}, ${widget.university}', style: const TextStyle(fontSize: 16, color: Colors.grey)), // ✅ Fix: Use widget.profession and widget.university
+                  Text('${profile!['firstName']}, ${profile!['birthDate']}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), // ✅ Fix: Use widget.name and widget.age
+                  /*Text('${profile!['profession']}, ${profile!['university']}', style: const TextStyle(fontSize: 16, color: Colors.grey)),*/ // ✅ Fix: Use widget.profession and widget.university
                 ],
               ),
             ),
@@ -65,13 +65,13 @@ class _Match extends State<Match> {
             // Image Carousel
             CarouselSlider.builder(
               options: CarouselOptions(height: 400.0),
-              itemCount: widget.imageUrls.length, // ✅ Fix: Use widget.imageUrls
+              itemCount: profile!['photos'].length,
               itemBuilder: (context, index, realIndex) {
                 return Stack(
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(widget.imageUrls[index], fit: BoxFit.cover, width: double.infinity),
+                      child: Image.network(profile!['photos'][index], fit: BoxFit.cover, width: double.infinity),
                     ),
                     Positioned(
                       top: 10,
@@ -99,7 +99,7 @@ class _Match extends State<Match> {
             ),
 
             // Match Metrics Carousel
-            CarouselSlider.builder(
+            /*CarouselSlider.builder(
               options: CarouselOptions(height: 100.0, enableInfiniteScroll: false),
               itemCount: widget.matchMetrics.isNotEmpty ? widget.matchMetrics.length : 3,
               itemBuilder: (context, index, realIndex) {
@@ -150,7 +150,7 @@ class _Match extends State<Match> {
                   ),
                 );
               },
-            ),
+            ),*/
           ],
         ),
         ),

@@ -36,34 +36,27 @@ class AppRoutes {
 
   
   static Route<dynamic> generateRoute(RouteSettings settings) {
+    final arguments = settings.arguments;
     return MaterialPageRoute(
-      builder: (_) => _buildAuthWrapper(settings),
+      settings: settings,
+      builder: (_) => _buildAuthWrapper(settings, arguments),
     );
   }
 
-  static Widget _loggedInRoutes(String? routeName) {
+  static Widget _loggedInRoutes(String? routeName, [dynamic arguments]) {
     switch (routeName) {
       case basicInfo:    
         return const BasicProfilePage();
       case chat:
-        return const MatchChat(title: 'Chat',);
+        return const MatchChat();
       case matches:
-        return const Matches(title: 'Discover',);
+        return const Matches();
       case profile:
-        return Match(
-          title: 'profile',
-          imageUrls: [],
-          name: 'name',
-          age: 'age',
-          profession: 'profession',
-          university: 'university',
-          matchMetrics: [],
-          sharedInterests: [],
-          );
+        return const Match();
       case photos:
         return const PhotoUploadPage();
       default:
-        return const Matches(title: 'Match');
+        return const Matches();
     }
   }
 
@@ -82,7 +75,7 @@ class AppRoutes {
       case lifeGoalNeeds:
         return const LifeGoalNeeds(title: 'LogisticNeeds',);
       case matches:
-        return const Matches(title: 'Discover',);
+        return const Matches();
       case login:
         return const LoginPage();
       case register:
@@ -94,12 +87,11 @@ class AppRoutes {
     }
   }
 
-  static Widget _buildAuthWrapper(RouteSettings settings) {
+  static Widget _buildAuthWrapper(RouteSettings settings, [dynamic arguments]) {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         print('Auth state: ${snapshot.hasData ? 'Logged in' : 'Logged out'}');
-        // Handle loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
@@ -107,16 +99,13 @@ class AppRoutes {
         }
         // Handle auth state
         if (snapshot.hasData) {
-          // Check if this is a new registration
           if (settings.name == AppRoutes.register || settings.name == AppRoutes.basicInfo) {
             return _loggedInRoutes(AppRoutes.basicInfo);
           }
-          // Normal logged in navigation
           try {
-            return _loggedInRoutes(settings.name);
+            return _loggedInRoutes(settings.name, arguments);
           } catch (e) {
-            // Only default to match if not in registration flow
-            return const Matches(title: 'Match');
+            return const Matches();
           }
         } else {
           return _loggedOutRoutes(settings.name);

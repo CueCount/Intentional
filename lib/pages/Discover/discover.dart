@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../widgets/ProfileCarousel.dart';
-import '../../router/router.dart';
 import '../../styles.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../data/firestore_service.dart';
 import '../../widgets/navigation.dart';
 
 class Matches extends StatefulWidget {
-  const Matches({super.key, required this.title});
-  final String title;
-
+  const Matches({super.key});
   @override
   State<Matches> createState() => _Matches();
 }
