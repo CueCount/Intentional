@@ -5,6 +5,7 @@ import '/router/router.dart';
 import '../../widgets/input_text.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
+import '../../functions/airTrafficControler_service.dart';
 
 class BasicProfilePage extends StatefulWidget {
  const BasicProfilePage({Key? key}) : super(key: key);
@@ -42,7 +43,9 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
  Map<String, dynamic> getInputData() {
    return {
      'firstName': _nameController.text,
-     'birthDate': _selectedDate != null ? Timestamp.fromDate(_selectedDate!) : null,
+      'birthDate': _selectedDate != null ? _selectedDate!.millisecondsSinceEpoch : null,
+     'school': _schoolController.text,
+     'career': _careerController.text,
    };
  }
 
@@ -77,49 +80,49 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
                 ),
               ),
 
-             const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-             CustomTextInput(
-              labelText: 'First Name',
-              controller: _nameController,
-              suffixIcon: Icon(Icons.mail)
-             ),
+              CustomTextInput(
+                labelText: 'First Name',
+                controller: _nameController,
+                suffixIcon: Icon(Icons.mail)
+              ),
 
-             const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-             InkWell(
-              onTap: () => _selectDate(context),
-              child: Container(
-                height: 50, // Match the height of text input fields
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white, // Match text field background
-                  borderRadius: BorderRadius.circular(10), // Match rounded corners
-                  
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _selectedDate == null
-                          ? 'Birthday'
-                          : '${_selectedDate!.month}/${_selectedDate!.day}/${_selectedDate!.year}',
-                      style: const TextStyle(
-                        fontSize: 16, 
-                        color: Colors.black54, // Match text input placeholder color
+              InkWell(
+                onTap: () => _selectDate(context),
+                child: Container(
+                  height: 50, // Match the height of text input fields
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white, // Match text field background
+                    borderRadius: BorderRadius.circular(10), // Match rounded corners
+                    
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _selectedDate == null
+                            ? 'Birthday'
+                            : '${_selectedDate!.month}/${_selectedDate!.day}/${_selectedDate!.year}',
+                        style: const TextStyle(
+                          fontSize: 16, 
+                          color: Colors.black54, // Match text input placeholder color
+                        ),
                       ),
-                    ),
-                    const Icon(Icons.calendar_today, color: Colors.black54),
-                  ],
+                      const Icon(Icons.calendar_today, color: Colors.black54),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
               const SizedBox(height: 10),
 
               CustomTextInput(
                 labelText: 'Career',
-                controller: _nameController,
+                controller: _careerController,
                 suffixIcon: Icon(Icons.mail)
               ),
               
@@ -127,7 +130,7 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
 
               CustomTextInput(
                 labelText: 'School',
-                controller: _nameController,
+                controller: _schoolController,
                 suffixIcon: Icon(Icons.mail)
               ),
            ],
@@ -135,10 +138,16 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
        
      ),
     ),
-     bottomNavigationBar: CustomAppBar(
+     /*bottomNavigationBar: CustomAppBar(
        route: AppRoutes.matches, 
        inputValues: inputData,
-     ),
+       onSubmit: (inputData) async {
+          final airTrafficController = AirTrafficController();
+          await airTrafficController.addedNeed(inputData);
+          return true;
+        },
+     ),*/
+     
    );
  }
 }

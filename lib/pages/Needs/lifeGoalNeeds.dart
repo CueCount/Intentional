@@ -3,9 +3,9 @@ import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/input_checkbox.dart';  
-import '../../data/data_inputs.dart';
+import '../../data/inputState.dart';
 import '../../styles.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import '../../functions/airTrafficControler_service.dart';
 import '../../widgets/navigation.dart';
 
 class LifeGoalNeeds extends StatefulWidget {
@@ -122,8 +122,13 @@ class _lifeGoalNeeds extends State<LifeGoalNeeds> {
         ),
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.matches, 
-        inputValues: inputData,
+        onPressed: () async {
+          final inputData = getSelectedAttributes();
+          await AirTrafficController().addedNeed(context, inputData);
+          if (context.mounted) {
+            Navigator.pushNamed(context, AppRoutes.matches, arguments: inputData);
+          }
+        },
       ),
     );
   }

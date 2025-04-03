@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import 'router/router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'data/data_inputs.dart'; // Import the updated input state
+import 'data/inputState.dart'; // Import the updated input state
+import 'state/discoverState.dart'; // Import the discover state
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,8 +12,12 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => InputState(), // Provide the global input state
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => InputState()),
+        ChangeNotifierProvider(create: (_) => DiscoverState()),
+        // Add more providers here as needed
+      ],
       child: const MyApp(),
     ),
   );

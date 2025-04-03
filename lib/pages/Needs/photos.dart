@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/photogrid.dart';
+import 'package:provider/provider.dart';
 import '/router/router.dart';
-import '../../functions/functions_photo.dart';
+import '../../data/inputState.dart';
+import '../../functions/photo_service.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
+import '../../functions/airTrafficControler_service.dart';
 
 class PhotoUploadPage extends StatefulWidget {
   const PhotoUploadPage({Key? key}) : super(key: key);
@@ -15,12 +18,13 @@ class PhotoUploadPage extends StatefulWidget {
 class _PhotoUploadPageState extends State<PhotoUploadPage> {
   List<String> _photoUrls = [];
   bool _isLoading = false;
-  late PhotoUploadHelper _photoHelper;
+  late PhotoService _photoHelper;
+  final _controller = AirTrafficController();
 
   @override
   void initState() {
     super.initState();
-    _photoHelper = PhotoUploadHelper(
+    _photoHelper = PhotoService(
       context: context,
       onLoadingChanged: (isLoading) {
         setState(() => _isLoading = isLoading);
@@ -28,6 +32,13 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
       onPhotosUpdated: (photos) {
         setState(() {
           _photoUrls = List<String>.from(photos);
+          final inputState = Provider.of<InputState>(context, listen: false);
+          inputState.photoInputs = photos.map((url) => InputPhoto(
+            base64Data: '', 
+            localUrl: null,
+            firestoreUrl: url,
+            filename: url.split('/').last,
+          )).toList();
         });
       },
       photoUrls: _photoUrls,
@@ -37,12 +48,18 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
 
   Future<void> _fetchPhotosForUpload() async {
     try {
-      // Fetch all photos for the current user
-      final photos = await PhotoUploadHelper.fetchExistingPhotos(selection: "all");
+      final photos = await PhotoService.fetchExistingPhotos(selection: "all");
       _photoHelper.onPhotosUpdated(photos);
     } catch (e) {
       print("Error fetching photos: $e");
     }
+  }
+
+  Map<String, dynamic> getSelectedAttributes() {
+    final inputState = Provider.of<InputState>(context, listen: false);
+    return {
+      "Photos": inputState.photoInputs.map((p) => p.toJson()).toList(),
+    };
   }
 
   @override
@@ -61,10 +78,10 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
             children: [
 
               const CustomStatusBar(
-                  messagesCount: 2,
-                  likesCount: 5,
-                ),
-              
+                messagesCount: 2,
+                likesCount: 5,
+              ),
+            
               const SizedBox(height: 20),
               
               Text(
@@ -80,6 +97,7 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
                 child: PhotoGrid(
                   photoUrls: _photoUrls,
                   isLoading: _isLoading,
+                  
                   context: context, 
                   onReorder: (oldIndex, newIndex) {
                     setState(() {
@@ -90,17 +108,25 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
                     });
                   },
                   onRemovePhoto: (index) => _photoHelper.removePhoto(index),
-                  onAddPhoto: () => _photoHelper.pickAndUploadImage(),
+                  onAddPhoto: () => _controller.uploadPhoto(context),
                 ),
               ),
             ],
           ),
-        
+        ),
       ),
-      ),
-      bottomNavigationBar: CustomAppBar(
+      /*bottomNavigationBar: CustomAppBar(
         route: AppRoutes.basicInfo,
         inputValues: {'photos': _photoUrls},
+      ),*/
+      bottomNavigationBar: CustomAppBar(
+        onPressed: () async {
+          final inputData = getSelectedAttributes();
+          await AirTrafficController().addedNeed(context, inputData);
+          if (context.mounted) {
+            Navigator.pushNamed(context, AppRoutes.basicInfo, arguments: inputData);
+          }
+        },
       ),
     );
   }

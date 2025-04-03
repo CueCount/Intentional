@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/landingPage.dart';
-import '../pages/Qualifiers/qual.dart';
+import '../pages/Needs/qual.dart';
 import '../pages/Discover/discover.dart';
 import '../pages/Chat/chat.dart';
 import '../pages/Profile/profile.dart';
-import '../login.dart';
-import '../pages/Registration/register.dart';
-import '../pages/Registration/basic_info.dart';
-import '../pages/Registration/photos.dart';
+import '../pages/login.dart';
+import '../pages/register.dart';
+import '../pages/Needs/basic_info.dart';
+import '../pages/Needs/photos.dart';
+import '../pages/Needs/photoCrop.dart';
 import '../pages/Needs/emotionalNeeds.dart';
 import '../pages/Needs/physicalNeeds.dart';
 import '../pages/Needs/chemistryNeeds.dart';
@@ -27,13 +28,13 @@ class AppRoutes {
   static const String register = '/register';
   static const String basicInfo = '/basic_info';
   static const String photos = '/photos';
+  static const String photoCrop = '/photoCrop';
   static const String prompts = '/prompts';
   static const String emotionalNeeds = '/emotionalNeeds';
   static const String physicalNeeds = '/physicalNeeds';
   static const String chemistryNeeds = '/chemistryNeeds';
   static const String logisticNeeds = '/logisticNeeds';
   static const String lifeGoalNeeds = '/lifeGoalNeeds';
-
   
   static Route<dynamic> generateRoute(RouteSettings settings) {
     final arguments = settings.arguments;
@@ -55,6 +56,8 @@ class AppRoutes {
         return const Match();
       case photos:
         return const PhotoUploadPage();
+      case photoCrop:
+        return PhotoCropPage(imageFile: arguments['imageFile'],);
       default:
         return const Matches();
     }
@@ -63,7 +66,7 @@ class AppRoutes {
   static Widget _loggedOutRoutes(String? routeName) {
     switch (routeName) {
       case qual:
-        return const QualifierRelDate(title: 'Qualifiers',);
+        return const QualifierRelDate();
       case emotionalNeeds:
         return const EmotionalNeeds(title: 'EmotionalNeeds',);
       case physicalNeeds:
@@ -76,6 +79,8 @@ class AppRoutes {
         return const LifeGoalNeeds(title: 'LogisticNeeds',);
       case matches:
         return const Matches();
+      case profile:
+        return const Match();
       case login:
         return const LoginPage();
       case register:
@@ -97,11 +102,8 @@ class AppRoutes {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        // Handle auth state
+        
         if (snapshot.hasData) {
-          if (settings.name == AppRoutes.register || settings.name == AppRoutes.basicInfo) {
-            return _loggedInRoutes(AppRoutes.basicInfo);
-          }
           try {
             return _loggedInRoutes(settings.name, arguments);
           } catch (e) {

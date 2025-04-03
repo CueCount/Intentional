@@ -5,36 +5,74 @@ class Input {
   final List<dynamic> possibleValues; 
   final String type;
   dynamic currentValue;
+  
   Input({
     required this.title, 
     required this.possibleValues, 
     required this.type, 
     this.currentValue,
   });
+  
   Map<String, dynamic> toJson() {
     return {'Title': title, 'PossibleValues': possibleValues, 'Type': type, };
   }
+  
   factory Input.fromJson(Map<String, dynamic> json) {
     return Input(title: json['Title'], possibleValues: List<int>.from(json['PossibleValues']), type: json['Type'],);
   }
 }
+
+class InputPhoto {
+  final String base64Data;
+  final String? localUrl;
+  final String? firestoreUrl;
+  final String filename;
+
+  InputPhoto({
+    required this.base64Data,
+    this.localUrl,
+    this.firestoreUrl,
+    required this.filename,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'base64Data': base64Data,
+    'localUrl': localUrl,
+    'firestoreUrl': firestoreUrl,
+    'filename': filename,
+  };
+}
+
 class InputState extends ChangeNotifier {
-  Map<String, dynamic> _cachedInputs = {}; // Local cache for inputs
-  // Cache inputs locally
-  void cacheInputs(Map<String, dynamic> inputs) {
-    _cachedInputs.addAll(inputs); 
-    print('Cached Inputs: $_cachedInputs');
-    notifyListeners(); 
+  Map<String, dynamic> _cachedInputs = {};
+  String _userId = '';
+  String get userId => _userId;
+
+  void setUserId(String id) {
+    _userId = id;
+    notifyListeners();
   }
-  // Retrieve cached inputs
+  
+  void cacheInputs(Map<String, dynamic> data) {
+    _cachedInputs.addAll(data);
+    notifyListeners();
+  }
+  
   Map<String, dynamic> getCachedInputs() {
     return _cachedInputs;
   }
-  // Clear cached inputs (if needed)
-  void clearCachedInputs() {
-    _cachedInputs.clear();
-    notifyListeners();
-  }
+
+  List<Input> basicInfo = [
+    Input(
+      title: "nameFirst",
+      possibleValues: [],
+      type: "text",),
+    
+    Input(
+      title: "birthDate",
+      possibleValues: [],
+      type: "calendar",),
+  ];
 
   List<Input> qual = [
     Input(
@@ -44,7 +82,6 @@ class InputState extends ChangeNotifier {
         "Woman",
       ],
       type: "checkbox"),
-
     Input(
       title: "Seeking",
       possibleValues: [
@@ -52,9 +89,6 @@ class InputState extends ChangeNotifier {
         "Woman",
       ],
       type: "checkbox"),
-  ];
-
-  List<Input> location = [
     Input(
       title: "Location",
       possibleValues: [],
@@ -145,9 +179,9 @@ class InputState extends ChangeNotifier {
         "Travel Frequently and Extensively",
         "Own a Nice Home, Car, and Toys",
         "Maximize Freedom and Flexibility",
-        "Maximize Financial and Retirement Security",
+        "Maximize Financial Security",
         "Build a Business, An Empire",
-        "Be Supported While You Pursue Your Dream"
+        "Pursue Our Craziest Dreams"
       ],
       type: "checkbox"
     ),
@@ -166,4 +200,7 @@ class InputState extends ChangeNotifier {
       type: "text"
     ),
   ];
+
+  List<InputPhoto> photoInputs = [];
+
 }

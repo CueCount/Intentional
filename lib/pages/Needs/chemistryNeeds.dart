@@ -3,9 +3,9 @@ import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/input_checkbox.dart';  
-import '../../data/data_inputs.dart';
+import '../../data/inputState.dart';
 import '../../styles.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import '../../functions/airTrafficControler_service.dart';
 import '../../widgets/navigation.dart';
 
 class ChemistryNeeds extends StatefulWidget {
@@ -123,8 +123,13 @@ class _chemistryNeeds extends State<ChemistryNeeds> {
       ),
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.logisticNeeds, 
-        inputValues: inputData,
+        onPressed: () async {
+          final inputData = getSelectedAttributes();
+          await AirTrafficController().addedNeed(context, inputData);
+          if (context.mounted) {
+            Navigator.pushNamed(context, AppRoutes.logisticNeeds, arguments: inputData);
+          }
+        },
       ),
     );
   }

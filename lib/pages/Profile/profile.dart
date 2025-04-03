@@ -156,10 +156,9 @@ class _Match extends State<Match> {
         ),
       ),
       ),
-      bottomNavigationBar: const CustomAppBar(
+      /*bottomNavigationBar: const CustomAppBar(
         route: AppRoutes.chat,
-        submitToFirestore: false,
-      ),
+      ),*/
       );
     
   }

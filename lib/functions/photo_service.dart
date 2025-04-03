@@ -7,18 +7,56 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class PhotoUploadHelper {
+class PhotoService {
   final BuildContext context;
   final Function(bool) onLoadingChanged;
   final Function(List<String>) onPhotosUpdated;
   final List<String> photoUrls;
 
-  PhotoUploadHelper({
+  PhotoService({
     required this.context,
     required this.onLoadingChanged,
     required this.onPhotosUpdated,
     required this.photoUrls,
   });
+
+  /*
+    We need to place new photo functions here. 
+    image picker on local device X
+    crop image 
+    optimize image 
+  */
+
+  static Future<XFile?> pickImage(BuildContext context) async {
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      
+      if (image == null) return null;
+      
+      print('Image path: ${image.path}');
+      
+      // Validate file type (JPG or PNG)
+      final String? mimeType = image.mimeType;
+
+      if (mimeType != null &&
+          !mimeType.contains('jpeg') &&
+          !mimeType.contains('png')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please select a JPG or PNG image')),
+        );
+        return null;
+      }
+      
+      return image;
+    } catch (e) {
+      print('Error picking image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error selecting photo: $e')),
+      );
+      return null;
+    }
+  }
 
   Future<void> pickAndUploadImage() async {
     final ImagePicker picker = ImagePicker();

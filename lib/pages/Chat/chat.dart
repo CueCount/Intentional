@@ -14,9 +14,8 @@ class _MatchChat extends State<MatchChat> {
   Widget build(BuildContext context) { 
 
     return Scaffold( 
-      appBar: CustomAppBar(
-        route: AppRoutes.home,
-      ),
+      
+
       body: ListView(
         children: <Widget>[
           Column(

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/ProfileCarousel.dart';
+import 'package:provider/provider.dart';
 import '../../styles.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../data/firestore_service.dart';
+import '../../state/discoverState.dart';
 import '../../widgets/navigation.dart';
+import '../../widgets/updateNeeds.dart';
 
 class Matches extends StatefulWidget {
   const Matches({super.key});
@@ -13,29 +15,20 @@ class Matches extends StatefulWidget {
 
 class _Matches extends State<Matches> {
   List<Map<String, dynamic>> users = [];
-  bool isLoading = true;
+  bool isLoading = true;        
+  final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
   @override
   void initState() {
     super.initState();
-    _fetchUsers();
-  }
-
-  Future<void> _fetchUsers() async {
-    FirestoreService firestoreService = FirestoreService();
-    List<Map<String, dynamic>> fetchedUsers = await firestoreService.fetchUsers();
-
-    if (mounted) { 
-      setState(() {
-        users = fetchedUsers;
-        isLoading = false;
-      });
-      print("🚀 profiles type: ${users.runtimeType}, length: ${users.length}");
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<DiscoverState>(context, listen: false).fetchUsers();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final discoverState = Provider.of<DiscoverState>(context);
     return Scaffold(
       body: Container(
         padding: const EdgeInsets.all(20), 
@@ -45,25 +38,19 @@ class _Matches extends State<Matches> {
         child: Column(
           children: [
               
-            const CustomStatusBar(
-              messagesCount: 2,
-              likesCount: 5,
-            ),
+            const CustomStatusBar(messagesCount: 2,likesCount: 5,),
+
+            const NotificationCTA(),
 
             const SizedBox(height: 20),
             
-            isLoading 
-              ? const Expanded(
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                )
-              : Expanded(
-                  child: ProfileCarousel(
-                    key: ValueKey(users.length), // Forces a rebuild when users change
-                    userData: users,
-                  ),
-                ),
+            Expanded(
+              child: ProfileCarousel(
+                key: UniqueKey(),
+                userData: discoverState.users,
+                isLoading: discoverState.isLoading,
+              ),
+            ),
 
             const SizedBox(height: 20),
 

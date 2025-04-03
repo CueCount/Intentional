@@ -1,19 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../data/data_inputs.dart';
-import 'package:provider/provider.dart';
-import '../data/firestore_service.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final dynamic route;
-  final Map<String, dynamic>? inputValues;
-  final bool submitToFirestore;
+  final VoidCallback onPressed;
 
-  const CustomAppBar({
-    Key? key,
-    required this.route,
-    this.inputValues,
-    this.submitToFirestore = false,
-  }) : super(key: key);
+  const CustomAppBar({Key? key, required this.onPressed}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +11,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFE5E5),
+            borderRadius: BorderRadius.circular(32),
+          ),
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SafeArea(
@@ -34,28 +28,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   onPressed: () => Navigator.pop(context),
                 ),
                 ElevatedButton(
-                  onPressed: () async {
-                    try {
-                      final inputState = Provider.of<InputState>(context, listen: false);
-                      if (inputValues != null) {
-                        inputState.cacheInputs(inputValues!);
-                        if (submitToFirestore) {
-                          FirestoreService firestoreService = FirestoreService();
-                          await firestoreService.handleSubmit(inputState.getCachedInputs());
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Data successfully saved!')),
-                          );
-                        }
-                      }
-                      Navigator.pushNamed(context, route, arguments: inputValues);
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error saving data: $e')),
-                      );
-                    }
-                  },
+                  onPressed: onPressed,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF5D5D), // Coral pink
+                    backgroundColor: const Color(0xFFFF5D5D),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -91,5 +66,5 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(88); // Adjusted height for padding
+  Size get preferredSize => const Size.fromHeight(88);
 }

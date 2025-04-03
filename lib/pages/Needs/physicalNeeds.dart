@@ -4,7 +4,8 @@ import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/input_slider.dart';
 import '../../widgets/CustomRangeSlider.dart';
-import '../../data/data_inputs.dart';
+import '../../data/inputState.dart';
+import '../../functions/airTrafficControler_service.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 
@@ -116,9 +117,13 @@ class _physicalNeeds extends State<PhysicalNeeds> {
       ),
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.chemistryNeeds,
-        inputValues: inputValues,
-        submitToFirestore: false,
+        onPressed: () async {
+          final inputData = inputValues;
+          await AirTrafficController().addedNeed(context, inputData);
+          if (context.mounted) {
+            Navigator.pushNamed(context, AppRoutes.chemistryNeeds, arguments: inputData);
+          }
+        },
       ),
     );
   }

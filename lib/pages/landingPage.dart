@@ -42,10 +42,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   color: const Color.fromRGBO(255, 213, 213, 1), 
                   borderRadius: BorderRadius.circular(16), 
                 ),
-                child: SvgPicture.asset(
-                  'lib/assets/Int.svg',
-                  color: const Color.fromRGBO(255, 93, 93, 1),
+                child: Image.asset(
+                  'assets/int.png',
                 ),
+                
               ),
               Container(
                 margin: const EdgeInsets.only(bottom: 20,),

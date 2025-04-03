@@ -3,9 +3,9 @@ import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/appBar.dart';
 import '../../widgets/input_checkbox.dart';
-import '../../data/data_inputs.dart';
+import '../../data/inputState.dart';
 import '../../styles.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import '../../functions/airTrafficControler_service.dart';
 import '../../widgets/navigation.dart';
 
 class EmotionalNeeds extends StatefulWidget {
@@ -120,9 +120,13 @@ class _emotionalNeeds extends State<EmotionalNeeds> {
         ),
       ),
       bottomNavigationBar: CustomAppBar(
-        route: AppRoutes.physicalNeeds,
-        inputValues: inputData,
-        submitToFirestore: false,
+        onPressed: () async {
+          final inputData = getSelectedAttributes();
+          await AirTrafficController().addedNeed(context, inputData);
+          if (context.mounted) {
+            Navigator.pushNamed(context, AppRoutes.physicalNeeds, arguments: inputData);
+          }
+        },
       ),
     );
   }

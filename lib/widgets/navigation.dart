@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../functions/login_service.dart';
 
 class CustomStatusBar extends StatelessWidget {
   final int messagesCount;
@@ -45,7 +46,12 @@ class CustomStatusBar extends StatelessWidget {
             ),
           ],
         ),
-        const Icon(Icons.more_horiz, color: Colors.white),
+        IconButton(
+          icon: const Icon(Icons.more_horiz, color: Colors.white),
+          onPressed: () {
+            LogoutService.logout(context);
+          },
+        ),
       ],
     );
   }
