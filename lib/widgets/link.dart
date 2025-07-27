@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../styles.dart';
 
 class LinkWidget extends StatelessWidget {
   final String title;
@@ -31,19 +32,16 @@ class LinkWidget extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Color(0xFFFF6B6B), // Brand peach color
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                    style: AppTextStyles.headingSmall.copyWith(
+                      color: ColorPalette.peach,
                     ),
                   ),
                   if (description != null && description!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
                       description!,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: ColorPalette.grey,
                       ),
                     ),
                   ],

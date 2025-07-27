@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../functions/login_service.dart';
 import '../styles.dart';
 import 'menu.dart';
+import '../router/router.dart';
 
 class CustomStatusBar extends StatelessWidget {
   final int messagesCount;
@@ -34,7 +34,7 @@ class CustomStatusBar extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.filter_list, color: Colors.black),
             onPressed: () {
-              AccountService.logout(context);
+              Navigator.pushNamed(context, AppRoutes.editNeeds);
             },
           )
         ],

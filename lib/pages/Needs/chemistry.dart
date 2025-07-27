@@ -71,26 +71,26 @@ class _chemistry extends State<Chemistry> {
                       spacing: 10.0, // horizontal spacing between items
                       runSpacing: 10.0, // vertical spacing between rows
                       children: inputState.emotionalNeeds.isNotEmpty 
-                        ? inputState.emotionalNeeds[0].possibleValues.map<Widget>((attribute) {
-                            return SizedBox(
-                              width: MediaQuery.of(context).size.width - 32, // Full width minus padding
-                              child: CustomCheckbox(
-                                attribute: CheckboxAttribute(
-                                  title: attribute,
-                                  description: '',
-                                  isSelected: selectedValues[attribute] ?? false,
-                                ),
-                                isHorizontal: true,
-                                onChanged: (isSelected) {
-                                  setState(() {
-                                    selectedValues[attribute] = isSelected;
-                                  });
-                                },
+                      ? inputState.emotionalNeeds[0].possibleValues.map<Widget>((attribute) {
+                          return SizedBox(
+                            width: MediaQuery.of(context).size.width - 32, // Full width minus padding
+                            child: CustomCheckbox(
+                              attribute: CheckboxAttribute(
+                                title: attribute,
+                                description: '',
                                 isSelected: selectedValues[attribute] ?? false,
                               ),
-                            );
-                          }).toList()
-                        : [],
+                              isHorizontal: true,
+                              onChanged: (isSelected) {
+                                setState(() {
+                                  selectedValues[attribute] = isSelected;
+                                });
+                              },
+                              isSelected: selectedValues[attribute] ?? false,
+                            ),
+                          );
+                        }).toList()
+                      : [],
                     ),
                   ],
                 ),

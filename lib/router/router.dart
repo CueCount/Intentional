@@ -43,7 +43,9 @@ class AppRoutes {
   static const String goals = '/lifeGoalNeeds';
   static const String subscription = '/subscription';
   static const String user = '/user';
-  static const String editNeeds = '/user';
+  static const String editNeeds = '/editNeeds';
+  static const String settings = '/settings';
+
   
   static Route<dynamic> generateRoute(RouteSettings settings) {
     final arguments = settings.arguments;
@@ -86,11 +88,13 @@ class AppRoutes {
       case photoCrop:
         return PhotoCropPage(imageFile: arguments['imageFile'],);
       case subscription:
-        return SubscriptionPage();
+        return const SubscriptionPage();
       case user:
-        return UserProfile();
+        return const UserProfile();
       case editNeeds:
-        return EditNeeds();
+        return const EditNeeds();
+      case settings:
+        return const Settings();
       default:
         return const Matches();
     }

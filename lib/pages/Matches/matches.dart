@@ -28,7 +28,7 @@ class _Matches extends State<Matches> {
     }
   }
 
-  Future<void> howToFetchUsers(bool shouldUpdate) async {
+  Future<void> howToFetchUsers(bool shouldUpdate) async {    
     setState(() {
       isLoading = true;
     });
@@ -45,7 +45,7 @@ class _Matches extends State<Matches> {
         print('📦 discoverFromCache() was called!');
         return users;
       });
-
+    
     setState(() {
       users = fetchedUsers;
       isLoading = false;

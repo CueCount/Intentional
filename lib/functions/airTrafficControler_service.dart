@@ -126,7 +126,6 @@ class AirTrafficController {
   Future<List<Map<String, dynamic>>> discoverFromCache() async {
     return await discoverProfiles(source: DataSource.cache);
   }
-
   Future<List<Map<String, dynamic>>> discoverFromFirebase({
     bool onlyWithPhotos = true,
     bool forceFresh = false,

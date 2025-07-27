@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/link.dart';
-import '../../data/inputState.dart';
 import '/router/router.dart';
-
+import '../../styles.dart';
 class EditNeeds extends StatefulWidget {
   const EditNeeds({super.key});
   
@@ -15,29 +13,25 @@ class EditNeeds extends StatefulWidget {
 class _EditNeedsState extends State<EditNeeds> {
   @override
   Widget build(BuildContext context) {
-    final inputState = Provider.of<InputState>(context);
-    
     return Scaffold(
-      body: Column(
-        children: [
-          const CustomStatusBar(messagesCount: 2,likesCount: 5,),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Your Needs',
-                    style: TextStyle(
-                      color: Color(0xFFFF6B6B), // Brand peach color
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const CustomStatusBar(messagesCount: 2, likesCount: 5),
+              Container(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Your Needs',
+                      style: AppTextStyles.headingLarge.copyWith(
+                        color: ColorPalette.peach,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 30),
-                  Expanded(
-                    child: ListView(
+                    const SizedBox(height: 30),
+                    Column(
                       children: [
                         LinkWidget(
                           title: 'Chemistry',
@@ -87,38 +81,14 @@ class _EditNeedsState extends State<EditNeeds> {
                             Navigator.pushNamed(context, AppRoutes.qual);
                           },
                         ),
-                        LinkWidget(
-                          title: 'Age',
-                          description: 'Age preferences and range',
-                          onTap: () {
-                            // Navigate to age page
-                            Navigator.pushNamed(context, AppRoutes.age);
-                          },
-                        ),
-                        LinkWidget(
-                          title: 'Basic Info',
-                          description: 'Personal information and details',
-                          onTap: () {
-                            // Navigate to basic info page
-                            Navigator.pushNamed(context, AppRoutes.basicInfo);
-                          },
-                        ),
-                        LinkWidget(
-                          title: 'Photos',
-                          description: 'Manage your profile photos',
-                          onTap: () {
-                            // Navigate to photos page
-                            Navigator.pushNamed(context, AppRoutes.photos);
-                          },
-                        ),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

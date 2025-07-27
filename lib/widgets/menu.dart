@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/router/router.dart';
+import '../styles.dart';
 
 class AppMenuOverlay extends StatelessWidget {
   const AppMenuOverlay({super.key});
@@ -80,7 +81,7 @@ class AppMenuOverlay extends StatelessWidget {
                         'App Settings',
                         () {
                           Navigator.of(context).pop();
-                          Navigator.pushNamed(context, AppRoutes.home);
+                          Navigator.pushNamed(context, AppRoutes.settings);
                         },
                       ),
                       const Spacer(),
@@ -103,11 +104,8 @@ class AppMenuOverlay extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 20),
         child: Text(
           title,
-          style: const TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w400,
-            color: Colors.black,
-            letterSpacing: -0.5,
+          style: AppTextStyles.headingMedium.copyWith(
+            color: ColorPalette.peach,
           ),
           textAlign: TextAlign.center,
         ),
