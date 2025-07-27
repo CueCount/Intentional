@@ -7,8 +7,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../data/inputState.dart';
-import 'dart:html' as html;
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+
+// Conditional import - will choose the right implementation
+import 'photo_service_web.dart' if (dart.library.io) 'photo_service_mobile.dart';
 
 class PhotoService {
   final BuildContext context;
@@ -26,9 +28,11 @@ class PhotoService {
   static Future<List<String>> uploadAllPhotos(BuildContext context, String userId) async {
     final inputState = Provider.of<InputState>(context, listen: false);
     final List<String> downloadUrls = [];
+    
     for (var photo in inputState.photoInputs) {
       if (kIsWeb && photo.croppedBytes != null) {
-        final blob = html.Blob([photo.croppedBytes!]);
+        // Use the platform-specific service for creating blob
+        final blob = PhotoServicePlatform.createBlob(photo.croppedBytes!);
         final ref = firebase_storage.FirebaseStorage.instance
             .ref()
             .child('user_photos/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg');
@@ -146,5 +150,4 @@ class PhotoService {
       );
     }
   }
-
 }

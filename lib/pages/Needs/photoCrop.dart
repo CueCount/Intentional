@@ -10,7 +10,9 @@ import '../../router/router.dart';
 import '../../data/inputState.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:vector_math/vector_math_64.dart' show Vector3;
-import 'dart:html' as html;
+
+// Conditional import - will choose the right implementation
+import '../../functions/photo_service_web.dart' if (dart.library.io) '../../functions/photo_service_mobile.dart';
 
 class PhotoCropPage extends StatefulWidget {
   final XFile imageFile;
@@ -129,22 +131,21 @@ class _PhotoCropPageState extends State<PhotoCropPage> {
       final cropH = (maxY - minY).toInt().clamp(1, originalImage.height - cropY);
       final croppedImage = img.copyCrop(originalImage,x: cropX,y: cropY,width: cropW,height: cropH);
       
-      // Save the cropped image - keeping your original implementation
+      // Save the cropped image - using platform-specific approach
       final croppedBytes = Uint8List.fromList(img.encodeJpg(croppedImage));
 
       String? localPath;
 
-      if (!kIsWeb) {
-        final appDir = await getApplicationDocumentsDirectory();
-        localPath = '${appDir.path}/cropped_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final imageFile = File(localPath);
-        await imageFile.writeAsBytes(croppedBytes);
+      if (kIsWeb) {
+        // Web: synchronous blob URL creation
+        localPath = PhotoServicePlatform.createObjectUrl(croppedBytes);
       } else {
-        final blob = html.Blob([croppedBytes]);
-        localPath = html.Url.createObjectUrlFromBlob(blob);
+        // Mobile: get temp directory first, then create file
+        final appDir = await getApplicationDocumentsDirectory();
+        localPath = PhotoServicePlatform.createObjectUrlSync(croppedBytes, appDir.path);
       }
 
-      final inputPhoto = InputPhoto(croppedBytes: croppedBytes);
+      final inputPhoto = InputPhoto(croppedBytes: croppedBytes, localPath: localPath);
       final inputState = Provider.of<InputState>(context, listen: false);
       inputState.photoInputs = [...inputState.photoInputs, inputPhoto];
 
