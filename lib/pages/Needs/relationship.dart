@@ -8,14 +8,13 @@ import '../../styles.dart';
 import '../../functions/airTrafficControler_service.dart';
 import '../../widgets/navigation.dart';
 
-class ChemistryNeeds extends StatefulWidget {
-  const ChemistryNeeds({super.key, required this.title});
-  final String title;
+class Relationship extends StatefulWidget {
+  const Relationship({super.key});
   @override
-  State<ChemistryNeeds> createState() => _chemistryNeeds();
+  State<Relationship> createState() => _relationship();
 }
 
-class _chemistryNeeds extends State<ChemistryNeeds> {
+class _relationship extends State<Relationship> {
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -107,7 +106,7 @@ class _chemistryNeeds extends State<ChemistryNeeds> {
           final inputData = getSelectedAttributes();
           await AirTrafficController().addedNeed(context, inputData);
           if (context.mounted) {
-            Navigator.pushNamed(context, AppRoutes.logisticNeeds, arguments: inputData);
+            Navigator.pushNamed(context, AppRoutes.interests, arguments: inputData);
           }
         },
       ),

@@ -8,14 +8,13 @@ import '../../styles.dart';
 import '../../functions/airTrafficControler_service.dart';
 import '../../widgets/navigation.dart';
 
-class LifeGoalNeeds extends StatefulWidget {
-  const LifeGoalNeeds({super.key, required this.title});
-  final String title;
+class Goals extends StatefulWidget {
+  const Goals({super.key});
   @override
-  State<LifeGoalNeeds> createState() => _lifeGoalNeeds();
+  State<Goals> createState() => _goals();
 }
 
-class _lifeGoalNeeds extends State<LifeGoalNeeds> {
+class _goals extends State<Goals> {
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

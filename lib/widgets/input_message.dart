@@ -75,8 +75,7 @@ class _MessageInputBoxState extends State<MessageInputBox> {
               // Navigate to Profile Page
               Navigator.pushNamed(
                 context,
-                AppRoutes.profile, // Ensure this route is registered in MaterialApp
-                
+                AppRoutes.match, // Ensure this route is registered in MaterialApp
               );
             },
             style: TextButton.styleFrom(

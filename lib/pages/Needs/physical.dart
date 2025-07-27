@@ -9,14 +9,13 @@ import '../../functions/airTrafficControler_service.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 
-class PhysicalNeeds extends StatefulWidget {
-  const PhysicalNeeds({super.key, required this.title});
-  final String title;
+class Physical extends StatefulWidget {
+  const Physical({super.key});
   @override
-  State<PhysicalNeeds> createState() => _physicalNeeds();
+  State<Physical> createState() => _physical();
 }
 
-class _physicalNeeds extends State<PhysicalNeeds> {
+class _physical extends State<Physical> {
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -103,7 +102,7 @@ class _physicalNeeds extends State<PhysicalNeeds> {
           final inputData = inputValues;
           await AirTrafficController().addedNeed(context, inputData);
           if (context.mounted) {
-            Navigator.pushNamed(context, AppRoutes.chemistryNeeds, arguments: inputData);
+            Navigator.pushNamed(context, AppRoutes.relationship, arguments: inputData);
           }
         },
       ),

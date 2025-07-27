@@ -107,7 +107,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                             onTap: () {
                               Navigator.pushNamed(
                                 context,
-                                AppRoutes.profile,
+                                AppRoutes.match,
                                 arguments: profile,
                               );
                             },

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../router/router.dart';
-import '../widgets/input_text.dart';
-import '../styles.dart';
-import '../functions/airTrafficControler_service.dart';
-import '../widgets/navigation.dart';
-import 'Needs/photos.dart';
+import '../../router/router.dart';
+import '../../widgets/input_text.dart';
+import '../../styles.dart';
+import '../../functions/airTrafficControler_service.dart';
+import '../../widgets/navigation.dart';
+import '../Needs/photos.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);

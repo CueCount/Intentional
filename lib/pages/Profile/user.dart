@@ -8,13 +8,13 @@ import '../../widgets/pill.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 
-class Match extends StatefulWidget {
-  const Match({super.key});
+class UserProfile extends StatefulWidget {
+  const UserProfile({super.key});
   @override
-  State<Match> createState() => _Match();
+  State<UserProfile> createState() => _userProfile();
 }
 
-class _Match extends State<Match> {
+class _userProfile extends State<UserProfile> {
   Map<String, dynamic>? profile; 
   int _currentImageIndex = 1; 
   int _currentMatchQualityIndex = 0;

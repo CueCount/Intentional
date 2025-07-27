@@ -8,14 +8,13 @@ import '../../styles.dart';
 import '../../functions/airTrafficControler_service.dart';
 import '../../widgets/navigation.dart';
 
-class EmotionalNeeds extends StatefulWidget {
-  const EmotionalNeeds({super.key, required this.title});
-  final String title;
+class Chemistry extends StatefulWidget {
+  const Chemistry({super.key});
   @override
-  State<EmotionalNeeds> createState() => _emotionalNeeds();
+  State<Chemistry> createState() => _chemistry();
 }
 
-class _emotionalNeeds extends State<EmotionalNeeds> {
+class _chemistry extends State<Chemistry> {
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -107,9 +106,9 @@ class _emotionalNeeds extends State<EmotionalNeeds> {
           if (context.mounted) {
             final inputState = Provider.of<InputState>(context, listen: false);
             if (inputState.userId.isNotEmpty) {
-              Navigator.pushNamed(context, AppRoutes.profile, arguments: inputData);
+              Navigator.pushNamed(context, AppRoutes.match, arguments: inputData);
             } else {
-              Navigator.pushNamed(context, AppRoutes.physicalNeeds, arguments: inputData);
+              Navigator.pushNamed(context, AppRoutes.physical, arguments: inputData);
             }
           }
         },

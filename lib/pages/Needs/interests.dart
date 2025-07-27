@@ -8,14 +8,13 @@ import '../../styles.dart';
 import '../../functions/airTrafficControler_service.dart';
 import '../../widgets/navigation.dart';
 
-class LogisticNeeds extends StatefulWidget {
-  const LogisticNeeds({super.key, required this.title});
-  final String title;
+class Interests extends StatefulWidget {
+  const Interests({super.key});
   @override
-  State<LogisticNeeds> createState() => _logisticNeeds();
+  State<Interests> createState() => _interests();
 }
 
-class _logisticNeeds extends State<LogisticNeeds> {
+class _interests extends State<Interests> {
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -92,7 +91,7 @@ Widget build(BuildContext context) {
         final inputData = selectedValues;
         await AirTrafficController().addedNeed(context, inputData);
         if (context.mounted) {
-          Navigator.pushNamed(context, AppRoutes.lifeGoalNeeds, arguments: inputData);
+          Navigator.pushNamed(context, AppRoutes.goals, arguments: inputData);
         }
       },
     ),

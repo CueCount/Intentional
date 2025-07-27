@@ -56,15 +56,7 @@ class AppMenuOverlay extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildMenuItem(
-                        context,
-                        'Home',
-                        () {
-                          Navigator.of(context).pop();
-                          Navigator.pushNamed(context, AppRoutes.home);
-                        },
-                      ),
-                      const SizedBox(height: 60),
+                      const Spacer(),
                       _buildMenuItem(
                         context,
                         'Matches',
@@ -73,15 +65,25 @@ class AppMenuOverlay extends StatelessWidget {
                           Navigator.pushNamed(context, AppRoutes.matches);
                         },
                       ),
-                      const SizedBox(height: 60),
+                      const Spacer(),
                       _buildMenuItem(
                         context,
-                        'Your Profile',
+                        'Your Needs',
                         () {
                           Navigator.of(context).pop();
-                          Navigator.pushNamed(context, AppRoutes.profile);
+                          Navigator.pushNamed(context, AppRoutes.editNeeds);
                         },
                       ),
+                      const Spacer(),
+                      _buildMenuItem(
+                        context,
+                        'App Settings',
+                        () {
+                          Navigator.of(context).pop();
+                          Navigator.pushNamed(context, AppRoutes.home);
+                        },
+                      ),
+                      const Spacer(),
                     ],
                   ),
                 ),
