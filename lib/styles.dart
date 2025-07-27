@@ -4,11 +4,6 @@ import 'package:flutter/material.dart';
 App Theme Styles 
  - - - - - - - - - - - - - - - - - - - - - */
 class AppStyles {
-  static const TextStyle headlineStyle = TextStyle(
-    fontWeight: FontWeight.bold,
-    fontSize: 18,
-  );
-
   static const BoxDecoration boxDecoration = BoxDecoration(
     color:  ColorPalette.peach,
   );
@@ -16,25 +11,41 @@ class AppStyles {
 
 class AppTextStyles {
   static TextStyle headingLarge = const TextStyle(
-    fontFamily: 'Bitter',
-    fontSize: 32,
-    fontWeight: FontWeight.w500,
+    fontFamily: 'Fraunces',
+    fontSize: 38,
+    fontWeight: FontWeight.w700,
     color: Colors.white,
     height: 1.2,
   );
 
   static TextStyle headingMedium = const TextStyle(
-    fontFamily: 'Bitter',
-    fontSize: 24,
+    fontFamily: 'Fraunces',
+    fontSize: 28,
+    fontWeight: FontWeight.w500,
+    color: Colors.white,
+    height: 1.2,
+  );
+
+  static TextStyle headingSmall = const TextStyle(
+    fontFamily: 'Fraunces',
+    fontSize: 18,
     fontWeight: FontWeight.w500,
     color: Colors.white,
     height: 1.2,
   );
 
   static TextStyle bodyMedium = const TextStyle(
-    fontFamily: 'Barlow',
+    fontFamily: 'Inter',
     fontSize: 18,
-    fontWeight: FontWeight.w300,
+    fontWeight: FontWeight.w500,
+    color: Colors.white,
+    height: 1.2,
+  );
+
+  static TextStyle bodySmall = const TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
     color: Colors.white,
     height: 1.2,
   );
@@ -42,21 +53,18 @@ class AppTextStyles {
 
 class ColorPalette {
   static const Color white = Color(0xFFFFFFFF);
-  static const Color peach = Color(0xFFFF5D5D);
+  static const Color peach = Color(0xFFFF294C);
+  static const Color violet = Color(0xFFE349D9);
+  static const Color green = Color(0xFF38B6A8);
   static const Color lite = Color(0xFFFAEBEB);
   static const Color dark = Color(0xFF250E0E);
   static const Color grey = Color(0xFF867A7A);
   static const Color peachLite = Color(0xFFFFD5D5);
-  static const LinearGradient peachGradient = LinearGradient(
-    colors: [Color(0xFFFF324D), Color(0xFFFF5D5D)],
-    begin: Alignment.topLeft,
+  static const LinearGradient brandGradient = LinearGradient(
+    colors: [Color(0xFFDC1C56), Color(0xFFFF294C)], // Colors from the screenshot
+    begin: Alignment.topLeft, // Adjust as needed
     end: Alignment.bottomRight,
   );
-  static const LinearGradient brandGradient = LinearGradient(
-            colors: [Color(0xFFDC1C56), Color(0xFFFF294C)], // Colors from the screenshot
-            begin: Alignment.topLeft, // Adjust as needed
-            end: Alignment.bottomRight,
-          );
 }
 
 /* - - - - - - - - - - - - - - - - - - - - -  
@@ -285,41 +293,68 @@ class RectangularRangeSliderTrackShape extends RangeSliderTrackShape {
 Checkbox Theme Styles 
  - - - - - - - - - - - - - - - - - - - - - */
 
+/* - - - - - - - - - - - - - - - - - - - - -  
+Checkbox Theme Styles 
+ - - - - - - - - - - - - - - - - - - - - - */
+
 class AppCheckboxThemes {
   static BoxDecoration checkboxDecoration(bool isSelected) {
     return BoxDecoration(
-      color: isSelected ? ColorPalette.peach : ColorPalette.white,
-      borderRadius: BorderRadius.circular(8), // Rounded corners
-      boxShadow: isSelected
-          ? [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 8,
-                offset: Offset(0, 4),
-              ),
-            ]
-          : [],
+      color: isSelected ? ColorPalette.peach : ColorPalette.lite,
+      borderRadius: BorderRadius.circular(16), // More rounded corners for card style  
     );
   }
 
   static TextStyle checkboxTitle(bool isSelected) {
     return TextStyle(
       fontSize: 16,
-      fontWeight: FontWeight.bold,
-      color: isSelected ? ColorPalette.white : ColorPalette.dark,
+      fontWeight: FontWeight.w600,
+      color: isSelected ? ColorPalette.white : ColorPalette.peach,
+      height: 1.2,
     );
   }
 
   static TextStyle checkboxDescription(bool isSelected) {
     return TextStyle(
       fontSize: 14,
-      color: isSelected ? ColorPalette.white.withOpacity(0.9) : ColorPalette.dark,
+      fontWeight: FontWeight.w400,
+      color: isSelected ? ColorPalette.white.withOpacity(0.9) : ColorPalette.grey,
+      height: 1.3,
     );
   }
 
-  static Icon checkboxIcon = Icon(
+  // Icon for selected state (checkmark)
+  static Icon checkboxSelectedIcon = const Icon(
     Icons.check,
     color: ColorPalette.white,
     size: 24,
   );
+
+  // Icon for unselected state (plus)
+  static Icon checkboxUnselectedIcon = Icon(
+    Icons.add,
+    color: ColorPalette.peach,
+    size: 24,
+  );
+
+  // Method to get the appropriate icon based on selection state
+  static Icon getCheckboxIcon(bool isSelected) {
+    return isSelected ? checkboxSelectedIcon : checkboxUnselectedIcon;
+  }
+
+  // Padding for the checkbox content
+  static const EdgeInsets checkboxPadding = EdgeInsets.all(16.0);
+
+  // Height for consistent checkbox sizing
+  // static const double checkboxHeight = 160.0;
+
+  // Text style for larger checkbox cards (like in your image)
+  static TextStyle checkboxCardTitle(bool isSelected) {
+    return TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      color: isSelected ? ColorPalette.white : ColorPalette.peach,
+      height: 1.2,
+    );
+  }
 }

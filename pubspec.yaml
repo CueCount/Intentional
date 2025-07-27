@@ -33,7 +33,9 @@ dependencies:
   google_fonts: ^6.1.0
   flutter_svg: ^1.1.6
   provider: ^6.0.2
+  path_provider: ^2.1.2
   http: ^1.2.2
+  image: ^4.1.3
   image_picker: ^1.0.7
   image_cropper: ^5.0.0
   shared_preferences: ^2.0.9 
@@ -78,20 +80,22 @@ flutter:
     - assets/int.png
 
   fonts:
-    - family: Bitter
+    - family: Fraunces
       fonts:
-        - asset: lib/fonts/Bitter-Regular.ttf
-        - asset: lib/fonts/Bitter-Medium.ttf
+        - asset: lib/fonts/Fraunces_72pt_Soft-Light.ttf
+          weight: 300
+        - asset: lib/fonts/Fraunces_72pt_Soft-Regular.ttf
           weight: 500
-        - asset: lib/fonts/Bitter-Bold.ttf
+        - asset: lib/fonts/Fraunces_72pt_Soft-Bold.ttf
           weight: 700
     
-    - family: Barlow
+    - family: Inter
       fonts:
-        - asset: lib/fonts/Barlow-Regular.ttf
-        - asset: lib/fonts/Barlow-Medium.ttf
+        - asset: lib/fonts/Inter_18pt-Light.ttf
+          weight: 300
+        - asset: lib/fonts/Inter_18pt-Regular.ttf
           weight: 500
-        - asset: lib/fonts/Barlow-Bold.ttf
+        - asset: lib/fonts/Inter_18pt-Bold.ttf
           weight: 700
 
   # To add assets to your application, add an assets section, like this:

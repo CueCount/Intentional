@@ -1,11 +1,14 @@
 import 'dart:io';
-import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../data/inputState.dart';
+import 'dart:html' as html;
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 
 class PhotoService {
   final BuildContext context;
@@ -20,12 +23,32 @@ class PhotoService {
     required this.photoUrls,
   });
 
-  /*
-    We need to place new photo functions here. 
-    image picker on local device X
-    crop image 
-    optimize image 
-  */
+  static Future<List<String>> uploadAllPhotos(BuildContext context, String userId) async {
+    final inputState = Provider.of<InputState>(context, listen: false);
+    final List<String> downloadUrls = [];
+    for (var photo in inputState.photoInputs) {
+      if (kIsWeb && photo.croppedBytes != null) {
+        final blob = html.Blob([photo.croppedBytes!]);
+        final ref = firebase_storage.FirebaseStorage.instance
+            .ref()
+            .child('user_photos/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg');
+        final task = ref.putBlob(blob);
+        final snapshot = await task;
+        final url = await snapshot.ref.getDownloadURL();
+        downloadUrls.add(url);
+      } else if (!kIsWeb && photo.localPath != null) {
+        final file = File(photo.localPath!);
+        final ref = firebase_storage.FirebaseStorage.instance
+            .ref()
+            .child('user_photos/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg');
+        final task = ref.putFile(file);
+        final snapshot = await task;
+        final url = await snapshot.ref.getDownloadURL();
+        downloadUrls.add(url);
+      }
+    }
+    return downloadUrls;
+  }
 
   static Future<XFile?> pickImage(BuildContext context) async {
     final ImagePicker picker = ImagePicker();
@@ -34,17 +57,15 @@ class PhotoService {
       
       if (image == null) return null;
       
-      print('Image path: ${image.path}');
+      print('Selected image for upload: ${image.path}');
       
       // Validate file type (JPG or PNG)
       final String? mimeType = image.mimeType;
 
       if (mimeType != null &&
-          !mimeType.contains('jpeg') &&
-          !mimeType.contains('png')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please select a JPG or PNG image')),
-        );
+      !mimeType.contains('jpeg') &&
+      !mimeType.contains('png')) {
+        print('Please select a JPG or PNG image');
         return null;
       }
       
@@ -55,81 +76,6 @@ class PhotoService {
         SnackBar(content: Text('Error selecting photo: $e')),
       );
       return null;
-    }
-  }
-
-  Future<void> pickAndUploadImage() async {
-    final ImagePicker picker = ImagePicker();
-    try {
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-      if (image == null) return;
-      
-      onLoadingChanged(true);
-      String userId = FirebaseAuth.instance.currentUser!.uid;
-      String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-      Reference storageRef = FirebaseStorage.instance
-          .ref()
-          .child('user_photos')
-          .child(userId)
-          .child(fileName);
-
-      // Upload the image
-      if (kIsWeb) {
-        final bytes = await image.readAsBytes();
-        await storageRef.putData(bytes);
-        await Future.delayed(Duration(seconds: 2));
-      } else {
-        await storageRef.putFile(File(image.path));
-        await Future.delayed(Duration(seconds: 2));
-      }
-
-      // Get the download URL with retry logic
-      String downloadUrl = '';
-      int attempts = 0;
-      while (attempts < 3) {
-        try {
-          downloadUrl = await storageRef.getDownloadURL();
-          print('Download URL obtained: $downloadUrl');
-          break;
-        } catch (e) {
-          attempts++;
-          print('Attempt $attempts to get download URL failed: $e');
-          if (attempts == 3) throw e;
-          await Future.delayed(Duration(seconds: 1));
-        }
-      }
-
-      // Fetch current photos from Firestore first
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-      
-      List<String> currentPhotos = [];
-      if (userDoc.exists && userDoc.data()!.containsKey('photos')) {
-        currentPhotos = List<String>.from(userDoc.data()!['photos'] ?? []);
-      }
-
-      // Add new photo URL
-      List<String> updatedPhotos = [...currentPhotos, downloadUrl];
-
-      // Update Firestore
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .update({
-        'photos': updatedPhotos,
-      });
-
-      print('Firestore updated, notifying UI with updated photos: $updatedPhotos');
-      onPhotosUpdated(updatedPhotos);
-    } catch (e) {
-      print('Error uploading photo: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error uploading photo: $e')),
-      );
-    } finally {
-      onLoadingChanged(false);
     }
   }
 
@@ -200,4 +146,5 @@ class PhotoService {
       );
     }
   }
+
 }

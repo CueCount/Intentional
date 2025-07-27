@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../functions/login_service.dart';
+import '../styles.dart';
+import 'menu.dart';
 
 class CustomStatusBar extends StatelessWidget {
   final int messagesCount;
@@ -14,45 +16,29 @@ class CustomStatusBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Image.asset(
-              'assets/int.png',
-            ),
-            const SizedBox(width: 16),
-            Row(
-              children: [
-                const Icon(Icons.send, color: Colors.white, size: 20),
-                const SizedBox(width: 4),
-                Text(
-                  messagesCount.toString(),
-                  style: GoogleFonts.roboto(fontSize: 16, color: Colors.white),
-                ),
-              ],
-            ),
-            const SizedBox(width: 12),
-            Row(
-              children: [
-                const Icon(Icons.favorite_border, color: Colors.white, size: 20),
-                const SizedBox(width: 4),
-                Text(
-                  likesCount.toString(),
-                  style: GoogleFonts.roboto(fontSize: 16, color: Colors.white),
-                ),
-              ],
-            ),
-          ],
-        ),
-        IconButton(
-          icon: const Icon(Icons.more_horiz, color: Colors.white),
-          onPressed: () {
-            LogoutService.logout(context);
-          },
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: Colors.black),
+            onPressed: () {
+              AppMenuOverlay.show(context);
+            },
+          ), 
+          Text(
+            'Intentional',
+            style: GoogleFonts.roboto(fontSize: 16, color: ColorPalette.peach),
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list, color: Colors.black),
+            onPressed: () {
+              AccountService.logout(context);
+            },
+          )
+        ],
+      ),
     );
   }
 }

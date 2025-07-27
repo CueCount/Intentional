@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../styles.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class CheckboxAttribute {
   String title;
@@ -18,12 +17,14 @@ class CustomCheckbox extends StatefulWidget {
   final CheckboxAttribute attribute;
   final bool isSelected;
   final Function(bool) onChanged;
+  final bool isHorizontal;
 
   const CustomCheckbox({
     Key? key,
     required this.attribute,
     required this.onChanged,
-    required this.isSelected, 
+    required this.isSelected,
+    this.isHorizontal = false, // defaults to vertical layout
   }) : super(key: key);
 
   @override
@@ -41,31 +42,53 @@ class _CustomCheckboxState extends State<CustomCheckbox> {
         widget.onChanged(widget.attribute.isSelected);
       },
       child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: widget.attribute.isSelected
-              ? ColorPalette.peach
-              : ColorPalette.white,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(widget.attribute.title, 
-            textAlign: TextAlign.center,
-            style: GoogleFonts.bitter(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                color: widget.attribute.isSelected
-                    ? ColorPalette.white
-                    : ColorPalette.dark,)            
-            ),
-            const SizedBox(height: 8),
-            Text(widget.attribute.description),
-            const SizedBox(height: 8),
-            if (widget.attribute.isSelected)
-              const Icon(Icons.check, color: ColorPalette.white, size: 20),
-          ],
-        ),
+        padding: AppCheckboxThemes.checkboxPadding,
+        decoration: AppCheckboxThemes.checkboxDecoration(widget.attribute.isSelected),
+        child: widget.isHorizontal
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.attribute.title,
+                          style: AppCheckboxThemes.checkboxCardTitle(widget.attribute.isSelected),
+                        ),
+                        if (widget.attribute.description.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.attribute.description,
+                            style: AppCheckboxThemes.checkboxDescription(widget.attribute.isSelected),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  AppCheckboxThemes.getCheckboxIcon(widget.attribute.isSelected),
+                ],
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    widget.attribute.title,
+                    textAlign: TextAlign.center,
+                    style: AppCheckboxThemes.checkboxCardTitle(widget.attribute.isSelected),
+                  ),
+                  if (widget.attribute.description.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.attribute.description,
+                      textAlign: TextAlign.center,
+                      style: AppCheckboxThemes.checkboxDescription(widget.attribute.isSelected),
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  AppCheckboxThemes.getCheckboxIcon(widget.attribute.isSelected),
+                ],
+              ),
       ),
     );
   }

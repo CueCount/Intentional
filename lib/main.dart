@@ -4,7 +4,6 @@ import 'router/router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'data/inputState.dart'; // Import the updated input state
-import 'state/discoverState.dart'; // Import the discover state
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,7 +14,6 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => InputState()),
-        ChangeNotifierProvider(create: (_) => DiscoverState()),
         // Add more providers here as needed
       ],
       child: const MyApp(),
@@ -31,7 +29,7 @@ class MyApp extends StatelessWidget {
       onGenerateRoute: AppRoutes.generateRoute,
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: Color.fromRGBO(250, 235, 235, 1.0),
+        scaffoldBackgroundColor: Color.fromRGBO(255, 255, 255, 1),
       ),
       debugShowCheckedModeBanner: false,
     );

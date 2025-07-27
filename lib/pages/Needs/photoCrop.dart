@@ -1,205 +1,209 @@
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:image_cropper/image_cropper.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
-import '../../widgets/appBar.dart'; 
-import '../../router/router.dart'; 
-import '../../data/inputState.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
+import '../../widgets/appBar.dart';
+import '../../router/router.dart';
+import '../../data/inputState.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:vector_math/vector_math_64.dart' show Vector3;
+import 'dart:html' as html;
 
 class PhotoCropPage extends StatefulWidget {
   final XFile imageFile;
-
-  const PhotoCropPage({
-    Key? key,
-    required this.imageFile,
-  }) : super(key: key);
-
+  const PhotoCropPage({Key? key, required this.imageFile}) : super(key: key);
   @override
-  _PhotoCropPageState createState() => _PhotoCropPageState();
+  State<PhotoCropPage> createState() => _PhotoCropPageState();
 }
 
 class _PhotoCropPageState extends State<PhotoCropPage> {
-  File? _croppedPhoto;
+  late File _originalFile;
+  Uint8List? _originalBytes;
+  TransformationController _controller = TransformationController();
+  GlobalKey _imageKey = GlobalKey();
+
   bool _isCropping = false;
 
   @override
   void initState() {
     super.initState();
-    _prepareImage();
-  }
-
-  Future<void> _prepareImage() async {
-    setState(() {
-      _isCropping = true;
-    });
-
-    try {
-      // Create a File from XFile
-      final File originalFile = File(widget.imageFile.path);
-      setState(() {
-        _croppedPhoto = originalFile;
-        _isCropping = false;
+    if (kIsWeb) {
+      widget.imageFile.readAsBytes().then((bytes) {
+        setState(() {
+          _originalBytes = bytes;
+        });
       });
-    } catch (e) {
-      print("Error preparing image: $e");
-      setState(() {
-        _isCropping = false;
+    } else {
+      _originalFile = File(widget.imageFile.path);
+      _originalFile.readAsBytes().then((bytes) {
+        setState(() {
+          _originalBytes = bytes;
+        });
       });
     }
   }
 
-  Future<void> _cropImage() async {
-    if (_croppedPhoto == null) return;
-
-    setState(() {
-      _isCropping = true;
-    });
+  Future<void> _autoCropAndSubmit() async {
+    if (_originalBytes == null) return;
+    setState(() => _isCropping = true);
 
     try {
-      final croppedFile = await ImageCropper().cropImage(
-        sourcePath: _croppedPhoto!.path,
-        aspectRatio: CropAspectRatio(
-          ratioX: 600,
-          ratioY: 750,
-        ),
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Crop Photo',
-            toolbarColor: Theme.of(context).primaryColor,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: true,
-          ),
-          IOSUiSettings(
-            title: 'Crop Photo',
-            aspectRatioLockEnabled: true,
-            resetAspectRatioEnabled: false,
-            aspectRatioPickerButtonHidden: true,
-          ),
-          WebUiSettings(
-            context: context,
-            presentStyle: CropperPresentStyle.dialog,
-            boundary: CroppieBoundary(
-              width: 600, 
-              height: 750,
-            ),
-            viewPort: CroppieViewPort(
-              width: 480,
-              height: 600,
-              type: 'rectangle',
-            ),
-            enableExif: true,
-            enableZoom: true,
-            showZoomer: true,
-          ),
-        ],
-      );
+      // 1. Get the rendered image size
+      final renderBox = _imageKey.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox == null) {
+        throw Exception("RenderBox not found");
+      }
+      final renderedSize = renderBox.size;
+      
+      // 2. Decode the original image to get its dimensions
+      final originalImage = img.decodeImage(_originalBytes!);
+      if (originalImage == null) {
+        throw Exception("Could not decode image");
+      }
+      final originalWidth = originalImage.width.toDouble();
+      final originalHeight = originalImage.height.toDouble();
+      
+      // 3. Calculate the scale ratios between original and rendered image
+      // We need to handle potential letterboxing from BoxFit.contain
+      final originalAspect = originalWidth / originalHeight;
+      final renderedAspect = renderedSize.width / renderedSize.height;
+      
+      double scaleX, scaleY, offsetX = 0, offsetY = 0;
+      
+      if (originalAspect > renderedAspect) {
+        // Image is wider than container - letterboxing on top/bottom
+        scaleX = originalWidth / renderedSize.width;
+        scaleY = scaleX; // Maintain aspect ratio
+        offsetY = (renderedSize.height - (originalHeight / scaleX)) / 2;
+      } else {
+        // Image is taller than container - letterboxing on sides
+        scaleY = originalHeight / renderedSize.height;
+        scaleX = scaleY; // Maintain aspect ratio
+        offsetX = (renderedSize.width - (originalWidth / scaleY)) / 2;
+      }
+      
+      // 4. Get the screen overlay coordinates
+      const overlayWidth = 300.0;
+      const overlayHeight = 375.0;
+      final screenWidth = MediaQuery.of(context).size.width;
+      const screenHeight = 500.0;
+      
+      final overlayLeft = (screenWidth - overlayWidth) / 2;
+      final overlayTop = (screenHeight - overlayHeight) / 2;
+      
+      // 5. Apply the current transformation from InteractiveViewer
+      final matrix = _controller.value;
+      final inverseMatrix = Matrix4.inverted(matrix);
+      
+      // 6. Map the overlay corners to the transformed image space
+      final screenCorners = [
+        Vector3(overlayLeft, overlayTop, 0),
+        Vector3(overlayLeft + overlayWidth, overlayTop, 0),
+        Vector3(overlayLeft, overlayTop + overlayHeight, 0),
+        Vector3(overlayLeft + overlayWidth, overlayTop + overlayHeight, 0)
+      ];
+      
+      final imageCorners = screenCorners.map((corner) {
+        final transformed = inverseMatrix.transform3(corner);
+        // Apply scaling and offset to get to original image coordinates
+        return Vector3(
+          (transformed.x - offsetX) * scaleX,
+          (transformed.y - offsetY) * scaleY,
+          0
+        );
+      }).toList();
+      
+      // 7. Find the bounding box in the original image
+      final minX = imageCorners.map((v) => v.x).reduce((a, b) => a < b ? a : b).clamp(0, originalWidth);
+      final minY = imageCorners.map((v) => v.y).reduce((a, b) => a < b ? a : b).clamp(0, originalHeight);
+      final maxX = imageCorners.map((v) => v.x).reduce((a, b) => a > b ? a : b).clamp(0, originalWidth);
+      final maxY = imageCorners.map((v) => v.y).reduce((a, b) => a > b ? a : b).clamp(0, originalHeight);
+      
+      // 8. Crop the image using these bounds
+      final cropX = minX.toInt();
+      final cropY = minY.toInt();
+      final cropW = (maxX - minX).toInt().clamp(1, originalImage.width - cropX);
+      final cropH = (maxY - minY).toInt().clamp(1, originalImage.height - cropY);
+      final croppedImage = img.copyCrop(originalImage,x: cropX,y: cropY,width: cropW,height: cropH);
+      
+      // Save the cropped image - keeping your original implementation
+      final croppedBytes = Uint8List.fromList(img.encodeJpg(croppedImage));
 
-      if (croppedFile != null) {
-        setState(() {
-          _croppedPhoto = File(croppedFile.path);
-        });
+      String? localPath;
+
+      if (!kIsWeb) {
+        final appDir = await getApplicationDocumentsDirectory();
+        localPath = '${appDir.path}/cropped_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final imageFile = File(localPath);
+        await imageFile.writeAsBytes(croppedBytes);
+      } else {
+        final blob = html.Blob([croppedBytes]);
+        localPath = html.Url.createObjectUrlFromBlob(blob);
+      }
+
+      final inputPhoto = InputPhoto(croppedBytes: croppedBytes);
+      final inputState = Provider.of<InputState>(context, listen: false);
+      inputState.photoInputs = [...inputState.photoInputs, inputPhoto];
+
+      if (context.mounted) {
+        print('Image saved to InputState Successfully: $inputPhoto');
+        Navigator.pushNamed(context, AppRoutes.photos);
       }
     } catch (e) {
-      print("Error cropping image: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error cropping image: $e')),
-      );
+      print("Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
     } finally {
-      setState(() {
-        _isCropping = false;
-      });
+      setState(() => _isCropping = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Crop Photo'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.crop),
-            onPressed: _cropImage,
-          ),
-        ],
-      ),
-      body: _isCropping
-          ? Center(child: CircularProgressIndicator())
-          : _croppedPhoto != null
-              ? Center(
-                  child: InteractiveViewer(
-                    constrained: false,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // The actual image
-                          Image.file(
-                            _croppedPhoto!,
-                            fit: BoxFit.contain,
-                          ),
-                          // Overlay with cut-out rectangle
-                          IgnorePointer(
-                            child: Container(
-                              width: double.infinity,
-                              height: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.5),
-                              ),
-                              child: Center(
-                                child: Container(
-                                  width: 300, // Scaled down for screen display
-                                  height: 375, // Maintaining the 600:750 ratio
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.white, width: 2),
-                                    color: Colors.transparent,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+      appBar: AppBar(title: const Text("Crop Photo")),
+      body: _originalBytes == null
+      ? const Center(child: CircularProgressIndicator())
+      : Center(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: 500,
+              child: InteractiveViewer(
+                transformationController: _controller,
+                boundaryMargin: const EdgeInsets.all(100),
+                child: Image.memory(_originalBytes!, key: _imageKey, fit: BoxFit.contain),
+              ),
+            ),
+            IgnorePointer(
+              child: Container(
+                width: double.infinity,
+                height: 500,
+                color: Colors.black.withOpacity(0.4),
+                child: Center(
+                  child: Container(
+                    width: 300,
+                    height: 375,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white, width: 2),
+                      color: Colors.transparent,
                     ),
                   ),
-                )
-              : Center(child: Text('No image selected')),
-
-      bottomNavigationBar: CustomAppBar(
-        onPressed: () async {
-          if (_croppedPhoto != null) {
-            final inputState = Provider.of<InputState>(context, listen: false);
-            final bytes = await _croppedPhoto!.readAsBytes();
-            final base64 = base64Encode(bytes);
-            final filename = _croppedPhoto!.path.split('/').last;
-
-            final inputPhoto = InputPhoto(
-              base64Data: base64,
-              localUrl: _croppedPhoto!.path,
-              firestoreUrl: '',
-              filename: filename,
-            );
-
-            // Overwrite or add to InputState
-            inputState.photoInputs = [...inputState.photoInputs, inputPhoto];
-
-            if (context.mounted) {
-              Navigator.pushNamed(context, AppRoutes.photos);
-            }
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No cropped image to save')),
-            );
-          }
-        },
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-
+      bottomNavigationBar: CustomAppBar(
+        onPressed: _isCropping
+        ? () {}
+        : () => _autoCropAndSubmit(),
+      ),
     );
   }
 }

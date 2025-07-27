@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '/functions/login_service.dart';
 import '../../../styles.dart';
-import '../../../router/router.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -78,7 +78,10 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   ElevatedButton(
                     onPressed: () async {
-                      await login();
+                      setState(() => _isLoading = true);
+                      final accountService = AccountService();
+                      await accountService.login(context, _emailController.text, _passwordController.text);
+                      if (mounted) setState(() => _isLoading = false);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF5D5D),  // Coral pink
@@ -103,11 +106,6 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.menu),
-                    color: Colors.black,
-                    onPressed: () => Scaffold.of(context).openEndDrawer(),
-                  ),
                 ],
               ),
             ),
@@ -117,29 +115,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> login() async {
-    setState(() => _isLoading = true);
-    try {
-      if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-        throw 'Please fill all fields';
-      }
-      
-      final userCredential = await _auth.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      
-      if (userCredential.user != null && mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
 }

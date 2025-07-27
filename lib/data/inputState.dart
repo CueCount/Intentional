@@ -23,24 +23,10 @@ class Input {
 }
 
 class InputPhoto {
-  final String base64Data;
-  final String? localUrl;
-  final String? firestoreUrl;
-  final String filename;
-
-  InputPhoto({
-    required this.base64Data,
-    this.localUrl,
-    this.firestoreUrl,
-    required this.filename,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'base64Data': base64Data,
-    'localUrl': localUrl,
-    'firestoreUrl': firestoreUrl,
-    'filename': filename,
-  };
+  final Uint8List? croppedBytes; // for Web
+  final String? localPath;       // for Native
+  InputPhoto({this.croppedBytes, this.localPath});
+  Map<String, dynamic> toJson() => {}; // not used for now
 }
 
 class InputState extends ChangeNotifier {
@@ -59,7 +45,10 @@ class InputState extends ChangeNotifier {
   }
   
   Map<String, dynamic> getCachedInputs() {
-    return _cachedInputs;
+    return {
+      ..._cachedInputs,
+      'photoInputs': photoInputs
+    };
   }
 
   List<Input> basicInfo = [
@@ -113,21 +102,6 @@ class InputState extends ChangeNotifier {
   List<Input> physicalNeeds = [
     Input(
       title: "How Tall?",
-      possibleValues: [0, 100],
-      type: "rangeSlider",
-    ),
-    Input(
-      title: "Body Type?",
-      possibleValues: [0, 100],
-      type: "rangeSlider",
-    ),
-    Input(
-      title: "Muscles?",
-      possibleValues: [0, 100],
-      type: "rangeSlider",
-    ),
-    Input(
-      title: "Age?",
       possibleValues: [0, 100],
       type: "rangeSlider",
     ),

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../../widgets/appBar.dart';
-import '/router/router.dart';
+import '../../widgets/navigation.dart';
+import '../../widgets/input_checkbox.dart';  
 import '../../functions/airTrafficControler_service.dart';
 import '../../styles.dart';
 import '../../data/inputState.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import '../../widgets/navigation.dart';
+import '/router/router.dart';
 
 class QualifierRelDate extends StatefulWidget {
   const QualifierRelDate({super.key});
@@ -86,162 +87,151 @@ class _QualifierRelDate extends State<QualifierRelDate> {
     final inputState = Provider.of<InputState>(context);
     Map<String, dynamic> inputData = getSelectedAttributes();
     return Scaffold( 
-      body: Container (
-        padding: const EdgeInsets.all(20), // 20px padding on all sides
-        decoration: const BoxDecoration(
-          gradient: ColorPalette.brandGradient,
-        ),
-      child: Column(
+      body: Column(
         children: [
-          
-          const CustomStatusBar(
-            messagesCount: 2,
-            likesCount: 5,
-          ),
-      
+          const CustomStatusBar(messagesCount: 2,likesCount: 5,), 
           Expanded(
+            child: Padding (
+              padding: const EdgeInsets.all(10),
           child: ListView(
             children: <Widget>[
-              for (var input in inputState.qual)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Text(
-                        input.title,
-                        style: AppTextStyles.headingMedium,
-                        textAlign: TextAlign.center,
+              const SizedBox(height: 20),
+              Text(
+                'Let\'s Begin',
+                style: AppTextStyles.headingLarge.copyWith(
+                  color: ColorPalette.peach,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+              for (var input in inputState.qual) ...[
+                if (input.type == "checkbox" && input.possibleValues.isNotEmpty) ...[
+                  SizedBox(
+                    height: (input.possibleValues.length / 2).ceil() * 100.0, // Adjust height based on number of items
+                    child: GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2, // 2 columns like chemistry page
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.75, // Adjust for your design
                       ),
+                      itemCount: input.possibleValues.length,
+                      itemBuilder: (context, index) {
+                        String attribute = input.possibleValues[index];
+                        return CustomCheckbox(
+                          attribute: CheckboxAttribute(
+                            title: attribute,
+                            description: '',
+                            isSelected: groupSelectedValues[input.title]?[attribute] ?? false,
+                          ),
+                          onChanged: (isSelected) {
+                            setState(() {
+                              // Clear all other selections for this input (single selection behavior)
+                              for (var value in input.possibleValues) {
+                                groupSelectedValues[input.title]![value] = false;
+                              }
+                              // Set the selected value
+                              groupSelectedValues[input.title]![attribute] = isSelected;
+                            });
+                          },
+                          isSelected: groupSelectedValues[input.title]?[attribute] ?? false,
+                        );
+                      },
                     ),
-                    if (input.type == "checkbox") ...[
-                      Wrap(
-                        alignment: WrapAlignment.spaceEvenly,
-                        children: input.possibleValues.map((value) =>  
-                          SizedBox(  
-                            width: 160,
-                            height: 160,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                CheckboxListTile(
-                                  title: Text(
-                                    value,  
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  value: groupSelectedValues[input.title]![value],
-                                  onChanged: (bool? checked) {
-                                    setState(() {
-                                      for (var v in input.possibleValues) {
-                                        groupSelectedValues[input.title]![v] = false;
-                                      }
-                                      groupSelectedValues[input.title]![value] = checked ?? false;
-                                    });
-                                  },
+                  ),
+                ] else if (input.type == "geopoint") ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: const InputDecoration(
+                              hintText: 'Around... (Your Location)',
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.all(16),
+                              suffixIcon: Icon(Icons.location_on_outlined),
+                            ),
+                            onChanged: (value) {
+                              Future.delayed(const Duration(milliseconds: 500), () {
+                                if (value == _searchController.text) {
+                                  searchCities(value);
+                                }
+                              });
+                            },
+                          ),
+                        ),
+
+                        if (_isLoading)
+                          const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+
+                        if (_suggestions.isNotEmpty)
+                          Container(
+                            margin: const EdgeInsets.only(top: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _suggestions.length,
+                              itemBuilder: (context, index) {
+                                final city = _suggestions[index];
+                                return ListTile(
+                                  title: Text('${city['name']}, ${city['adminCode1']}'),
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedCity = city;
+                                      _searchController.text = '${city['name']}, ${city['adminCode1']}';
+                                      _suggestions = [];
+                                    });
+                                  },
+                                );
+                              },
+                            ),
                           ),
-                        ).toList(),
+                        ],
                       ),
-                    ],
-                  ],
-                ), 
-                
-                Center(
-                  child: Text(
-                    'In',
-                    style: AppTextStyles.headingMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your city',
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.all(16),
-                      suffixIcon: const Icon(Icons.location_on_outlined),
                     ),
-                    onChanged: (value) {
-                      Future.delayed(const Duration(milliseconds: 500), () {
-                        if (value == _searchController.text) {
-                          searchCities(value);
-                        }
-                      });
-                    },
-                  ),
-
-                ),
-
-                if (_isLoading)
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: CircularProgressIndicator(),
-                ),
-
-                if (_suggestions.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(top: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _suggestions.length,
-                    itemBuilder: (context, index) {
-                      final city = _suggestions[index];
-                      return ListTile(
-                        title: Text('${city['name']}, ${city['adminCode1']}'),
-                        onTap: () {
-                          setState(() {
-                            _selectedCity = city;
-                            _searchController.text = 
-                                '${city['name']}, ${city['adminCode1']}';
-                            _suggestions = [];
-                          });
-                        },
-                      );
-                    },
-                  ),
-                ),
+                  ],
+                  const SizedBox(height: 10),
+                ],
               ],
+            ),
             ),
           ),
         ],
       ),
-    ),
       bottomNavigationBar: CustomAppBar(
         onPressed: () async {
           final inputData = getSelectedAttributes();
           await AirTrafficController().addedNeed(context, inputData);
           if (context.mounted) {
-            Navigator.pushNamed(context, AppRoutes.emotionalNeeds, arguments: inputData);
+            Navigator.pushNamed(context, AppRoutes.age, arguments: inputData);
           }
         },
       ),
