@@ -5,7 +5,7 @@ import 'dart:convert';
 import '../../widgets/appBar.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/input_checkbox.dart';  
-import '../../functions/airTrafficControler_service.dart';
+import '../../functions/onboardingService.dart';
 import '../../styles.dart';
 import '../../data/inputState.dart';
 import '/router/router.dart';
@@ -38,14 +38,28 @@ class _QualifierRelDate extends State<QualifierRelDate> {
   }
 
   Map<String, dynamic> getSelectedAttributes() {
-    final inputState = Provider.of<InputState>(context, listen:false);
-    Map<String, List<String>> selections = {};
+    final inputState = Provider.of<InputState>(context, listen: false);
+    Map<String, dynamic> selections = {}; 
+    
     for (var input in inputState.qual) {
-      selections[input.title] = groupSelectedValues[input.title]!.entries
-          .where((entry) => entry.value)
-          .map((entry) => entry.key)
-          .toList();
+      if (input.type == "checkbox") {
+        selections[input.title] = groupSelectedValues[input.title]!.entries
+            .where((entry) => entry.value)
+            .map((entry) => entry.key)
+            .toList();
+      } else if (input.type == "geopoint") {
+        // Add the location data
+        selections[input.title] = _selectedCity != null 
+            ? {
+                'name': _selectedCity!['name'],
+                'adminCode1': _selectedCity!['adminCode1'],
+                'lat': _selectedCity!['lat'],
+                'lng': _selectedCity!['lng'],
+              }
+            : null;
+      }
     }
+    
     return selections;
   }
 
@@ -229,7 +243,7 @@ class _QualifierRelDate extends State<QualifierRelDate> {
       bottomNavigationBar: CustomAppBar(
         onPressed: () async {
           final inputData = getSelectedAttributes();
-          await AirTrafficController().addedNeed(context, inputData);
+          await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
           if (context.mounted) {
             Navigator.pushNamed(context, AppRoutes.age, arguments: inputData);
           }

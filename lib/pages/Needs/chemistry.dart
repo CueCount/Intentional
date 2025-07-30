@@ -5,7 +5,7 @@ import '../../widgets/appBar.dart';
 import '../../widgets/input_checkbox.dart';
 import '../../data/inputState.dart';
 import '../../styles.dart';
-import '../../functions/airTrafficControler_service.dart';
+import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
 
 class Chemistry extends StatefulWidget {
@@ -102,14 +102,9 @@ class _chemistry extends State<Chemistry> {
       bottomNavigationBar: CustomAppBar(
         onPressed: () async {
           final inputData = getSelectedAttributes();
-          await AirTrafficController().addedNeed(context, inputData);
+          await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
           if (context.mounted) {
-            final inputState = Provider.of<InputState>(context, listen: false);
-            if (inputState.userId.isNotEmpty) {
-              Navigator.pushNamed(context, AppRoutes.match, arguments: inputData);
-            } else {
-              Navigator.pushNamed(context, AppRoutes.physical, arguments: inputData);
-            }
+            Navigator.pushNamed(context, AppRoutes.physical, arguments: inputData);
           }
         },
       ),

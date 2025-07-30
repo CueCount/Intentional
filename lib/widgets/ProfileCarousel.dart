@@ -21,7 +21,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
   @override
   Widget build(BuildContext context) {
     if (widget.isLoading) {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     }
 
     final profiles = widget.userData;

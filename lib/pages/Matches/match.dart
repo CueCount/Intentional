@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import '../../widgets/shortcarousel.dart'; 
 import '../../styles.dart';
 import '../../widgets/navigation.dart';

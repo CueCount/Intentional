@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../router/router.dart';
 import '../../widgets/input_text.dart';
 import '../../styles.dart';
-import '../../functions/airTrafficControler_service.dart';
+import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
 import '../Needs/photos.dart';
 
@@ -156,7 +156,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       TextButton(
                         onPressed: () async {                          
                           try {
-                            await _airTrafficController.registerUser(
+                            await _airTrafficController.registerUserAndTransferSavedData(
                               context,
                               _emailController.text.trim(),
                               _passwordController.text.trim(),

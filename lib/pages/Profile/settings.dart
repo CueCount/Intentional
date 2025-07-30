@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../data/inputState.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/link.dart';
 import '/router/router.dart';
-import '../../functions/login_service.dart';
+import '../../functions/loginService.dart';
 import '../../styles.dart';
 
 class Settings extends StatefulWidget {
@@ -27,7 +29,7 @@ class _SettingsState extends State<Settings> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
-                      'App Settings',
+                      'Settings',
                       style: AppTextStyles.headingLarge.copyWith(
                         color: ColorPalette.peach,
                       ),
@@ -63,8 +65,9 @@ class _SettingsState extends State<Settings> {
                           title: 'View Your Profile',
                           description: 'See how others view your profile',
                           onTap: () {
+                            final inputState = Provider.of<InputState>(context, listen: false);
                             // Navigate to view profile page
-                            Navigator.pushNamed(context, AppRoutes.home);
+                            Navigator.pushNamed(context, AppRoutes.userprofile, arguments: {'userId': inputState.userId});
                           },
                         ),
                         LinkWidget(

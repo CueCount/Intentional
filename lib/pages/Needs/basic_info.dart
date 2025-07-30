@@ -4,7 +4,7 @@ import '/router/router.dart';
 import '../../widgets/input_text.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
-import '../../functions/airTrafficControler_service.dart';
+import '../../functions/onboardingService.dart';
 
 class BasicProfilePage extends StatefulWidget {
  const BasicProfilePage({Key? key}) : super(key: key);
@@ -168,7 +168,7 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
     
     bottomNavigationBar: CustomAppBar(
       onPressed: () async {
-        await AirTrafficController().addedNeed(context, inputData);
+        await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
         if (context.mounted) {
           Navigator.pushNamed(context, AppRoutes.photos, arguments: inputData);
         }

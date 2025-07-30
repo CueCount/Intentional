@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/ProfileCarousel.dart';
 import '../../widgets/navigation.dart';
-import '../../functions/airTrafficControler_service.dart';
+import '../../functions/matchesService.dart';
 
 class Matches extends StatefulWidget {
   final bool shouldUpdate;
-  const Matches({Key? key, this.shouldUpdate = true}) : super(key: key);
+  const Matches({Key? key, this.shouldUpdate = false}) : super(key: key);
   
   @override
   State<Matches> createState() => _Matches();
@@ -23,26 +23,21 @@ class _Matches extends State<Matches> {
     super.didChangeDependencies();
     if (!_initialized) {
       print('🧠 shouldUpdate value from constructor: ${widget.shouldUpdate}');
-      howToFetchUsers(widget.shouldUpdate);
+      howToFetchMatches(widget.shouldUpdate);
       _initialized = true;
     }
   }
 
-  Future<void> howToFetchUsers(bool shouldUpdate) async {    
+  Future<void> howToFetchMatches(bool shouldUpdate) async {    
     setState(() {
       isLoading = true;
     });
 
     final fetchedUsers = shouldUpdate
-    ? await AirTrafficController().discoverFromFirebase(
-        onlyWithPhotos: true,
-        forceFresh: true,
-      ).then((users) {
-        print('🚀 discoverFromFirebase() was called!');
+    ? await MatchesService().fetchMatchesFromFirebase(onlyWithPhotos: true, forceFresh: true,).then((users) {
         return users;
       })
-    : await AirTrafficController().discoverFromCache().then((users) {
-        print('📦 discoverFromCache() was called!');
+    : await MatchesService().fetchMatchesFromSharedPreferences().then((users) {
         return users;
       });
     

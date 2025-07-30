@@ -5,7 +5,7 @@ import '../../widgets/appBar.dart';
 import '../../widgets/input_checkbox.dart';  
 import '../../data/inputState.dart';
 import '../../styles.dart';
-import '../../functions/airTrafficControler_service.dart';
+import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
 
 class Relationship extends StatefulWidget {
@@ -104,7 +104,7 @@ class _relationship extends State<Relationship> {
       bottomNavigationBar: CustomAppBar(
         onPressed: () async {
           final inputData = getSelectedAttributes();
-          await AirTrafficController().addedNeed(context, inputData);
+          await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
           if (context.mounted) {
             Navigator.pushNamed(context, AppRoutes.interests, arguments: inputData);
           }

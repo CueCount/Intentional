@@ -19,7 +19,7 @@ import '../pages/Profile/login.dart';
 import '../pages/Profile/register.dart';
 import '../pages/Profile/settings.dart';
 import '../pages/Profile/editneeds.dart';
-import '../pages/Profile/user.dart';
+import '../pages/Profile/userprofile.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -42,7 +42,7 @@ class AppRoutes {
   static const String interests = '/interests';
   static const String goals = '/lifeGoalNeeds';
   static const String subscription = '/subscription';
-  static const String user = '/user';
+  static const String userprofile = '/userprofile';
   static const String editNeeds = '/editNeeds';
   static const String settings = '/settings';
 
@@ -89,7 +89,7 @@ class AppRoutes {
         return PhotoCropPage(imageFile: arguments['imageFile'],);
       case subscription:
         return const SubscriptionPage();
-      case user:
+      case userprofile:
         return const UserProfile();
       case editNeeds:
         return const EditNeeds();

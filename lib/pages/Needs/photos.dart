@@ -6,7 +6,7 @@ import '/router/router.dart';
 import '../../data/inputState.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
-import '../../functions/airTrafficControler_service.dart';
+import '../../functions/onboardingService.dart';
 
 class PhotoUploadPage extends StatefulWidget {
   const PhotoUploadPage({Key? key}) : super(key: key);
@@ -60,7 +60,7 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
                       inputState.photoInputs = [...photos]; // ✅ Update InputState
                     });
                   },
-                  onAddPhoto: () => AirTrafficController().uploadPhoto(context),
+                  onAddPhoto: () => AirTrafficController().sendPhotoToCrop(context),
                 ),
                 ),
               ),
@@ -72,7 +72,7 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
       bottomNavigationBar: CustomAppBar(
         onPressed: () async {
           final inputData = getSelectedAttributes();
-          await AirTrafficController().saveAllInputs(context);
+          await AirTrafficController().saveAccountDataToFirebase(context);
           if (context.mounted) {
             Navigator.pushNamed(context, AppRoutes.subscription, arguments: inputData);
           }

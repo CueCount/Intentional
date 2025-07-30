@@ -3,7 +3,7 @@ import '../../widgets/appBar.dart';
 import '/router/router.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
-import '../../functions/airTrafficControler_service.dart';
+import '../../functions/onboardingService.dart';
 
 class SubscriptionPage extends StatefulWidget {
   const SubscriptionPage({Key? key}) : super(key: key);
@@ -70,7 +70,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       
       bottomNavigationBar: CustomAppBar(
         onPressed: () async {
-          await AirTrafficController().addedNeed(context, inputData);
+          await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
           if (context.mounted) {
             // Update this route to wherever you want to navigate next
             Navigator.pushNamed(context, AppRoutes.matches, arguments: inputData);

@@ -5,7 +5,7 @@ import '../../widgets/appBar.dart';
 import '../../widgets/input_slider.dart';
 import '../../widgets/CustomRangeSlider.dart';
 import '../../data/inputState.dart';
-import '../../functions/airTrafficControler_service.dart';
+import '../../functions/onboardingService.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 
@@ -100,7 +100,7 @@ class _physical extends State<Physical> {
       bottomNavigationBar: CustomAppBar(
         onPressed: () async {
           final inputData = inputValues;
-          await AirTrafficController().addedNeed(context, inputData);
+          await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
           if (context.mounted) {
             Navigator.pushNamed(context, AppRoutes.relationship, arguments: inputData);
           }

@@ -18,7 +18,13 @@ class Input {
   }
   
   factory Input.fromJson(Map<String, dynamic> json) {
-    return Input(title: json['Title'], possibleValues: List<int>.from(json['PossibleValues']), type: json['Type'],);
+    return Input(
+      title: json['Title'] ?? '', 
+      possibleValues: json['PossibleValues'] != null 
+          ? List<dynamic>.from(json['PossibleValues']) 
+          : [], 
+      type: json['Type'] ?? '',
+    );
   }
 }
 
@@ -47,7 +53,7 @@ class InputState extends ChangeNotifier {
   Map<String, dynamic> getCachedInputs() {
     return {
       ..._cachedInputs,
-      'photoInputs': photoInputs
+      'photoInputs': photoInputs ?? [],
     };
   }
 

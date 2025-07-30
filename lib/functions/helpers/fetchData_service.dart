@@ -1,10 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../data/inputState.dart';
 
 class FetchDataService {
-
   /* = = = = = = = = = =
   Fetch Users From SharedPreferences
   = = = = = = = = = */
@@ -30,8 +31,20 @@ class FetchDataService {
     return cachedUsers;
   }
 
+  /* = = = = = = = = = 
+  Fetch from Provider
+  = = = = = = = = = */
+  static Map<String, dynamic> fetchFromInputState(
+    BuildContext context
+  ) {
+    final inputState = Provider.of<InputState>(context, listen: false);
+    final data = inputState.getCachedInputs();
+    print('📥 Data fetched from InputState:\n$data');
+    return data;
+  }
+
   /* = = = = = = = = = =
-  Fetch Users From Firebase (with better debugging)
+  Fetch Users From Firebase
   = = = = = = = = = */
   Future<List<Map<String, dynamic>>> fetchUsersFromFirebase({
     bool onlyWithPhotos = false,
@@ -126,46 +139,11 @@ class FetchDataService {
     }
   }
 
-  /* = = = = = = = = = =
-  Check Data In SharedPreferences
-  = = = = = = = = = */
-  static Future<bool> checkProfileCompleteness() async {
-    try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        print('❌ No logged-in user found.');
-        return true;
-      }
-
-      final userId = currentUser.uid;
-      final prefs = await SharedPreferences.getInstance();
-      final key = 'user_data_$userId';
-      final userJson = prefs.getString(key);
-
-      if (userJson == null || userJson.isEmpty) {
-        print('⚠️ No cached data found for user $userId');
-        return true;
-      }
-
-      final userData = json.decode(userJson) as Map<String, dynamic>;
-
-      final firstName = userData['firstName'] ?? '';
-      print('firstName: $firstName');
-      final birthDate = userData['birthDate'] ?? 0;
-      print('birthDate: $birthDate');
-      final gender = userData['Gender'] ?? ''; 
-      print('gender: $gender');
-
-      final hasGaps = firstName.isEmpty || birthDate == 0 || gender.isEmpty;
-
-      print('👤 Profile check for $userId → hasGaps: $hasGaps');
-      return hasGaps;
-    } catch (e) {
-      print('❌ Error checking profile completeness: $e');
-      return true;
-    }
-  }
 }
+
+/* = = = = = = = = = 
+Helpers
+= = = = = = = = = */
 
 Map<String, dynamic> cleanUserData(Map<String, dynamic> user) {
   Map<String, dynamic> cleanUser = {};
@@ -175,7 +153,6 @@ Map<String, dynamic> cleanUserData(Map<String, dynamic> user) {
     } else if (value is DateTime) {
       cleanUser[key] = value.millisecondsSinceEpoch;
     } else if (value is GeoPoint) {
-      // Convert GeoPoint to a serializable format
       cleanUser[key] = {
         'latitude': value.latitude,
         'longitude': value.longitude,

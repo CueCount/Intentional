@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import '../../widgets/shortcarousel.dart'; 
+import '../../widgets/shortcarousel.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/profile_info_carousel.dart';
-import '../../widgets/pill.dart'; 
+import '../../widgets/pill.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 
@@ -102,7 +101,7 @@ class _userProfile extends State<UserProfile> {
       );
     }
 
-    final photos = profile!['photos'] as List;
+    final photos = (profile!['photos'] as List?) ?? [];
     
     return Scaffold(
       body: SafeArea(
@@ -119,16 +118,28 @@ class _userProfile extends State<UserProfile> {
                   padding: const EdgeInsets.all(16),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
-                      photos[0],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-                        );
-                      },
-                    ),
+                    child: photos.isNotEmpty 
+                    ? Image.network(
+                        photos[0],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: Colors.grey[300],
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_a_photo, size: 50, color: Colors.grey),
+                            SizedBox(height: 8),
+                            Text('No photo available', style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                      ),
                   ),
                 ),
 

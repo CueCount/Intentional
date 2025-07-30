@@ -5,13 +5,15 @@ import 'package:provider/provider.dart';
 import 'package:flutter/widgets.dart';
 import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../data/inputState.dart';
+import '../../data/inputState.dart';
 import 'photo_service.dart';
 
 class SaveDataService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static String? _tempUserId;
   
   /* = = = = = = = = 
-  saveToInputState 
+  Save to Provider 
   = = = = = = = = = */
   static void saveToInputState({
     required BuildContext context,
@@ -23,30 +25,8 @@ class SaveDataService {
     print('✅ Data saved to InputState:\n$fullData');
   }
   
-  Future<void> cacheFetchedProfilesToSharedPrefs(List<Map<String, dynamic>> cleanedUsers) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    for (var user in cleanedUsers) {
-      final userId = user['id']; // Make sure 'id' exists here.
-      final userJson = jsonEncode(user); // Cleaned and Flutter-friendly already.
-      await prefs.setString('user_data_$userId', userJson);
-    }
-  }
-
   /* = = = = = = = = = 
-  fetchFromInputState 
-  = = = = = = = = = */
-  static Map<String, dynamic> fetchFromInputState(
-    BuildContext context
-  ) {
-    final inputState = Provider.of<InputState>(context, listen: false);
-    final data = inputState.getCachedInputs();
-    print('📥 Data fetched from InputState:\n$data');
-    return data;
-  }
-
-  /* = = = = = = = = = 
-  saveToSharedPref 
+  Save to Shared Preferences 
   = = = = = = = = = */
   static Future<void> saveToSharedPref({
     required Map<String, dynamic> data,
@@ -70,13 +50,18 @@ class SaveDataService {
     await prefs.setString(key, json.encode(mergedData));
     print('✅ Data saved to SharedPreferences under key "$key":\n$mergedData');
   }
+  Future<void> cacheFetchedProfilesToSharedPrefs(List<Map<String, dynamic>> cleanedUsers) async {
+    final prefs = await SharedPreferences.getInstance();
 
+    for (var user in cleanedUsers) {
+      final userId = user['id']; // Make sure 'id' exists here.
+      final userJson = jsonEncode(user); // Cleaned and Flutter-friendly already.
+      await prefs.setString('user_data_$userId', userJson);
+    }
+  }
   /* = = = = = = = = = 
   Save to Firebase 
   = = = = = = = = = */
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  static String? _tempUserId;
-  
   Future<void> handleSubmit(BuildContext context, Map<String, dynamic> inputValues) async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;

@@ -5,7 +5,7 @@ import '../../widgets/appBar.dart';
 import '../../widgets/input_checkbox.dart';  
 import '../../data/inputState.dart';
 import '../../styles.dart';
-import '../../functions/airTrafficControler_service.dart';
+import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
 
 class Goals extends StatefulWidget {
@@ -102,7 +102,7 @@ class _goals extends State<Goals> {
       bottomNavigationBar: CustomAppBar(
         onPressed: () async {
           final inputData = getSelectedAttributes();
-          await AirTrafficController().addedNeed(context, inputData);
+          await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
           if (context.mounted) {
             Navigator.pushNamed(context, AppRoutes.matches, arguments: inputData);
           }

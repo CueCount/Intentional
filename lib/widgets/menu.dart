@@ -78,7 +78,7 @@ class AppMenuOverlay extends StatelessWidget {
                       const Spacer(),
                       _buildMenuItem(
                         context,
-                        'App Settings',
+                        'Settings',
                         () {
                           Navigator.of(context).pop();
                           Navigator.pushNamed(context, AppRoutes.settings);
