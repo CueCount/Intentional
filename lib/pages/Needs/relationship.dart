@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
-import '../../widgets/appBar.dart';
+import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/input_checkbox.dart';  
 import '../../data/inputState.dart';
 import '../../styles.dart';
 import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../functions/userActionsService.dart';
 class Relationship extends StatefulWidget {
   const Relationship({super.key});
   @override
@@ -101,15 +102,29 @@ class _relationship extends State<Relationship> {
           ),
         ),
       ),
-      bottomNavigationBar: CustomAppBar(
+
+      bottomNavigationBar: () {
+      final user = FirebaseAuth.instance.currentUser;
+      bool isLoggedIn = user != null;
+      final inputData = getSelectedAttributes();
+      return CustomAppBar(
+        buttonText: isLoggedIn ? 'Save' : 'Continue',
+        buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
         onPressed: () async {
-          final inputData = getSelectedAttributes();
-          await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
-          if (context.mounted) {
-            Navigator.pushNamed(context, AppRoutes.interests, arguments: inputData);
+          if (isLoggedIn) {
+            await UserActions().saveNeedLocally(context, inputData);
+            if (context.mounted) {
+              Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
+            }
+          } else {
+            await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+            if (context.mounted) {
+              Navigator.pushNamed(context, AppRoutes.interests, arguments: inputData);
+            }
           }
         },
-      ),
+      );
+    }(),
     );
   }
 }

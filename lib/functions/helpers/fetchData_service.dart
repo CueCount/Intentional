@@ -32,7 +32,7 @@ class FetchDataService {
   }
 
   /* = = = = = = = = = 
-  Fetch from Provider
+  Fetch from Provider / Shared Preferences
   = = = = = = = = = */
   static Map<String, dynamic> fetchFromInputState(
     BuildContext context
@@ -43,6 +43,27 @@ class FetchDataService {
     return data;
   }
 
+  static Future<Map<String, dynamic>> getUserDataFromSharedPref(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'user_data_$userId';
+      final userDataString = prefs.getString(key);
+      
+      if (userDataString != null) {
+        final userData = json.decode(userDataString) as Map<String, dynamic>;
+        print('📥 Found user data for: $userId');
+        return userData;
+      } else {
+        print('⚠️ No user data found for: $userId');
+        return {};
+      }
+      
+    } catch (e) {
+      print('❌ getUserDataFromSharedPref: Failed - $e');
+      return {};
+    }
+  }
+  
   /* = = = = = = = = = =
   Fetch Users From Firebase
   = = = = = = = = = */

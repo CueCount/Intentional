@@ -119,6 +119,32 @@ class SaveDataService {
     }
   }
   
+  static Future<void> saveToFirestore({
+    required Map<String, dynamic> data, 
+    required String userId
+  }) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      
+      // Prepare data for Firestore (exclude photos and other non-serializable data)
+      Map<String, dynamic> firestoreData = Map.from(data);
+      firestoreData.remove('photoInputs'); // Photos handled separately
+      firestoreData['last_updated'] = FieldValue.serverTimestamp();
+      firestoreData['userId'] = userId;
+      
+      // Save to Firestore with merge
+      await firestore.collection('users').doc(userId).set(
+        firestoreData,
+        SetOptions(merge: true)
+      );
+      
+      print('✅ saveToFirestore: Success for user $userId');
+      
+    } catch (e) {
+      print('❌ saveToFirestore: Failed - $e');
+      throw e;
+    }
+  }
   // Transfer data from temp document to authenticated user document
   Future<void> _transferTempDataToAuthUser(String tempId, String authUserId, Map<String, dynamic> currentData) async {
     try {

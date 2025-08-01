@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
-import '../../widgets/appBar.dart';
+import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/input_checkbox.dart';
 import '../../data/inputState.dart';
 import '../../styles.dart';
 import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../functions/userActionsService.dart';
 
 class Chemistry extends StatefulWidget {
   const Chemistry({super.key});
@@ -99,15 +101,29 @@ class _chemistry extends State<Chemistry> {
           ),
         ),
       ),
-      bottomNavigationBar: CustomAppBar(
-        onPressed: () async {
-          final inputData = getSelectedAttributes();
-          await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
-          if (context.mounted) {
-            Navigator.pushNamed(context, AppRoutes.physical, arguments: inputData);
-          }
-        },
-      ),
+      
+      bottomNavigationBar: () {
+        final user = FirebaseAuth.instance.currentUser;
+        bool isLoggedIn = user != null;
+        return CustomAppBar(
+          buttonText: isLoggedIn ? 'Save' : 'Continue',
+          buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
+          onPressed: () async {
+            final inputData = getSelectedAttributes();
+            if (isLoggedIn) {
+              await UserActions().saveNeedLocally(context, inputData);
+              if (context.mounted) {
+                Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
+              }
+            } else {
+              await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+              if (context.mounted) {
+                Navigator.pushNamed(context, AppRoutes.physical, arguments: inputData);
+              }
+            }
+          },
+        );
+      }(),
     );
   }
 }

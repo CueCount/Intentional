@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../widgets/appBar.dart';
+import '../../widgets/bottomNavigationBar.dart';
 import '/router/router.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';

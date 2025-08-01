@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../widgets/appBar.dart';
+import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/photogrid.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
@@ -7,6 +7,9 @@ import '../../data/inputState.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import '../../functions/onboardingService.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../functions/userActionsService.dart';
+import '../../functions/loginService.dart';
 
 class PhotoUploadPage extends StatefulWidget {
   const PhotoUploadPage({Key? key}) : super(key: key);
@@ -66,18 +69,40 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
               ),
             ],
           ),
-        
-      ),
+        ),
 
-      bottomNavigationBar: CustomAppBar(
-        onPressed: () async {
-          final inputData = getSelectedAttributes();
-          await AirTrafficController().saveAccountDataToFirebase(context);
-          if (context.mounted) {
-            Navigator.pushNamed(context, AppRoutes.subscription, arguments: inputData);
-          }
-        },
-      ),
-    );
-  }
+        bottomNavigationBar: () {
+          return FutureBuilder<bool>(
+            future: () async {
+              final prefs = await SharedPreferences.getInstance();
+              String tempUserId = prefs.getString('current_temp_id') ?? '';
+              return await AccountService.isInfoIncomplete(tempUserId);
+            }(),
+            builder: (context, snapshot) {
+              bool infoIncomplete = snapshot.data ?? true;
+              
+              return CustomAppBar(
+                buttonText: infoIncomplete ? 'Continue' : 'Save',
+                buttonIcon: infoIncomplete ? Icons.arrow_forward : Icons.save,
+                onPressed: () async {
+                  final inputData = getSelectedAttributes();
+                  
+                  if (infoIncomplete) {
+                    await AirTrafficController().saveAccountDataToFirebase(context);
+                    if (context.mounted) {
+                      Navigator.pushNamed(context, AppRoutes.subscription, arguments: inputData);
+                    }
+                  } else {
+                    await UserActions().savePhotosToFirebase(context);
+                    if (context.mounted) {
+                      Navigator.pushNamed(context, AppRoutes.settings, arguments: inputData);
+                    }
+                  }
+                },
+              );
+            },
+          );
+        }(),
+      );
+    }
 }

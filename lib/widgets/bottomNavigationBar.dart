@@ -3,8 +3,15 @@ import '../styles.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onPressed;
+  final String buttonText;
+  final IconData buttonIcon;
 
-  const CustomAppBar({Key? key, required this.onPressed}) : super(key: key);
+  const CustomAppBar({
+    Key? key, 
+    required this.onPressed,
+    this.buttonText = 'Continue',
+    this.buttonIcon = Icons.arrow_forward,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -30,19 +37,19 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   elevation: MaterialStateProperty.all(0),
                   overlayColor: MaterialStateProperty.all(Colors.transparent),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Continue',
-                      style: TextStyle(
+                      buttonText,
+                      style: const TextStyle(
                         color: ColorPalette.peach,
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward, color: ColorPalette.peach, size: 20),
+                    const SizedBox(width: 8),
+                    Icon(buttonIcon, color: ColorPalette.peach, size: 20),
                   ],
                 ),
               ),

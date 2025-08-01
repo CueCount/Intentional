@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../../widgets/appBar.dart';
+import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/input_checkbox.dart';  
 import '../../functions/onboardingService.dart';
 import '../../styles.dart';
 import '../../data/inputState.dart';
 import '/router/router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../functions/userActionsService.dart';
 
 class QualifierRelDate extends StatefulWidget {
   const QualifierRelDate({super.key});
@@ -22,6 +24,8 @@ class _QualifierRelDate extends State<QualifierRelDate> {
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, dynamic> inputValues = {};
   Map<String, Map<String, bool>> groupSelectedValues = {};
+  bool _isInitialized = false; // Add initialization flag
+  
   @override
   void initState() {
     super.initState();
@@ -33,7 +37,9 @@ class _QualifierRelDate extends State<QualifierRelDate> {
           groupSelectedValues[input.title]![value] = false;
         }
       }
-      setState(() {});
+      setState(() {
+        _isInitialized = true; // Set initialization flag
+      });
     });
   }
 
@@ -43,10 +49,16 @@ class _QualifierRelDate extends State<QualifierRelDate> {
     
     for (var input in inputState.qual) {
       if (input.type == "checkbox") {
-        selections[input.title] = groupSelectedValues[input.title]!.entries
-            .where((entry) => entry.value)
-            .map((entry) => entry.key)
-            .toList();
+        // Add null safety check
+        final groupValues = groupSelectedValues[input.title];
+        if (groupValues != null) {
+          selections[input.title] = groupValues.entries
+              .where((entry) => entry.value)
+              .map((entry) => entry.key)
+              .toList();
+        } else {
+          selections[input.title] = <String>[]; // Return empty list if not initialized
+        }
       } else if (input.type == "geopoint") {
         // Add the location data
         selections[input.title] = _selectedCity != null 
@@ -99,6 +111,16 @@ class _QualifierRelDate extends State<QualifierRelDate> {
   @override
   Widget build(BuildContext context) {
     final inputState = Provider.of<InputState>(context);
+    
+    // Show loading indicator until initialization is complete
+    if (!_isInitialized) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
     Map<String, dynamic> inputData = getSelectedAttributes();
     return Scaffold( 
       body: Column(
@@ -240,15 +262,28 @@ class _QualifierRelDate extends State<QualifierRelDate> {
           ),
         ],
       ),
-      bottomNavigationBar: CustomAppBar(
-        onPressed: () async {
-          final inputData = getSelectedAttributes();
-          await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
-          if (context.mounted) {
-            Navigator.pushNamed(context, AppRoutes.age, arguments: inputData);
-          }
-        },
-      ),
+      
+      bottomNavigationBar: () {
+        final user = FirebaseAuth.instance.currentUser;
+        bool isLoggedIn = user != null;
+        return CustomAppBar(
+          buttonText: isLoggedIn ? 'Save' : 'Continue',
+          buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
+          onPressed: () async {
+            if (isLoggedIn) {
+              await UserActions().saveNeedLocally(context, inputData);
+              if (context.mounted) {
+                Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
+              }
+            } else {
+              await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+              if (context.mounted) {
+                Navigator.pushNamed(context, AppRoutes.age, arguments: inputData);
+              }
+            }
+          },
+        );
+      }(),
     );
   }
 }

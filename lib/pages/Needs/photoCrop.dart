@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../../widgets/appBar.dart';
+import '../../widgets/bottomNavigationBar.dart';
 import '../../router/router.dart';
 import '../../data/inputState.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;

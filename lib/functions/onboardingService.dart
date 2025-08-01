@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../../data/inputState.dart';
 import '../router/router.dart';
+
 enum DataSource { cache, firebase }
 
 class AirTrafficController {
@@ -26,7 +27,11 @@ class AirTrafficController {
         final prefs = await SharedPreferences.getInstance();
         
         // Check for existing temp_id, create one if it doesn't exist
-        String tempUserId = prefs.getString('current_temp_id') ?? await AccountService.createUserId();
+        String tempUserId = prefs.getString('current_temp_id') ?? 
+          await AccountService.createUserId().then((newId) async {
+            await AccountService.setInfoIncomplete(newId, true);
+            return newId;
+          });
         
         // Save the temp_id to SharedPreferences
         await prefs.setString('current_temp_id', tempUserId);
@@ -63,49 +68,34 @@ class AirTrafficController {
     }
   }
 
-  // saveAccountDataInRegisterFlow()
-
   Future<void> saveAccountDataToFirebase(BuildContext context) async {
-    final allInputs = FetchDataService.fetchFromInputState(context);
-    final inputState = Provider.of<InputState>(context, listen: false);
-    SaveDataService.saveToSharedPref(data: allInputs, userId: inputState.userId,); 
-    await SaveDataService().handleSubmit(context, allInputs);
-  }
-  
-
-  /* = = = = = = = = =
-  Messages
-  = = = = = = = = = */
-  Future<bool> sendMessage(
-    String targetUserId,
-    String content
-  ) async {
     try {
-      // Get existing messages or create empty array
-      // Add new message to array
-      // Save message locally first
-      // Artificial delay to simulate network latency
-      // Update message in Firestore using your existing saveUserData
-      // Update local status to sent
-      return true;
+      final inputState = Provider.of<InputState>(context, listen: false);
+      final userId = inputState.userId;
+      
+      // 1. Get user data from SharedPreferences
+      Map<String, dynamic> userData = await FetchDataService.getUserDataFromSharedPref(userId);
+      
+      // 2. Get photo data from Provider
+      Map<String, dynamic> photoData = FetchDataService.fetchFromInputState(context);
+      
+      // 3. Combine all data
+      Map<String, dynamic> allData = {
+        ...userData,
+        ...photoData,
+        'userId': userId,
+        'lastUpdated': DateTime.now().toIso8601String(),
+      };
+      
+      // 4. Save to Firebase
+      await SaveDataService().handleSubmit(context, allData);
+      
+      print('✅ Account data saved to Firebase for user: $userId');
+      
     } catch (e) {
-      print('Error in sendMessage: $e');
-      return false;
+      print('❌ saveAccountDataToFirebase: Failed - $e');
     }
   }
-  Future<List<Map<String, dynamic>>> receiveMessages(String chatId) async {
-    try {
-      // Get user data to know who sent the message
-      // Save to local cache for offline access
-      // Note: In a real app, you'd transform the stream into a list here
-      // This is simplified for the example
-      return [];
-    } catch (e) {
-      print('Error in receiveMessages: $e');
-      return [];
-    }
-  }
-
 
   /* = = = = = = = = =
   Photos

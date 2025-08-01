@@ -50,7 +50,7 @@ class _SettingsState extends State<Settings> {
                           description: 'Account settings and preferences',
                           onTap: () {
                             // Navigate to account page
-                            Navigator.pushNamed(context, AppRoutes.home);
+                            Navigator.pushNamed(context, AppRoutes.basicInfo);
                           },
                         ),
                         LinkWidget(
@@ -76,14 +76,6 @@ class _SettingsState extends State<Settings> {
                           onTap: () {
                             // Navigate to subscription page
                             Navigator.pushNamed(context, AppRoutes.subscription);
-                          },
-                        ),
-                        LinkWidget(
-                          title: 'Pausing Account',
-                          description: 'Temporarily pause your account',
-                          onTap: () {
-                            // Navigate to pause account page
-                            Navigator.pushNamed(context, AppRoutes.home);
                           },
                         ),
                         LinkWidget(

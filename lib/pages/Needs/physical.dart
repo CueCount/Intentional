@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
-import '../../widgets/appBar.dart';
+import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/input_slider.dart';
 import '../../widgets/CustomRangeSlider.dart';
 import '../../data/inputState.dart';
 import '../../functions/onboardingService.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../functions/userActionsService.dart';
 
 class Physical extends StatefulWidget {
   const Physical({super.key});
@@ -97,15 +99,29 @@ class _physical extends State<Physical> {
           ),
         ),
       ),
-      bottomNavigationBar: CustomAppBar(
-        onPressed: () async {
-          final inputData = inputValues;
-          await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
-          if (context.mounted) {
-            Navigator.pushNamed(context, AppRoutes.relationship, arguments: inputData);
-          }
-        },
-      ),
+      
+      bottomNavigationBar: () {
+        final user = FirebaseAuth.instance.currentUser;
+        bool isLoggedIn = user != null;
+        final inputData = inputValues;
+        return CustomAppBar(
+          buttonText: isLoggedIn ? 'Save' : 'Continue',
+          buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
+          onPressed: () async {
+            if (isLoggedIn) {
+              await UserActions().saveNeedLocally(context, inputData);
+              if (context.mounted) {
+                Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
+              }
+            } else {
+              await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+              if (context.mounted) {
+                Navigator.pushNamed(context, AppRoutes.relationship, arguments: inputData);
+              }
+            }
+          },
+        );
+      }(),
     );
   }
 }

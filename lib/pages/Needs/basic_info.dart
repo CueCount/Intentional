@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../widgets/appBar.dart';
+import '../../widgets/bottomNavigationBar.dart';
 import '/router/router.dart';
+import '../../functions/loginService.dart';
 import '../../widgets/input_text.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import '../../functions/onboardingService.dart';
+import '../../functions/userActionsService.dart';
 
 class BasicProfilePage extends StatefulWidget {
  const BasicProfilePage({Key? key}) : super(key: key);
@@ -37,143 +40,164 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
   Map<String, dynamic> inputData = getInputData();
     return Scaffold(
       body: SafeArea(
-          child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const CustomStatusBar(messagesCount: 2,likesCount: 5,),
-              const SizedBox(height: 20),
-          
-              Container(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Text( 
-                      'You',
-                      style: AppTextStyles.headingLarge.copyWith(
-                        color: ColorPalette.peach,
-                      ),
+        child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            const CustomStatusBar(messagesCount: 2,likesCount: 5,),
+            const SizedBox(height: 20),
+        
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Text( 
+                    'You',
+                    style: AppTextStyles.headingLarge.copyWith(
+                      color: ColorPalette.peach,
                     ),
+                  ),
 
-                    const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                    TextField(
-                      controller: _nameController,
-                      style: const TextStyle(color: ColorPalette.peach),
-                      decoration: InputDecoration(
-                        labelText: 'First Name',
-                        labelStyle: const TextStyle(color: ColorPalette.peach),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: const BorderSide(
-                            color: Colors.grey,
-                            width: 1,
-                          ),
+                  TextField(
+                    controller: _nameController,
+                    style: const TextStyle(color: ColorPalette.peach),
+                    decoration: InputDecoration(
+                      labelText: 'First Name',
+                      labelStyle: const TextStyle(color: ColorPalette.peach),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                          width: 1,
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: const BorderSide(
-                            color: Colors.grey,
-                            width: 1,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: const BorderSide(
-                            color: Colors.grey,
-                            width: 1,
-                          ),
-                        ),
-                        suffixIcon: const Icon(Icons.mail, color: Colors.grey),
                       ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    TextField(
-                      controller: _careerController,
-                      style: const TextStyle(color: ColorPalette.peach),
-                      decoration: InputDecoration(
-                        labelText: 'Career',
-                        labelStyle: const TextStyle(color: ColorPalette.peach),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: const BorderSide(
-                            color: Colors.grey,
-                            width: 1,
-                          ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                          width: 1,
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: const BorderSide(
-                            color: Colors.grey,
-                            width: 1,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: const BorderSide(
-                            color: Colors.grey,
-                            width: 1,
-                          ),
-                        ),
-                        suffixIcon: const Icon(Icons.mail, color: Colors.grey),
                       ),
-                    ),
-                    
-                    const SizedBox(height: 10),
-
-                    TextField(
-                      controller: _schoolController,
-                      style: const TextStyle(color: ColorPalette.peach),
-                      decoration: InputDecoration(
-                        labelText: 'School',
-                        labelStyle: const TextStyle(color: ColorPalette.peach),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: const BorderSide(
-                            color: Colors.grey,
-                            width: 1,
-                          ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                          width: 1,
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: const BorderSide(
-                            color: Colors.grey,
-                            width: 1,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: const BorderSide(
-                            color: Colors.grey,
-                            width: 1,
-                          ),
-                        ),
-                        suffixIcon: const Icon(Icons.mail, color: Colors.grey),
                       ),
+                      suffixIcon: const Icon(Icons.mail, color: Colors.grey),
                     ),
-                  ],
-                ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  TextField(
+                    controller: _careerController,
+                    style: const TextStyle(color: ColorPalette.peach),
+                    decoration: InputDecoration(
+                      labelText: 'Career',
+                      labelStyle: const TextStyle(color: ColorPalette.peach),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      suffixIcon: const Icon(Icons.mail, color: Colors.grey),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 10),
+
+                  TextField(
+                    controller: _schoolController,
+                    style: const TextStyle(color: ColorPalette.peach),
+                    decoration: InputDecoration(
+                      labelText: 'School',
+                      labelStyle: const TextStyle(color: ColorPalette.peach),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      suffixIcon: const Icon(Icons.mail, color: Colors.grey),
+                    ),
+                  ),
+                ],
               ),
-           ],
-         ),
-     ),
-    
-    bottomNavigationBar: CustomAppBar(
-      onPressed: () async {
-        await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
-        if (context.mounted) {
-          Navigator.pushNamed(context, AppRoutes.photos, arguments: inputData);
-        }
-      },
-    ),
-  );
- }
+            ),
+          ],
+        ),
+      ),
+
+      bottomNavigationBar: () {
+        return FutureBuilder<bool>(
+          future: () async {
+            final prefs = await SharedPreferences.getInstance();
+            String tempUserId = prefs.getString('current_temp_id') ?? '';
+            return await AccountService.isInfoIncomplete(tempUserId);
+          }(),
+          builder: (context, snapshot) {
+            bool infoIncomplete = snapshot.data ?? true;
+            return CustomAppBar(
+              buttonText: infoIncomplete ? 'Continue' : 'Update',
+              buttonIcon: infoIncomplete ? Icons.arrow_forward : Icons.edit,
+              onPressed: () async {
+                if (infoIncomplete) {
+                  await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+                  if (context.mounted) {
+                    Navigator.pushNamed(context, AppRoutes.photos, arguments: inputData);
+                  }
+                } else {
+                  await UserActions().saveNeedLocally(context, inputData);
+                  if (context.mounted) {
+                    Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
+                  }
+                }
+              },
+            );
+          },
+        );
+      }(),
+    );
+  }
 }
