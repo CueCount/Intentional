@@ -137,13 +137,17 @@ class AppRoutes {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        final user = FirebaseAuth.instance.currentUser;
-        print('Auth state: ${user != null ? 'Logged in as ${user.uid}' : 'Logged out'}');
+        //final user = FirebaseAuth.instance.currentUser;
+        //print('Auth state: ${user != null ? 'Logged in as ${user.uid}' : 'Logged out'}');
+        
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
+
+        final bool isLoggedIn = snapshot.hasData && snapshot.data != null;
+        print('Auth state: ${snapshot.hasData ? 'Logged in as ${snapshot.data!.uid}' : 'Logged out'}');
         
         if (snapshot.hasData) {
           try {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../router/router.dart';
-import '../../widgets/input_text.dart';
+import '../../widgets/inputText.dart';
 import '../../styles.dart';
 import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
@@ -31,7 +31,7 @@ class _RegisterPageState extends State<RegisterPage> {
         child: SingleChildScrollView(
             child: Column(
               children: [
-                const CustomStatusBar(messagesCount: 2,likesCount: 5,),
+                const CustomStatusBar(),
                 Container (
                   padding: const EdgeInsets.all(16),
                   child: Column(

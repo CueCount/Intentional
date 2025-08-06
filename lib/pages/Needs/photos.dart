@@ -9,7 +9,6 @@ import '../../widgets/navigation.dart';
 import '../../functions/onboardingService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../functions/userActionsService.dart';
-import '../../functions/loginService.dart';
 
 class PhotoUploadPage extends StatefulWidget {
   const PhotoUploadPage({Key? key}) : super(key: key);
@@ -37,7 +36,7 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CustomStatusBar(messagesCount: 2,likesCount: 5,),
+              const CustomStatusBar(),
               const SizedBox(height: 20),
               Text('Photos',style: AppTextStyles.headingLarge.copyWith(color: ColorPalette.peach,),),
               const SizedBox(height: 20),
@@ -63,7 +62,7 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
                       inputState.photoInputs = [...photos]; // ✅ Update InputState
                     });
                   },
-                  onAddPhoto: () => AirTrafficController().sendPhotoToCrop(context),
+                  onAddPhoto: () => UserActions().sendPhotoToCrop(context),
                 ),
                 ),
               ),
@@ -76,7 +75,7 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
             future: () async {
               final prefs = await SharedPreferences.getInstance();
               String tempUserId = prefs.getString('current_temp_id') ?? '';
-              return await AccountService.isInfoIncomplete(tempUserId);
+              return await UserActions.isInfoIncomplete(tempUserId);
             }(),
             builder: (context, snapshot) {
               bool infoIncomplete = snapshot.data ?? true;

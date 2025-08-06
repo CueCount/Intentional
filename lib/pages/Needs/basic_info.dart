@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/bottomNavigationBar.dart';
 import '/router/router.dart';
-import '../../functions/loginService.dart';
-import '../../widgets/input_text.dart';
+import '../../widgets/inputText.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
@@ -37,14 +36,14 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
 
  @override
  Widget build(BuildContext context) {
-  Map<String, dynamic> inputData = getInputData();
+  
     return Scaffold(
       body: SafeArea(
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            const CustomStatusBar(messagesCount: 2,likesCount: 5,),
+            const CustomStatusBar(),
             const SizedBox(height: 20),
         
             Container(
@@ -172,9 +171,11 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
       bottomNavigationBar: () {
         return FutureBuilder<bool>(
           future: () async {
-            final prefs = await SharedPreferences.getInstance();
-            String tempUserId = prefs.getString('current_temp_id') ?? '';
-            return await AccountService.isInfoIncomplete(tempUserId);
+            String? userId = await UserActions.getCurrentUserId(); // ← Use same function
+            if (userId != null) {
+              return await UserActions.isInfoIncomplete(userId);
+            }
+            return true;
           }(),
           builder: (context, snapshot) {
             bool infoIncomplete = snapshot.data ?? true;
@@ -182,8 +183,9 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
               buttonText: infoIncomplete ? 'Continue' : 'Update',
               buttonIcon: infoIncomplete ? Icons.arrow_forward : Icons.edit,
               onPressed: () async {
+                Map<String, dynamic> inputData = getInputData();
                 if (infoIncomplete) {
-                  await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+                  await AirTrafficController().saveAccountInputRegistrationFlow(context, inputData);
                   if (context.mounted) {
                     Navigator.pushNamed(context, AppRoutes.photos, arguments: inputData);
                   }

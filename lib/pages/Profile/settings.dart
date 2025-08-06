@@ -22,7 +22,7 @@ class _SettingsState extends State<Settings> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              const CustomStatusBar(messagesCount: 2, likesCount: 5),
+              const CustomStatusBar(),
               Container(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(

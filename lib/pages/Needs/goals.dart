@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/bottomNavigationBar.dart';
-import '../../widgets/input_checkbox.dart';  
+import '../../widgets/inputCheckbox.dart';  
 import '../../data/inputState.dart';
 import '../../styles.dart';
 import '../../functions/onboardingService.dart';
@@ -49,14 +49,14 @@ class _goals extends State<Goals> {
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   @override
   Widget build(BuildContext context) {
-    final inputState = Provider.of<InputState>(context);
+    final inputState = Provider.of<InputState>(context, listen: false);
     Map<String, dynamic> inputData = getSelectedAttributes();
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
-              const CustomStatusBar(messagesCount: 2,likesCount: 5,),
+              const CustomStatusBar(),
               Container(
                 padding: const EdgeInsets.all(16), // Add some padding around the content
                 child: Column(

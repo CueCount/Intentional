@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/navigation.dart';
-import '../../widgets/input_checkbox.dart';  
+import '../../widgets/inputCheckbox.dart';  
 import '../../functions/onboardingService.dart';
 import '../../styles.dart';
 import '../../data/inputState.dart';
@@ -110,7 +110,7 @@ class _QualifierRelDate extends State<QualifierRelDate> {
 
   @override
   Widget build(BuildContext context) {
-    final inputState = Provider.of<InputState>(context);
+    final inputState = Provider.of<InputState>(context, listen: false);
     
     // Show loading indicator until initialization is complete
     if (!_isInitialized) {
@@ -125,7 +125,7 @@ class _QualifierRelDate extends State<QualifierRelDate> {
     return Scaffold( 
       body: Column(
         children: [
-          const CustomStatusBar(messagesCount: 2,likesCount: 5,), 
+          const CustomStatusBar(), 
           Expanded(
             child: Padding (
               padding: const EdgeInsets.all(10),

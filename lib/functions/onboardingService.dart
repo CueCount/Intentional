@@ -1,52 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'helpers/saveData_service.dart';
 import 'helpers/fetchData_service.dart';
-import 'helpers/matches_service.dart';
 import 'helpers/register_service.dart';
-import 'loginService.dart';
-import 'package:image_picker/image_picker.dart';
-import 'helpers/photo_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart';
-import '../../data/inputState.dart';
-import '../router/router.dart';
+import 'dart:math';
 
+import 'userActionsService.dart';
 enum DataSource { cache, firebase }
 
 class AirTrafficController {
-  
+
+  /* = = = = = = = = = 
+  Create Temporary ID 
+  = = = = = = = = = */
+  static Future<String> createUserId() async {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random(); // You'll need to import 'dart:math'
+    
+    // Create a truly random 28-character ID with temp prefix
+    final randomId = List.generate(28, (index) => chars[random.nextInt(chars.length)]).join();
+    
+    return 'temp_$randomId';
+  }
+
   /* = = = = = = = = =
-  Onboarding + Registration Flow
+  Saving Locally / Firebase
   = = = = = = = = = */
   Future<void> saveNeedInOnboardingFlow(BuildContext context, Map<String, dynamic>? needData) async {
     try {
-      final inputState = Provider.of<InputState>(context, listen: false);
-
-      if (inputState.userId.isEmpty) {
-        final prefs = await SharedPreferences.getInstance();
-        
-        // Check for existing temp_id, create one if it doesn't exist
-        String tempUserId = prefs.getString('current_temp_id') ?? 
-          await AccountService.createUserId().then((newId) async {
-            await AccountService.setInfoIncomplete(newId, true);
-            return newId;
-          });
-        
-        // Save the temp_id to SharedPreferences
-        await prefs.setString('current_temp_id', tempUserId);
-        
-        // Set it in the Provider for this session
-        inputState.setUserId(tempUserId);
-        
-        print('Using temp_id for onboarding: $tempUserId');
-      }
-
-      // Save the onboarding data
-      if (needData != null) {
-        await SaveDataService.saveToSharedPref(data: needData, userId: inputState.userId);
-      }
+      final prefs = await SharedPreferences.getInstance();
       
+      String tempUserId = prefs.getString('current_temp_id') ?? 
+        await createUserId().then((newId) async {
+          await UserActions.setInfoIncomplete(newId, true);
+          await UserActions.setNeedsUpdated(newId, true);
+          return newId;
+        });
+      
+      await prefs.setString('current_temp_id', tempUserId);
+            
+      if (needData != null) {
+        await SaveDataService.saveToSharedPref(data: needData, userId: tempUserId);
+      }
     } catch (e) {
       print('Error in saveNeedInOnboardingFlow: $e');
       throw e;
@@ -68,49 +64,42 @@ class AirTrafficController {
     }
   }
 
+  Future<void> saveAccountInputRegistrationFlow(BuildContext context, Map<String, dynamic>? accountData) async {
+    try {
+      final id = await UserActions.getCurrentUserId();
+                  
+      if (id != null && id.isNotEmpty && accountData != null && accountData.isNotEmpty) {
+        await SaveDataService.saveToSharedPref(data: accountData, userId: id);
+      }
+    } catch (e) {
+      print('Error in saveAccountInputRegistrationFlow: $e');
+      throw e;
+    }
+  }
+
   Future<void> saveAccountDataToFirebase(BuildContext context) async {
     try {
-      final inputState = Provider.of<InputState>(context, listen: false);
-      final userId = inputState.userId;
-      
-      // 1. Get user data from SharedPreferences
-      Map<String, dynamic> userData = await FetchDataService.getUserDataFromSharedPref(userId);
-      
-      // 2. Get photo data from Provider
-      Map<String, dynamic> photoData = FetchDataService.fetchFromInputState(context);
-      
-      // 3. Combine all data
-      Map<String, dynamic> allData = {
-        ...userData,
-        ...photoData,
-        'userId': userId,
-        'lastUpdated': DateTime.now().toIso8601String(),
-      };
-      
-      // 4. Save to Firebase
-      await SaveDataService().handleSubmit(context, allData);
-      
-      print('✅ Account data saved to Firebase for user: $userId');
+      final id = await UserActions.getCurrentUserId();
+
+      if (id != null && id.isNotEmpty) {
+        await UserActions.setInfoIncomplete(id, false);
+        await UserActions().resetNeedsUpdated(id);
+        Map<String, dynamic> userData = await FetchDataService.getUserDataFromSharedPref(id);
+        Map<String, dynamic> photoData = FetchDataService.fetchFromInputState(context);
+        Map<String, dynamic> allData = {
+          ...userData,
+          ...photoData,
+          'userId': id,
+          'lastUpdated': DateTime.now().toIso8601String(),
+          'infoIncomplete': false,
+        };
+        await SaveDataService().saveToFirebaseOnRegister(context, allData);
+        print('✅ Account data saved to Firebase for user: $id');
+      }
       
     } catch (e) {
       print('❌ saveAccountDataToFirebase: Failed - $e');
     }
   }
 
-  /* = = = = = = = = =
-  Photos
-  = = = = = = = = = */
-  Future<void> sendPhotoToCrop(BuildContext context) async {
-    try {
-      final XFile? selectedImage = await PhotoService.pickImage(context);
-      if (selectedImage != null) {
-        Navigator.pushNamed(context, AppRoutes.photoCrop, arguments: {'imageFile': selectedImage,},);
-      }
-      if (selectedImage == null) { 
-        return; 
-      }
-    } catch (e) {
-      print('Error in upload photo process: $e');
-    }
-  }
 }

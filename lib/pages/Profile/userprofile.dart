@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/shortcarousel.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
-import '../../widgets/profile_info_carousel.dart';
+import '../../widgets/profileInfoCarousel.dart';
 import '../../widgets/pill.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -109,7 +109,7 @@ class _userProfile extends State<UserProfile> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                const CustomStatusBar(messagesCount: 2,likesCount: 5,),
+                const CustomStatusBar(),
 
                 // First Photo
                 Container(

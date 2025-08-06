@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/bottomNavigationBar.dart';
-import '../../widgets/input_slider.dart';
-import '../../widgets/CustomRangeSlider.dart';
+import '../../widgets/inputSlider.dart';
+import '../../widgets/customRangeSlider.dart';
 import '../../data/inputState.dart';
 import '../../functions/onboardingService.dart';
 import '../../styles.dart';
@@ -39,13 +39,13 @@ class _physical extends State<Physical> {
 
   @override
   Widget build(BuildContext context) { 
-    final inputState = Provider.of<InputState>(context);
+    final inputState = Provider.of<InputState>(context, listen: false);
     return Scaffold( 
       body: SafeArea(
         child: SingleChildScrollView(            
           child: Column(
             children: [
-              const CustomStatusBar(messagesCount: 2,likesCount: 5,),
+              const CustomStatusBar(),
               Container(
                 child: Column(
                   children: <Widget>[

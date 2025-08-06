@@ -3,7 +3,6 @@ import '../../widgets/bottomNavigationBar.dart';
 import '/router/router.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
-import '../../functions/onboardingService.dart';
 
 class SubscriptionPage extends StatefulWidget {
   const SubscriptionPage({Key? key}) : super(key: key);
@@ -28,7 +27,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            const CustomStatusBar(messagesCount: 2, likesCount: 5,),
+            const CustomStatusBar(),
             const SizedBox(height: 20),
             
             Container(
@@ -70,7 +69,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       
       bottomNavigationBar: CustomAppBar(
         onPressed: () async {
-          await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
           if (context.mounted) {
             // Update this route to wherever you want to navigate next
             Navigator.pushNamed(context, AppRoutes.matches, arguments: inputData);

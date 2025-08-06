@@ -11,20 +11,7 @@ import 'photo_service.dart';
 class SaveDataService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static String? _tempUserId;
-  
-  /* = = = = = = = = 
-  Save to Provider 
-  = = = = = = = = = */
-  static void saveToInputState({
-    required BuildContext context,
-    required Map<String, dynamic> data,
-  }) {
-    final inputState = Provider.of<InputState>(context, listen: false);
-    inputState.cacheInputs(data);
-    final fullData = inputState.getCachedInputs();
-    print('✅ Data saved to InputState:\n$fullData');
-  }
-  
+    
   /* = = = = = = = = = 
   Save to Shared Preferences 
   = = = = = = = = = */
@@ -50,6 +37,7 @@ class SaveDataService {
     await prefs.setString(key, json.encode(mergedData));
     print('✅ Data saved to SharedPreferences under key "$key":\n$mergedData');
   }
+  
   Future<void> cacheFetchedProfilesToSharedPrefs(List<Map<String, dynamic>> cleanedUsers) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -59,10 +47,11 @@ class SaveDataService {
       await prefs.setString('user_data_$userId', userJson);
     }
   }
+  
   /* = = = = = = = = = 
   Save to Firebase 
   = = = = = = = = = */
-  Future<void> handleSubmit(BuildContext context, Map<String, dynamic> inputValues) async {
+  Future<void> saveToFirebaseOnRegister(BuildContext context, Map<String, dynamic> inputValues) async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       String documentId;
@@ -128,7 +117,6 @@ class SaveDataService {
       
       // Prepare data for Firestore (exclude photos and other non-serializable data)
       Map<String, dynamic> firestoreData = Map.from(data);
-      firestoreData.remove('photoInputs'); // Photos handled separately
       firestoreData['last_updated'] = FieldValue.serverTimestamp();
       firestoreData['userId'] = userId;
       
@@ -143,6 +131,22 @@ class SaveDataService {
     } catch (e) {
       print('❌ saveToFirestore: Failed - $e');
       throw e;
+    }
+  }
+  
+
+  /* = = = = = = = = = 
+  Clear User Data from SharedPreferences 
+  = = = = = = = = = */
+  static Future<void> clearUserDataFromSharedPref(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'user_data_$userId';
+      
+      await prefs.remove(key);
+      print('✅ Cleared user data for: $userId');
+    } catch (e) {
+      print('❌ clearUserDataFromSharedPref: Failed - $e');
     }
   }
   // Transfer data from temp document to authenticated user document

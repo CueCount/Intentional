@@ -1,12 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../router/router.dart';
 import 'dart:async';
 import 'helpers/fetchData_service.dart';
 import 'helpers/saveData_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'userActionsService.dart';
 
 enum DataSource { cache, firebase }
 
 class MatchesService {
+
+  /* = = = = = = = = =
+  Refresh Matches Manually
+  = = = = = = = = = */
+  Future<void> refreshMatches(BuildContext context) async {
+    try {
+      final id = await UserActions.getCurrentUserId(context: context);
+      if (id != null && id.isNotEmpty) {
+        await UserActions().resetNeedsUpdated(id);
+        print('✅ Set needsUpdated flag for refresh');
+      }
+      
+      Navigator.pushNamed(
+        context, 
+        AppRoutes.matches,
+        arguments: {'shouldUpdate': true}
+      );
+    } catch (e) {
+      print('❌ Error in refreshMatches: $e');
+    }
+  }
 
   /* = = = = = = = = =
   Calculate + Filter Matches
@@ -107,14 +130,21 @@ class MatchesService {
   Future<void> _clearUserCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final keys = prefs.getKeys().where((key) => key.startsWith('user_data_')).toList();
+      
+      // Get current user ID to preserve their data
+      final currentUserId = await UserActions.getCurrentUserId();
+      
+      final keys = prefs.getKeys().where((key) => 
+        key.startsWith('user_data_') && 
+        (currentUserId == null || key != 'user_data_$currentUserId') // Don't clear current user's data
+      ).toList();
+      
       for (var key in keys) {
         await prefs.remove(key);
       }
-      print('🧹 Cleared ${keys.length} cached user profiles');
+      print('🧹 Cleared ${keys.length} cached user profiles (preserved current user)');
     } catch (e) {
       print('❌ Error clearing cache: $e');
     }
   }
-
 }

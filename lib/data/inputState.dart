@@ -26,6 +26,8 @@ class Input {
       type: json['Type'] ?? '',
     );
   }
+
+  
 }
 
 class InputPhoto {
@@ -40,14 +42,10 @@ class InputState extends ChangeNotifier {
   String _userId = '';
   String get userId => _userId;
 
-  void setUserId(String id) {
-    _userId = id;
-    notifyListeners();
-  }
-  
-  void cacheInputs(Map<String, dynamic> data) {
-    _cachedInputs.addAll(data);
-    notifyListeners();
+  void clearAllData() {
+    _cachedInputs.clear();
+    _userId = '';
+    photoInputs.clear();
   }
   
   Map<String, dynamic> getCachedInputs() {

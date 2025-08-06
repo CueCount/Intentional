@@ -64,14 +64,38 @@ class FetchDataService {
     }
   }
   
+  /* = = = = = = = = = 
+  Fetch Session Data from Firebase (Used for Login)
+  = = = = = = = = = */
+  static Future<Map<String, dynamic>> fetchSessionDataFromFirebase(String userId) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final docSnapshot = await firestore.collection('users').doc(userId).get();
+      
+      if (docSnapshot.exists) {
+        final userData = docSnapshot.data() as Map<String, dynamic>;
+        print('✅ Fetched session data from Firebase for user: $userId');
+        return userData;
+      } else {
+        print('⚠️ No session data found in Firebase for user: $userId');
+        return {};
+      }
+      
+    } catch (e) {
+      print('❌ fetchSessionDataFromFirebase: Failed - $e');
+      return {};
+    }
+  }
+
   /* = = = = = = = = = =
-  Fetch Users From Firebase
+  Fetch Matches From Firebase
   = = = = = = = = = */
   Future<List<Map<String, dynamic>>> fetchUsersFromFirebase({
     bool onlyWithPhotos = false,
     List<String>? userIds,
     Map<String, dynamic>? additionalFilters,
   }) async {
+    
     try {
       Query query = FirebaseFirestore.instance.collection('users');
 
@@ -110,7 +134,6 @@ class FetchDataService {
         
         for (var doc in allSnapshot.docs) {
           final data = doc.data() as Map<String, dynamic>;
-          print('👤 User ${doc.id}: photos = ${data['photos']} (type: ${data['photos'].runtimeType})');
         }
       }
 
@@ -126,7 +149,6 @@ class FetchDataService {
         .toList();
 
       if (onlyWithPhotos) {
-        print('🔍 Filtering ${allResults.length} users for photos...');
         
         // Filter users with photos in Dart (more reliable than Firestore query)
         List<Map<String, dynamic>> usersWithPhotos = allResults.where((user) {
@@ -142,8 +164,6 @@ class FetchDataService {
               hasPhotos = true;
             }
           }
-          
-          print('👤 User ${user['id']}: hasPhotos = $hasPhotos, photos = $photos');
           return hasPhotos;
         }).toList();
         

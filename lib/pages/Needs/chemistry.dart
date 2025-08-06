@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/bottomNavigationBar.dart';
-import '../../widgets/input_checkbox.dart';
+import '../../widgets/inputCheckbox.dart';
 import '../../data/inputState.dart';
 import '../../styles.dart';
 import '../../functions/onboardingService.dart';
@@ -57,7 +57,7 @@ class _chemistry extends State<Chemistry> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              const CustomStatusBar(messagesCount: 2,likesCount: 5,),
+              const CustomStatusBar(),
               Container (
                 padding: const EdgeInsets.all(16), // Add some padding around the content
                 child: Column(

@@ -46,7 +46,7 @@ class _Age extends State<Age> {
           mainAxisAlignment: MainAxisAlignment.start,
             children: [
 
-              const CustomStatusBar(messagesCount: 2,likesCount: 5,),
+              const CustomStatusBar(),
 
               Text(
                 'Verify Your Age',

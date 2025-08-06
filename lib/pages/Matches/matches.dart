@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../widgets/ProfileCarousel.dart';
+import '../../widgets/profileCarousel.dart';
 import '../../widgets/navigation.dart';
 import '../../functions/matchesService.dart';
 
@@ -29,38 +29,52 @@ class _Matches extends State<Matches> {
   }
 
   Future<void> howToFetchMatches(bool shouldUpdate) async {    
-    setState(() {
-      isLoading = true;
-    });
-
-    final fetchedUsers = shouldUpdate
-    ? await MatchesService().fetchMatchesFromFirebase(onlyWithPhotos: true, forceFresh: true,).then((users) {
-        return users;
-      })
-    : await MatchesService().fetchMatchesFromSharedPreferences().then((users) {
-        return users;
+    if (mounted) {
+      setState(() {
+        isLoading = true;
       });
-    
-    setState(() {
-      users = fetchedUsers;
-      isLoading = false;
-    });
+    }
+
+    try {
+      final fetchedUsers = shouldUpdate
+        ? await MatchesService().fetchMatchesFromFirebase(onlyWithPhotos: true, forceFresh: true,).then((users) {
+            return users;
+          })
+        : await MatchesService().fetchMatchesFromSharedPreferences().then((users) {
+            return users;
+          });
+      
+      if (mounted) {
+        setState(() {
+          users = fetchedUsers;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Error in howToFetchMatches: $e');
+      
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
-          children: [
-            const CustomStatusBar(messagesCount: 2,likesCount: 5,),
-            Expanded(
-              child: ProfileCarousel(
-                userData: users,
-                isLoading: isLoading,
-              ),
+        children: [
+          const CustomStatusBar(),
+          Expanded(
+            child: ProfileCarousel(
+              userData: users,
+              isLoading: isLoading,
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
   }
 }
