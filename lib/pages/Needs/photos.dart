@@ -38,32 +38,35 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
             children: [
               const CustomStatusBar(),
               const SizedBox(height: 20),
-              Text('Photos',style: AppTextStyles.headingLarge.copyWith(color: ColorPalette.peach,),),
+              Text(
+                'Photos',
+                style: AppTextStyles.headingLarge.copyWith(color: ColorPalette.peach,),
+                ),
               const SizedBox(height: 20),
               Expanded(
                 child: Container (
                   padding: const EdgeInsets.all(16),
-                child: PhotoGrid(
-                  photoInputs: photos,
-                  isLoading: _isLoading,
-                  context: context, 
-                  onReorder: (oldIndex, newIndex) {
-                    setState(() {
-                      if (oldIndex < photos.length && newIndex <= photos.length) {
-                        final item = photos.removeAt(oldIndex);
-                        photos.insert(newIndex > oldIndex ? newIndex - 1 : newIndex, item);
+                  child: PhotoGrid(
+                    photoInputs: photos,
+                    isLoading: _isLoading,
+                    context: context, 
+                    onReorder: (oldIndex, newIndex) {
+                      setState(() {
+                        if (oldIndex < photos.length && newIndex <= photos.length) {
+                          final item = photos.removeAt(oldIndex);
+                          photos.insert(newIndex > oldIndex ? newIndex - 1 : newIndex, item);
+                          inputState.photoInputs = [...photos]; // ✅ Update InputState
+                        }
+                      });
+                    },
+                    onRemovePhoto: (index) {
+                      setState(() {
+                        photos.removeAt(index);
                         inputState.photoInputs = [...photos]; // ✅ Update InputState
-                      }
-                    });
-                  },
-                  onRemovePhoto: (index) {
-                    setState(() {
-                      photos.removeAt(index);
-                      inputState.photoInputs = [...photos]; // ✅ Update InputState
-                    });
-                  },
-                  onAddPhoto: () => UserActions().sendPhotoToCrop(context),
-                ),
+                      });
+                    },
+                    onAddPhoto: () => UserActions().sendPhotoToCrop(context),
+                  ),
                 ),
               ),
             ],
@@ -75,7 +78,8 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
             future: () async {
               final prefs = await SharedPreferences.getInstance();
               String tempUserId = prefs.getString('current_temp_id') ?? '';
-              return await UserActions.isInfoIncomplete(tempUserId);
+              Map<String, bool> status = await UserActions.readStatus(tempUserId, ['infoIncomplete']);
+              return status['infoIncomplete'] ?? true;
             }(),
             builder: (context, snapshot) {
               bool infoIncomplete = snapshot.data ?? true;

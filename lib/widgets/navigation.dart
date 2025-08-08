@@ -16,9 +16,9 @@ class CustomStatusBar extends StatefulWidget {
 }
 
 class _CustomStatusBarState extends State<CustomStatusBar> {
-  bool infoIncomplete = false;
-  bool needsUpdated = false;
   int refinedMatchesCount = 12000;
+  bool infoIncomplete = true;
+  bool needsUpdated = false;
   bool _isLoading = true;
   bool _isDisposed = false; // Add disposal tracking
 
@@ -40,43 +40,31 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
   }
 
   Future<void> _checkNotificationStatus() async {
-    // Early exit if widget is disposed
     if (_isDisposed || !mounted) return;
     
     try {
-      // Use centralized ID management
       String? userId = await UserActions.getCurrentUserId();
       
-      // Check again after async operation
       if (_isDisposed || !mounted) return;
       
       if (userId == null) {
-        print('⚠️ No user ID found in UserIdManager');
-        if (!_isDisposed && mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+        // Handle no user case
         return;
       }
 
-      // Batch all async operations
-      final results = await Future.wait([
-        UserActions.isInfoIncomplete(userId),
-        MatchCountService.getRefinedMatchesCount(),
-        UserActions().isNeedsUpdated(userId),
+      // Read status once here
+      Map<String, bool> status = await UserActions.readStatus(userId, [
+        'infoIncomplete', 
+        'needsUpdated', 
+        'available'
       ]);
       
-      // Final check before setState
       if (!_isDisposed && mounted) {
         setState(() {
-          infoIncomplete = results[0] as bool;
-          refinedMatchesCount = results[1] as int;
-          needsUpdated = results[2] as bool;
+          infoIncomplete = status['infoIncomplete'] ?? true;
+          needsUpdated = status['needsUpdated'] ?? false;
           _isLoading = false;
         });
-        
-        print('✅ Status updated - Info: $infoIncomplete, Matches: $refinedMatchesCount, Needs: $needsUpdated');
       }
       
     } catch (e) {
@@ -115,7 +103,7 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
   }
 
   Widget _buildNotificationText(BuildContext context) {
-    if (infoIncomplete && needsUpdated) {
+    if (infoIncomplete) {
       return Text(
         '$refinedMatchesCount Matches',
         style: AppTextStyles.bodySmall.copyWith(color: ColorPalette.grey,),

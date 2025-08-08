@@ -17,7 +17,9 @@ class MatchesService {
     try {
       final id = await UserActions.getCurrentUserId(context: context);
       if (id != null && id.isNotEmpty) {
-        await UserActions().resetNeedsUpdated(id);
+        await UserActions.setStatus(id, {
+          'needsUpdated': false,
+        });
         print('✅ Set needsUpdated flag for refresh');
       }
       
@@ -88,17 +90,17 @@ class MatchesService {
       List<Map<String, dynamic>> profiles = [];
       switch (source) {
         case DataSource.cache:
-          profiles = await FetchDataService().fetchUserProfilesFromSharedPreferences();
+          profiles = await FetchDataService().fetchMatchesFromSharedPreferences();
           break;
         case DataSource.firebase:
           if (forceFresh) {
             await _clearUserCache();
           }
-          profiles = await FetchDataService().fetchUsersFromFirebase(
+          profiles = await FetchDataService().fetchMatchesFromFirebase(
             onlyWithPhotos: onlyWithPhotos,
             additionalFilters: additionalFilters,
           );
-          final cleanedUsers = profiles.map((user) => cleanUserData(user)).toList();
+          final cleanedUsers = profiles.map((user) => FetchDataService().cleanUserData(user)).toList();
           await SaveDataService().cacheFetchedProfilesToSharedPrefs(cleanedUsers);
           profiles = cleanedUsers;
           break;
@@ -110,7 +112,7 @@ class MatchesService {
       return [];
     }
   }
-  // These use fetchMatches() to fetch from different places
+
   Future<List<Map<String, dynamic>>> fetchMatchesFromSharedPreferences() async {
     return await fetchMatches(source: DataSource.cache);
   }
@@ -126,7 +128,7 @@ class MatchesService {
       additionalFilters: additionalFilters,
     );
   }
-  // This clears users if fetching from firebase
+
   Future<void> _clearUserCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();

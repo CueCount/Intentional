@@ -111,6 +111,12 @@ class _Age extends State<Age> {
               Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
             }
           } else {
+            final id = await UserActions.getCurrentUserId();
+            if (id != null && id.isNotEmpty) {
+              await UserActions.setStatus(id, {
+                'infoIncomplete': true,
+              });
+            }
             await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
             if (context.mounted) {
               Navigator.pushNamed(context, AppRoutes.chemistry, arguments: inputData);

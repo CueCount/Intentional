@@ -63,9 +63,9 @@ class AuthService {
       print('✅ Temp data transfer completed');
       
       // Fetch fresh data from Firebase and populate SharedPreferences
-      final freshData = await FetchDataService.fetchSessionDataFromFirebase(authenticatedUserId);
+      final freshData = await FetchDataService.fetchUserFromFirebase(authenticatedUserId);
       if (freshData.isNotEmpty) {
-        final cleanedData = cleanUserData(freshData);
+        final cleanedData = FetchDataService().cleanUserData(freshData);
         await SaveDataService.saveToSharedPref(data: cleanedData, userId: authenticatedUserId);
         print('✅ Fresh data loaded from Firebase to SharedPreferences');
       }

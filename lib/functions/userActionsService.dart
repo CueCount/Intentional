@@ -14,7 +14,7 @@ import '../router/router.dart';
 class UserActions {
   
   /* = = = = = = = = =
-  ID MGMT
+  ID Management
   = = = = = = = = = */
   
   static Future<String?> getCurrentUserId({BuildContext? context}) async {
@@ -66,35 +66,21 @@ class UserActions {
     }
   }
 
-  static Future<void> setCurrentUserId(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('current_user_id', userId);
-      print('✅ Set current user ID: $userId');
-    } catch (e) {
-      print('❌ Failed to set current user ID: $e');
-    }
-  }
-
   /* = = = = = = = = =
   Save to Local / Firebase 
   = = = = = = = = = */
   
   Future<void> saveNeedLocally(BuildContext context, Map<String, dynamic>? needData) async {
     try {
-      // Use centralized ID function instead of _getAuthenticatedUserId
       final authenticatedUserId = await getCurrentUserId(context: context);
-      
       if (authenticatedUserId == null) {throw Exception("User not authenticated");}
-      
       if (needData != null) {
         await SaveDataService.saveToSharedPref(data: needData, userId: authenticatedUserId);
       }
-
-      await setNeedsUpdated(authenticatedUserId, true);
-      
+      await setStatus(authenticatedUserId, {
+        'needsUpdated': true,
+      });
       print("✅ saveNeedLocally: Success");
-      
     } catch (e) {
       print('❌ saveNeedLocally: Failed - $e');
       throw e;
@@ -108,7 +94,7 @@ class UserActions {
       
       if (authenticatedUserId == null) {throw Exception("User not authenticated");}
       
-      final allUserData = await FetchDataService.getUserDataFromSharedPref(authenticatedUserId);
+      final allUserData = await FetchDataService.fetchUserFromSharedPreferences(authenticatedUserId);
       
       await SaveDataService.saveToFirestore(data: allUserData, userId: authenticatedUserId);
       
@@ -153,119 +139,57 @@ class UserActions {
   }
 
   /* = = = = = = = = =
-  "StateFlags?" Services
+  Status Services
   = = = = = = = = = */
-  static Future<void> setInfoIncomplete(String userId, bool isIncomplete) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Get existing user data
-      Map<String, dynamic> userData = await FetchDataService.getUserDataFromSharedPref(userId);
-      
-      // Add/update the infoIncomplete field
-      userData['infoIncomplete'] = isIncomplete;
-      
-      // Save back to SharedPreferences
-      final key = 'user_data_$userId';
-      await prefs.setString(key, json.encode(userData));
-      
-      print('✅ Set infoIncomplete to $isIncomplete for user: $userId');
-    } catch (e) {
-      print('❌ setInfoIncomplete: Failed - $e');
-    }
-  }
 
-  static Future<void> setNeedsUpdated(String userId, bool needsUpdated) async {
+  static Future<void> setStatus(String userId, Map<String, bool> flags) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       
-      // Get existing user data or create empty map
       Map<String, dynamic> userData = {};
       try {
-        userData = await FetchDataService.getUserDataFromSharedPref(userId);
+        userData = await FetchDataService.fetchUserFromSharedPreferences(userId);
       } catch (e) {
         print('No existing user data, creating new entry');
       }
       
-      // Add/update the needsUpdated field
-      userData['needsUpdated'] = needsUpdated;
+      flags.forEach((fieldName, value) {
+        userData[fieldName] = value;
+      });
       
-      // Save back to SharedPreferences
       final key = 'user_data_$userId';
       await prefs.setString(key, json.encode(userData));
-      
-      print('✅ Set needsUpdated to $needsUpdated for user: $userId');
+      print('✅ Set flags $flags for user: $userId');
     } catch (e) {
-      print('❌ setNeedsUpdated: Failed - $e');
+      print('❌ setUserFlags: Failed - $e');
     }
   }
 
-  static Future<bool> isInfoIncomplete(String userId) async {
-    try {
-      Map<String, dynamic> userData = await FetchDataService.getUserDataFromSharedPref(userId);
-      return userData['infoIncomplete'] ?? true; // ← ADD ?? true BACK
-    } catch (e) {
-      print('❌ isInfoIncomplete: Failed - $e');
-      return true;
+  static Future<Map<String, bool>> readStatus(String userId, List<String> statusNames) async {
+  try {
+    Map<String, dynamic> userData = await FetchDataService.fetchUserFromSharedPreferences(userId);
+    
+    Map<String, bool> currentStatus = {};
+    for (String statusName in statusNames) {
+      if (userData.containsKey(statusName)) {
+        currentStatus[statusName] = userData[statusName];
+      }
     }
+    
+    print('✅ Read status $currentStatus for user: $userId');
+    return currentStatus;
+    
+  } catch (e) {
+    print('❌ readUserStatus: Failed - $e');
+    return {}; 
   }
+}
 
-  Future<bool> isNeedsUpdated(String userId) async {
-    try {
-      Map<String, dynamic> userData = await FetchDataService.getUserDataFromSharedPref(userId);
-      return userData['needsUpdated'] ?? false; // Default to false if not set
-    } catch (e) {
-      print('❌ isNeedsUpdated: Failed - $e');
-      return false;
-    }
-  }
-
-  Future<void> resetNeedsUpdated(String userId) async {
-    try {
-      await setNeedsUpdated(userId, false);
-      print('✅ Reset needsUpdated flag for user: $userId');
-    } catch (e) {
-      print('❌ resetNeedsUpdated: Failed - $e');
-    }
-  }
-
-  /* = = = = = = = = =
-  Messages - Keep exactly as is
-  = = = = = = = = = */
-  Future<bool> sendMessage(
-    String targetUserId,
-    String content
-  ) async {
-    try {
-      // Get existing messages or create empty array
-      // Add new message to array
-      // Save message locally first
-      // Artificial delay to simulate network latency
-      // Update message in Firestore using your existing saveUserData
-      // Update local status to sent
-      return true;
-    } catch (e) {
-      print('Error in sendMessage: $e');
-      return false;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> receiveMessages(String chatId) async {
-    try {
-      // Get user data to know who sent the message
-      // Save to local cache for offline access
-      // Note: In a real app, you'd transform the stream into a list here
-      // This is simplified for the example
-      return [];
-    } catch (e) {
-      print('Error in receiveMessages: $e');
-      return [];
-    }
-  }
-
+  
   /* = = = = = = = = =
   Photos
   = = = = = = = = = */
+
   Future<void> sendPhotoToCrop(BuildContext context) async {
     try {
       final XFile? selectedImage = await PhotoService.pickImage(context);
@@ -279,6 +203,5 @@ class UserActions {
       print('Error in upload photo process: $e');
     }
   }
-
 
 }

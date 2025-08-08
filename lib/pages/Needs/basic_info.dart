@@ -45,7 +45,6 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
           children: [
             const CustomStatusBar(),
             const SizedBox(height: 20),
-        
             Container(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -171,9 +170,10 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
       bottomNavigationBar: () {
         return FutureBuilder<bool>(
           future: () async {
-            String? userId = await UserActions.getCurrentUserId(); // ← Use same function
+            String? userId = await UserActions.getCurrentUserId();
             if (userId != null) {
-              return await UserActions.isInfoIncomplete(userId);
+              Map<String, bool> status = await UserActions.readStatus(userId, ['infoIncomplete']);
+              return status['infoIncomplete'] ?? true;
             }
             return true;
           }(),

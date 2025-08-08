@@ -6,10 +6,13 @@ import 'package:provider/provider.dart';
 import '../../data/inputState.dart';
 
 class FetchDataService {
-  /* = = = = = = = = = =
-  Fetch Users From SharedPreferences
+
+  /* = = = = = = = = =
+  Fetch Matches From 
+  SharedPreferences / Firebase
   = = = = = = = = = */
-  Future<List<Map<String, dynamic>>> fetchUserProfilesFromSharedPreferences() async {
+
+  Future<List<Map<String, dynamic>>> fetchMatchesFromSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     final keys = prefs.getKeys().where((key) => key.startsWith('user_data_')).toList();
 
@@ -31,66 +34,7 @@ class FetchDataService {
     return cachedUsers;
   }
 
-  /* = = = = = = = = = 
-  Fetch from Provider / Shared Preferences
-  = = = = = = = = = */
-  static Map<String, dynamic> fetchFromInputState(
-    BuildContext context
-  ) {
-    final inputState = Provider.of<InputState>(context, listen: false);
-    final data = inputState.getCachedInputs();
-    print('📥 Data fetched from InputState:\n$data');
-    return data;
-  }
-
-  static Future<Map<String, dynamic>> getUserDataFromSharedPref(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final key = 'user_data_$userId';
-      final userDataString = prefs.getString(key);
-      
-      if (userDataString != null) {
-        final userData = json.decode(userDataString) as Map<String, dynamic>;
-        print('📥 Found user data for: $userId');
-        return userData;
-      } else {
-        print('⚠️ No user data found for: $userId');
-        return {};
-      }
-      
-    } catch (e) {
-      print('❌ getUserDataFromSharedPref: Failed - $e');
-      return {};
-    }
-  }
-  
-  /* = = = = = = = = = 
-  Fetch Session Data from Firebase (Used for Login)
-  = = = = = = = = = */
-  static Future<Map<String, dynamic>> fetchSessionDataFromFirebase(String userId) async {
-    try {
-      final firestore = FirebaseFirestore.instance;
-      final docSnapshot = await firestore.collection('users').doc(userId).get();
-      
-      if (docSnapshot.exists) {
-        final userData = docSnapshot.data() as Map<String, dynamic>;
-        print('✅ Fetched session data from Firebase for user: $userId');
-        return userData;
-      } else {
-        print('⚠️ No session data found in Firebase for user: $userId');
-        return {};
-      }
-      
-    } catch (e) {
-      print('❌ fetchSessionDataFromFirebase: Failed - $e');
-      return {};
-    }
-  }
-
-  /* = = = = = = = = = =
-  Fetch Matches From Firebase
-  = = = = = = = = = */
-  Future<List<Map<String, dynamic>>> fetchUsersFromFirebase({
+  Future<List<Map<String, dynamic>>> fetchMatchesFromFirebase({
     bool onlyWithPhotos = false,
     List<String>? userIds,
     Map<String, dynamic>? additionalFilters,
@@ -180,31 +124,86 @@ class FetchDataService {
     }
   }
 
-}
+  /* = = = = = = = = =
+  Fetch User Data from 
+  Provider / Shared Preferences / Firebase
+  = = = = = = = = = */
 
-/* = = = = = = = = = 
-Helpers
-= = = = = = = = = */
+  static Map<String, dynamic> fetchFromInputState(
+    BuildContext context
+  ) {
+    final inputState = Provider.of<InputState>(context, listen: false);
+    final data = inputState.getCachedInputs();
+    print('📥 Data fetched from InputState:\n$data');
+    return data;
+  }
 
-Map<String, dynamic> cleanUserData(Map<String, dynamic> user) {
-  Map<String, dynamic> cleanUser = {};
-  user.forEach((key, value) {
-    if (value is Timestamp) {
-      cleanUser[key] = value.millisecondsSinceEpoch;
-    } else if (value is DateTime) {
-      cleanUser[key] = value.millisecondsSinceEpoch;
-    } else if (value is GeoPoint) {
-      cleanUser[key] = {
-        'latitude': value.latitude,
-        'longitude': value.longitude,
-      };
-    } else if (value is List) {
-      cleanUser[key] = List.from(value);
-    } else if (value is Map) {
-      cleanUser[key] = Map<String, dynamic>.from(value);
-    } else {
-      cleanUser[key] = value;
+  static Future<Map<String, dynamic>> fetchUserFromSharedPreferences(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'user_data_$userId';
+      final userDataString = prefs.getString(key);
+      
+      if (userDataString != null) {
+        final userData = json.decode(userDataString) as Map<String, dynamic>;
+        print('📥 Found user data for: $userId');
+        return userData;
+      } else {
+        print('⚠️ No user data found for: $userId');
+        return {};
+      }
+      
+    } catch (e) {
+      print('❌ getUserDataFromSharedPref: Failed - $e');
+      return {};
     }
-  });
-  return cleanUser;
+  }
+  
+  static Future<Map<String, dynamic>> fetchUserFromFirebase(String userId) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final docSnapshot = await firestore.collection('users').doc(userId).get();
+      
+      if (docSnapshot.exists) {
+        final userData = docSnapshot.data() as Map<String, dynamic>;
+        print('✅ Fetched session data from Firebase for user: $userId');
+        return userData;
+      } else {
+        print('⚠️ No session data found in Firebase for user: $userId');
+        return {};
+      }
+      
+    } catch (e) {
+      print('❌ fetchSessionDataFromFirebase: Failed - $e');
+      return {};
+    }
+  }
+
+  /* = = = = = = = = =
+  Clean User Data
+  = = = = = = = = = */
+
+  Map<String, dynamic> cleanUserData(Map<String, dynamic> user) {
+    Map<String, dynamic> cleanUser = {};
+    user.forEach((key, value) {
+      if (value is Timestamp) {
+        cleanUser[key] = value.millisecondsSinceEpoch;
+      } else if (value is DateTime) {
+        cleanUser[key] = value.millisecondsSinceEpoch;
+      } else if (value is GeoPoint) {
+        cleanUser[key] = {
+          'latitude': value.latitude,
+          'longitude': value.longitude,
+        };
+      } else if (value is List) {
+        cleanUser[key] = List.from(value);
+      } else if (value is Map) {
+        cleanUser[key] = Map<String, dynamic>.from(value);
+      } else {
+        cleanUser[key] = value;
+      }
+    });
+    return cleanUser;
+  }
+
 }

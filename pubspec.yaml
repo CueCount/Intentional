@@ -1,4 +1,4 @@
-name: intentional_demo_01
+name: Intentional
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -130,11 +130,11 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
 
-flutter_icons:
+flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/icon.png"
-  min_sdk_android: 21 # android min sdk min:16, default 21
+  min_sdk_android: 21
   web:
     generate: true
     image_path: "assets/icon.png"
@@ -143,4 +143,4 @@ flutter_icons:
   windows:
     generate: true
     image_path: "assets/icon.png"
-    icon_size: 48 # min:48, max:256, default: 48
+    icon_size: 48

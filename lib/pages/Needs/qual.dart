@@ -266,6 +266,7 @@ class _QualifierRelDate extends State<QualifierRelDate> {
       bottomNavigationBar: () {
         final user = FirebaseAuth.instance.currentUser;
         bool isLoggedIn = user != null;
+
         return CustomAppBar(
           buttonText: isLoggedIn ? 'Save' : 'Continue',
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,

@@ -64,16 +64,18 @@ class _Matches extends State<Matches> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          const CustomStatusBar(),
-          Expanded(
-            child: ProfileCarousel(
-              userData: users,
-              isLoading: isLoading,
+      body: SafeArea(  
+        child: Column(
+          children: [
+            const CustomStatusBar(),
+            Expanded(
+              child: ProfileCarousel(
+                userData: users,
+                isLoading: isLoading,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

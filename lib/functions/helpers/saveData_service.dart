@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter/widgets.dart';
 import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../data/inputState.dart';
 import 'photo_service.dart';
 
 class SaveDataService {
@@ -15,6 +13,7 @@ class SaveDataService {
   /* = = = = = = = = = 
   Save to Shared Preferences 
   = = = = = = = = = */
+
   static Future<void> saveToSharedPref({
     required Map<String, dynamic> data,
     required String userId,
@@ -51,6 +50,7 @@ class SaveDataService {
   /* = = = = = = = = = 
   Save to Firebase 
   = = = = = = = = = */
+  
   Future<void> saveToFirebaseOnRegister(BuildContext context, Map<String, dynamic> inputValues) async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
@@ -108,48 +108,6 @@ class SaveDataService {
     }
   }
   
-  static Future<void> saveToFirestore({
-    required Map<String, dynamic> data, 
-    required String userId
-  }) async {
-    try {
-      final firestore = FirebaseFirestore.instance;
-      
-      // Prepare data for Firestore (exclude photos and other non-serializable data)
-      Map<String, dynamic> firestoreData = Map.from(data);
-      firestoreData['last_updated'] = FieldValue.serverTimestamp();
-      firestoreData['userId'] = userId;
-      
-      // Save to Firestore with merge
-      await firestore.collection('users').doc(userId).set(
-        firestoreData,
-        SetOptions(merge: true)
-      );
-      
-      print('✅ saveToFirestore: Success for user $userId');
-      
-    } catch (e) {
-      print('❌ saveToFirestore: Failed - $e');
-      throw e;
-    }
-  }
-  
-
-  /* = = = = = = = = = 
-  Clear User Data from SharedPreferences 
-  = = = = = = = = = */
-  static Future<void> clearUserDataFromSharedPref(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final key = 'user_data_$userId';
-      
-      await prefs.remove(key);
-      print('✅ Cleared user data for: $userId');
-    } catch (e) {
-      print('❌ clearUserDataFromSharedPref: Failed - $e');
-    }
-  }
-  // Transfer data from temp document to authenticated user document
   Future<void> _transferTempDataToAuthUser(String tempId, String authUserId, Map<String, dynamic> currentData) async {
     try {
       // Get temp document data
@@ -183,4 +141,47 @@ class SaveDataService {
       // Continue anyway - don't let this block the main flow
     }
   }
+
+  static Future<void> saveToFirestore({
+    required Map<String, dynamic> data, 
+    required String userId
+  }) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      
+      // Prepare data for Firestore (exclude photos and other non-serializable data)
+      Map<String, dynamic> firestoreData = Map.from(data);
+      firestoreData['last_updated'] = FieldValue.serverTimestamp();
+      firestoreData['userId'] = userId;
+      
+      // Save to Firestore with merge
+      await firestore.collection('users').doc(userId).set(
+        firestoreData,
+        SetOptions(merge: true)
+      );
+      
+      print('✅ saveToFirestore: Success for user $userId');
+      
+    } catch (e) {
+      print('❌ saveToFirestore: Failed - $e');
+      throw e;
+    }
+  }
+  
+  /* = = = = = = = = = 
+  Clear User Data from SharedPreferences 
+  = = = = = = = = = */
+
+  static Future<void> clearUserDataFromSharedPref(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'user_data_$userId';
+      
+      await prefs.remove(key);
+      print('✅ Cleared user data for: $userId');
+    } catch (e) {
+      print('❌ clearUserDataFromSharedPref: Failed - $e');
+    }
+  }
+
 }

@@ -16,7 +16,7 @@ class AccountService {
       final id = await UserActions.getCurrentUserId();
       print('✅ User ID: \n$id');
       if (id != null && id.isNotEmpty) {
-        final data = await FetchDataService.getUserDataFromSharedPref(id);
+        final data = await FetchDataService.fetchUserFromSharedPreferences(id);
         print('✅ Data fetched from \n$id');
         await SaveDataService.saveToFirestore(data: data, userId: id);
         print('✅ Data saved to \n$id');
@@ -56,7 +56,7 @@ class AccountService {
         print('✅ User ID: \n$id');
 
         if (id != null && id.isNotEmpty) {
-          final data = await FetchDataService.fetchSessionDataFromFirebase(id);
+          final data = await FetchDataService.fetchUserFromFirebase(id);
           print('✅ Data fetched from \n$id in Firebase');
           await SaveDataService.saveToSharedPref(data: data, userId: id);
           print('✅ Data saved from \n$id into Shared Preferences');

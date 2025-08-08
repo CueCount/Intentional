@@ -5,7 +5,6 @@ import 'helpers/saveData_service.dart';
 import 'helpers/fetchData_service.dart';
 import 'helpers/register_service.dart';
 import 'dart:math';
-
 import 'userActionsService.dart';
 enum DataSource { cache, firebase }
 
@@ -13,7 +12,8 @@ class AirTrafficController {
 
   /* = = = = = = = = = 
   Create Temporary ID 
-  = = = = = = = = = */
+  = = = = = = = = = */ 
+
   static Future<String> createUserId() async {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random(); // You'll need to import 'dart:math'
@@ -27,18 +27,16 @@ class AirTrafficController {
   /* = = = = = = = = =
   Saving Locally / Firebase
   = = = = = = = = = */
+
   Future<void> saveNeedInOnboardingFlow(BuildContext context, Map<String, dynamic>? needData) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       
       String tempUserId = prefs.getString('current_temp_id') ?? 
         await createUserId().then((newId) async {
-          await UserActions.setInfoIncomplete(newId, true);
-          await UserActions.setNeedsUpdated(newId, true);
+          await prefs.setString('current_temp_id', newId);
           return newId;
         });
-      
-      await prefs.setString('current_temp_id', tempUserId);
             
       if (needData != null) {
         await SaveDataService.saveToSharedPref(data: needData, userId: tempUserId);
@@ -82,9 +80,12 @@ class AirTrafficController {
       final id = await UserActions.getCurrentUserId();
 
       if (id != null && id.isNotEmpty) {
-        await UserActions.setInfoIncomplete(id, false);
-        await UserActions().resetNeedsUpdated(id);
-        Map<String, dynamic> userData = await FetchDataService.getUserDataFromSharedPref(id);
+        await UserActions.setStatus(id, {
+          'infoIncomplete': false,
+          'needsUpdated': false,
+          'available': true
+        });
+        Map<String, dynamic> userData = await FetchDataService.fetchUserFromSharedPreferences(id);
         Map<String, dynamic> photoData = FetchDataService.fetchFromInputState(context);
         Map<String, dynamic> allData = {
           ...userData,
