@@ -112,7 +112,6 @@ class _QualifierRelDate extends State<QualifierRelDate> {
   Widget build(BuildContext context) {
     final inputState = Provider.of<InputState>(context, listen: false);
     
-    // Show loading indicator until initialization is complete
     if (!_isInitialized) {
       return const Scaffold(
         body: Center(
@@ -285,6 +284,7 @@ class _QualifierRelDate extends State<QualifierRelDate> {
           },
         );
       }(),
+    
     );
   }
 }

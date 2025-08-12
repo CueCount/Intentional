@@ -40,91 +40,83 @@ class _Age extends State<Age> {
  Widget build(BuildContext context) {
   Map<String, dynamic> inputData = getInputData();
     return Scaffold(
-        body: SafeArea(
-          child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-
-              const CustomStatusBar(),
-
-              Text(
-                'Verify Your Age',
-                style: AppTextStyles.headingLarge.copyWith(
-                  color: ColorPalette.peach,
-                ),
-                textAlign: TextAlign.center,
+      body: SafeArea(
+        child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            const CustomStatusBar(),
+            Text(
+              'Verify Your Age',
+              style: AppTextStyles.headingLarge.copyWith(
+                color: ColorPalette.peach,
               ),
-
-              const SizedBox(height: 20),
-              
-              Text( 
-                'Birthday',
-                style: AppTextStyles.headingMedium.copyWith(
-                  color: ColorPalette.white,
-                ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Text( 
+              'Birthday',
+              style: AppTextStyles.headingMedium.copyWith(
+                color: ColorPalette.white,
               ),
-
-              const SizedBox(height: 20),
-
-              InkWell(
-                onTap: () => _selectDate(context),
-                child: Container(
-                  height: 50, 
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white, 
-                    borderRadius: BorderRadius.circular(10), 
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _selectedDate == null
-                          ? 'Birthday'
-                          : '${_selectedDate!.month}/${_selectedDate!.day}/${_selectedDate!.year}',
-                        style: const TextStyle(
-                          fontSize: 16, 
-                          color: Colors.black54, // Match text input placeholder color
-                        ),
+            ),
+            const SizedBox(height: 20),
+            InkWell(
+              onTap: () => _selectDate(context),
+              child: Container(
+                height: 50, 
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white, 
+                  borderRadius: BorderRadius.circular(10), 
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedDate == null
+                        ? 'Birthday'
+                        : '${_selectedDate!.month}/${_selectedDate!.day}/${_selectedDate!.year}',
+                      style: const TextStyle(
+                        fontSize: 16, 
+                        color: Colors.black54, // Match text input placeholder color
                       ),
-                      const Icon(Icons.calendar_today, color: Colors.black54),
-                    ],
-                  ),
+                    ),
+                    const Icon(Icons.calendar_today, color: Colors.black54),
+                  ],
                 ),
               ),
-
-           ],
-         ),
-     ),
-    
-    bottomNavigationBar: () {
-      final user = FirebaseAuth.instance.currentUser;
-      bool isLoggedIn = user != null;
-      return CustomAppBar(
-        buttonText: isLoggedIn ? 'Save' : 'Continue',
-        buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
-        onPressed: () async {
-          if (isLoggedIn) {
-            await UserActions().saveNeedLocally(context, inputData);
-            if (context.mounted) {
-              Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: () {
+        final user = FirebaseAuth.instance.currentUser;
+        bool isLoggedIn = user != null;
+        return CustomAppBar(
+          buttonText: isLoggedIn ? 'Save' : 'Continue',
+          buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
+          onPressed: () async {
+            if (isLoggedIn) {
+              await UserActions().saveNeedLocally(context, inputData);
+              if (context.mounted) {
+                Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
+              }
+            } else {
+              final id = await UserActions.getCurrentUserId();
+              if (id != null && id.isNotEmpty) {
+                await UserActions.setStatus(id, {
+                  'infoIncomplete': true,
+                });
+              }
+              await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+              if (context.mounted) {
+                Navigator.pushNamed(context, AppRoutes.chemistry, arguments: inputData);
+              }
             }
-          } else {
-            final id = await UserActions.getCurrentUserId();
-            if (id != null && id.isNotEmpty) {
-              await UserActions.setStatus(id, {
-                'infoIncomplete': true,
-              });
-            }
-            await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
-            if (context.mounted) {
-              Navigator.pushNamed(context, AppRoutes.chemistry, arguments: inputData);
-            }
-          }
-        },
-      );
-    }(),
-  );
- }
+          },
+        );
+      }(),
+    );
+  }
 }

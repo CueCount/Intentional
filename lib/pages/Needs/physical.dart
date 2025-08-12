@@ -56,10 +56,10 @@ class _physical extends State<Physical> {
                         children: [
                           Center(
                             child: Text(
-                              input.title, 
+                              'Physical',
                               textAlign: TextAlign.center,
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: ColorPalette.dark,
+                              style: AppTextStyles.headingLarge.copyWith(
+                                color: ColorPalette.peach,
                               ),
                             ),
                           ), 

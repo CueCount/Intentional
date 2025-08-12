@@ -45,50 +45,50 @@ class _CustomCheckboxState extends State<CustomCheckbox> {
         padding: AppCheckboxThemes.checkboxPadding,
         decoration: AppCheckboxThemes.checkboxDecoration(widget.attribute.isSelected),
         child: widget.isHorizontal
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.attribute.title,
-                          style: AppCheckboxThemes.checkboxCardTitle(widget.attribute.isSelected),
-                        ),
-                        if (widget.attribute.description.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.attribute.description,
-                            style: AppCheckboxThemes.checkboxDescription(widget.attribute.isSelected),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  AppCheckboxThemes.getCheckboxIcon(widget.attribute.isSelected),
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+        ? Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     widget.attribute.title,
-                    textAlign: TextAlign.center,
                     style: AppCheckboxThemes.checkboxCardTitle(widget.attribute.isSelected),
                   ),
                   if (widget.attribute.description.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
                       widget.attribute.description,
-                      textAlign: TextAlign.center,
                       style: AppCheckboxThemes.checkboxDescription(widget.attribute.isSelected),
                     ),
                   ],
-                  const SizedBox(height: 4),
-                  AppCheckboxThemes.getCheckboxIcon(widget.attribute.isSelected),
                 ],
               ),
+            ),
+            AppCheckboxThemes.getCheckboxIcon(widget.attribute.isSelected),
+          ],
+        )
+        : Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              widget.attribute.title,
+              textAlign: TextAlign.center,
+              style: AppCheckboxThemes.checkboxCardTitle(widget.attribute.isSelected),
+            ),
+            if (widget.attribute.description.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                widget.attribute.description,
+                textAlign: TextAlign.center,
+                style: AppCheckboxThemes.checkboxDescription(widget.attribute.isSelected),
+              ),
+            ],
+            const SizedBox(height: 4),
+            AppCheckboxThemes.getCheckboxIcon(widget.attribute.isSelected),
+          ],
+        ),
       ),
     );
   }

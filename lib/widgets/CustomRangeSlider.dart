@@ -34,44 +34,47 @@ class _CustomRangeSliderState extends State<CustomRangeSlider> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (widget.label.isNotEmpty)
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Center(
-            child: Text(
-              "${_currentRangeValues.start.toStringAsFixed(1)} - ${_currentRangeValues.end.toStringAsFixed(1)}",
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: ColorPalette.dark,
-              ),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text(
+            "${_currentRangeValues.start.toStringAsFixed(1)} - ${_currentRangeValues.end.toStringAsFixed(1)}",
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: ColorPalette.peach,
+              fontSize: 16,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          SliderTheme(
+            data: AppRangeSliderThemes.sliderTheme.copyWith(
+              trackHeight: 8.0,
+              rangeThumbShape: const RoundRangeSliderThumbShape(enabledThumbRadius: 12.0),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 20.0),
+            ),
+            child: RangeSlider(
+              values: _currentRangeValues,
+              min: widget.min,
+              max: widget.max,
+              divisions: widget.divisions,
+              onChanged: (RangeValues newRangeValues) {
+                setState(() {
+                  _currentRangeValues = newRangeValues; 
+                });
+                if (widget.onChanged != null) {
+                  widget.onChanged!(newRangeValues);
+                }
+              },
             ),
           ),
-        ),
-        SliderTheme(
-          data: AppRangeSliderThemes.sliderTheme,
-          child: RangeSlider(
-            values: _currentRangeValues,
-            min: widget.min,
-            max: widget.max,
-            divisions: widget.divisions,
-            labels: RangeLabels(
-              _currentRangeValues.start.toStringAsFixed(1),
-              _currentRangeValues.end.toStringAsFixed(1),
-            ),
-            onChanged: (RangeValues newRangeValues) {
-              setState(() {
-                _currentRangeValues = newRangeValues; 
-              });
-              if (widget.onChanged != null) {
-                widget.onChanged!(newRangeValues);
-              }
-            },
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

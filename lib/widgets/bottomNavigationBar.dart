@@ -21,7 +21,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(16),
             child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -32,24 +32,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               TextButton(
                 onPressed: onPressed,
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(Colors.transparent),
-                  elevation: MaterialStateProperty.all(0),
-                  overlayColor: MaterialStateProperty.all(Colors.transparent),
-                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       buttonText,
-                      style: const TextStyle(
+                      style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.peach,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(buttonIcon, color: ColorPalette.peach, size: 20),
+                    Icon(buttonIcon, color: ColorPalette.peach, size: 24),
                   ],
                 ),
               ),

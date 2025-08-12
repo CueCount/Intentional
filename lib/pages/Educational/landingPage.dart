@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '/router/router.dart';
 import '../../styles.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -15,98 +14,58 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     void noOperation() {}
     return Scaffold(
-      body: Center(
-        child: Column(
-          children: <Widget>[
-            Container(
-              width: 60,  
-              height: 60,
-              margin: const EdgeInsets.only(
-                top: 20,    
-                bottom: 60, 
-              ),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color.fromRGBO(255, 213, 213, 1), 
-                borderRadius: BorderRadius.circular(16), 
-              ),
-              child: Image.asset(
-                'assets/int.png',
-              ),
-              
-            ),
-            Container(
-              margin: const EdgeInsets.only(bottom: 20,),
-              child: Text(
-                'Let Us Sort\n Through the Mess,\n and Find You\n Your Person',
+      body: SafeArea(
+        child: Container(
+          color: ColorPalette.peach,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                'Everything\nChanges When\nIt\'s Just You\nand Them',
                 style: AppTextStyles.headingLarge,
                 textAlign: TextAlign.center,
               ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(bottom: 60,),
-              child: Text(
-                'Start Dating Intentionally.',
-                style: AppTextStyles.bodyMedium,
+              const SizedBox(height: 20),
+              Text(
+                'One match at a time.\n One chat at a time.\n & the space to explore something real. ',
+                style: AppTextStyles.headingSmall,
                 textAlign: TextAlign.center,
               ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 150, 
-                  height: 150,
-                  margin: const EdgeInsets.all(10),
-                  child: MaterialButton(
+              const SizedBox(height: 20),
+              Container(
+                width: 180,
+                height: 180,
+                decoration: const BoxDecoration(
+                  color: Colors.grey,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Column(
+                children: [
+                  TextButton.icon(
                     onPressed: () {Navigator.pushNamed(context, AppRoutes.qual);},
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4),),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Get Started',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Icon(Icons.arrow_forward, size: 18),
-                      ],
+                    icon: Text(
+                      'Get Started',
+                      style: AppTextStyles.headingMedium,
                     ),
+                    label: const Icon(Icons.arrow_forward, color: Colors.white),
                   ),
-                ),
-                Container(
-                  width: 150, 
-                  height: 150, 
-                  margin: const EdgeInsets.all(10),
-                  child: MaterialButton(
+                  const SizedBox(height: 20),
+                  TextButton.icon(
                     onPressed: () {Navigator.pushNamed(context, AppRoutes.login);},
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4),),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Login',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        SizedBox(height: 8), 
-                        Icon(Icons.login, size: 18),
-                      ],
+                    icon: Text(
+                      'Login',
+                      style: AppTextStyles.headingMedium,
                     ),
+                    label: const Icon(Icons.arrow_forward, color: Colors.white),
                   ),
-                ),
-              ],
-            )
-          ],
+                ],
+              )
+            ],
+          ),
+        ),
         ),
       ),
     );

@@ -15,7 +15,7 @@ class AppTextStyles {
     fontSize: 38,
     fontWeight: FontWeight.w700,
     color: Colors.white,
-    height: 1.2,
+    height: 1,
   );
 
   static TextStyle headingMedium = const TextStyle(
@@ -23,7 +23,7 @@ class AppTextStyles {
     fontSize: 28,
     fontWeight: FontWeight.w500,
     color: Colors.white,
-    height: 1.2,
+    height: 1.1,
   );
 
   static TextStyle headingSmall = const TextStyle(
@@ -307,19 +307,21 @@ class AppCheckboxThemes {
 
   static TextStyle checkboxTitle(bool isSelected) {
     return TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w600,
       color: isSelected ? ColorPalette.white : ColorPalette.peach,
+      fontFamily: 'Fraunces',
+      fontSize: 18,
+      fontWeight: FontWeight.w500,
       height: 1.2,
     );
   }
 
   static TextStyle checkboxDescription(bool isSelected) {
     return TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w400,
       color: isSelected ? ColorPalette.white.withOpacity(0.9) : ColorPalette.grey,
-      height: 1.3,
+      fontFamily: 'Fraunces',
+      fontSize: 18,
+      fontWeight: FontWeight.w500,
+      height: 1.2,
     );
   }
 
@@ -331,7 +333,7 @@ class AppCheckboxThemes {
   );
 
   // Icon for unselected state (plus)
-  static Icon checkboxUnselectedIcon = Icon(
+  static Icon checkboxUnselectedIcon = const Icon(
     Icons.add,
     color: ColorPalette.peach,
     size: 24,
@@ -351,10 +353,11 @@ class AppCheckboxThemes {
   // Text style for larger checkbox cards (like in your image)
   static TextStyle checkboxCardTitle(bool isSelected) {
     return TextStyle(
+      fontFamily: 'Fraunces',
       fontSize: 18,
-      fontWeight: FontWeight.w600,
-      color: isSelected ? ColorPalette.white : ColorPalette.peach,
+      fontWeight: FontWeight.w500,
       height: 1.2,
+      color: isSelected ? ColorPalette.white : ColorPalette.peach,
     );
   }
 }

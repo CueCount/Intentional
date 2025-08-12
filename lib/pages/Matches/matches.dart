@@ -14,7 +14,7 @@ class Matches extends StatefulWidget {
 
 class _Matches extends State<Matches> {
   List<Map<String, dynamic>> users = [];
-  bool isLoading = true;        
+  bool isLoading = true;
   final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
   bool _initialized = false;
 
@@ -64,7 +64,7 @@ class _Matches extends State<Matches> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(  
+      body: SafeArea(
         child: Column(
           children: [
             const CustomStatusBar(),

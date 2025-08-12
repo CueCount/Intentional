@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../router/router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../functions/userActionsService.dart';
+import '../../widgets/pill.dart'; 
 import '../styles.dart';
 
 class ProfileCarousel extends StatefulWidget {
@@ -33,7 +35,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
 
     return CarouselSlider(
       options: CarouselOptions(
-        height: 600,
+        height: 700,
         autoPlay: false,
         enlargeCenterPage: true,
       ),
@@ -92,7 +94,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                           bottom: 20,
                           left: 20,
                           child: Text(
-                            "${profile['firstName'] ?? 'Unknown'}, ${profile['birthDate'] ?? 'Unknown'}",
+                            "${profile['firstName'] ?? 'Unknown'}, ${UserActions().calculateAge(profile['birthDate'])}",
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: ColorPalette.white,
                             ),
@@ -121,9 +123,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                       ],
                     ),
                   ),
-                  
-                  const SizedBox(height: 10),
-                  
+                                    
                   Container(
                     padding: const EdgeInsets.all(20),
                     width: double.infinity,
@@ -136,12 +136,11 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                             color: ColorPalette.peach,
                           ),
                         ),
-                        Text(
-                          'complimenting emotional qualities',
-                          style: AppTextStyles.headingSmall.copyWith(
-                            color: ColorPalette.peach,
-                          ),
-                        ),
+                        const SizedBox(height: 8),
+                        PillText(text: 'Emotional Qualities'),
+                        const SizedBox(height: 8),
+                        PillText(text: 'Bar Hopping'),
+                        const SizedBox(height: 8),
                         TextButton(
                           onPressed: () {
                             final user = FirebaseAuth.instance.currentUser;
