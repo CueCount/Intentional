@@ -147,16 +147,20 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                             if (user == null) {
                               Navigator.pushNamed(context, AppRoutes.register);
                             } else {
-                              print("User is logged in, staying on the same page.");
+                              // Navigate to the user's profile using the UID from the profile data
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.match,
+                                arguments: profile,
+                              );
                             }
                           },
                           style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 20)),
-                          child: const Text('Send Chat Request'),
+                          child: const Text('View Profile'),
                         ),
                       ],
                     ),
                   ),
-
                 ],
               ),
             ),

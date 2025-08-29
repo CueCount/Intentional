@@ -69,6 +69,24 @@ class AppMenuOverlay extends StatelessWidget {
                       const Spacer(),
                       _buildMenuItem(
                         context,
+                        'Requests Received',
+                        () {
+                          Navigator.of(context).pop();
+                          Navigator.pushNamed(context, AppRoutes.requestsReceived);
+                        },
+                      ),
+                      const Spacer(),
+                      _buildMenuItem(
+                        context,
+                        'Requests Sent',
+                        () {
+                          Navigator.of(context).pop();
+                          Navigator.pushNamed(context, AppRoutes.requestsSent);
+                        },
+                      ),
+                      const Spacer(),
+                      _buildMenuItem(
+                        context,
                         'Your Needs',
                         () {
                           Navigator.of(context).pop();

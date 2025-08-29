@@ -22,17 +22,20 @@ class SaveDataService {
     final prefs = await SharedPreferences.getInstance();
     final key = customKey ?? 'user_data_$userId';
     String? existingDataJson = prefs.getString(key);
+
     Map<String, dynamic> existingData = {};
     if (existingDataJson != null && existingDataJson.isNotEmpty) {
       Map rawData = json.decode(existingDataJson);
       rawData.forEach((k, v) => existingData[k.toString()] = v);
     }
+
     final mergedData = {
       ...existingData,
       ...data,
       'temp_user_id': userId,
       'last_updated': DateTime.now().toIso8601String(),
     };
+    
     await prefs.setString(key, json.encode(mergedData));
     print('✅ Data saved to SharedPreferences under key "$key":\n$mergedData');
   }
@@ -168,6 +171,36 @@ class SaveDataService {
     }
   }
   
+  /* = = = = = = = = = 
+  Cache Sent Requests to Shared Preferences 
+  = = = = = = = = = */
+
+  Future<void> cacheSentRequestsToSharedPrefs(List<Map<String, dynamic>> requests, String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final requestsJson = requests.map((request) => jsonEncode(request)).toList();
+      await prefs.setStringList('sent_requests_$userId', requestsJson);
+      print('💾 Cached ${requests.length} sent requests to SharedPreferences');
+    } catch (e) {
+      print('❌ Error caching sent requests to SharedPreferences: $e');
+    }
+  }
+
+  /* = = = = = = = = = 
+  Cache Received Requests to Shared Preferences 
+  = = = = = = = = = */
+
+  Future<void> cacheReceivedRequestsToSharedPrefs(List<Map<String, dynamic>> requests, String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final requestsJson = requests.map((request) => jsonEncode(request)).toList();
+      await prefs.setStringList('received_requests_$userId', requestsJson);
+      print('💾 Cached ${requests.length} received requests to SharedPreferences');
+    } catch (e) {
+      print('❌ Error caching received requests to SharedPreferences: $e');
+    }
+  }
+
   /* = = = = = = = = = 
   Clear User Data from SharedPreferences 
   = = = = = = = = = */

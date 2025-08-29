@@ -23,12 +23,12 @@ class _Matches extends State<Matches> {
     super.didChangeDependencies();
     if (!_initialized) {
       print('🧠 shouldUpdate value from constructor: ${widget.shouldUpdate}');
-      howToFetchMatches(widget.shouldUpdate);
+      fetchMatches();
       _initialized = true;
     }
   }
 
-  Future<void> howToFetchMatches(bool shouldUpdate) async {    
+  Future<void> fetchMatches() async {    
     if (mounted) {
       setState(() {
         isLoading = true;
@@ -36,13 +36,11 @@ class _Matches extends State<Matches> {
     }
 
     try {
-      final fetchedUsers = shouldUpdate
-        ? await MatchesService().fetchMatchesFromFirebase(onlyWithPhotos: true, forceFresh: true,).then((users) {
-            return users;
-          })
-        : await MatchesService().fetchMatchesFromSharedPreferences().then((users) {
-            return users;
-          });
+      final fetchedUsers = await MatchesService().fetchMatches(
+        fromFirebase: widget.shouldUpdate,
+        onlyWithPhotos: true,
+        forceFresh: widget.shouldUpdate,
+      );
       
       if (mounted) {
         setState(() {
@@ -51,7 +49,7 @@ class _Matches extends State<Matches> {
         });
       }
     } catch (e) {
-      print('❌ Error in howToFetchMatches: $e');
+      print('❌ Error in fetchMatches: $e');
       
       if (mounted) {
         setState(() {

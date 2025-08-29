@@ -5,14 +5,220 @@ import 'dart:async';
 import 'helpers/fetchData_service.dart';
 import 'helpers/saveData_service.dart';
 import 'userActionsService.dart';
+import 'package:flutter/foundation.dart';
+import 'helpers/matchesHelper.dart';
 
 enum DataSource { cache, firebase }
 
 class MatchesService {
 
   /* = = = = = = = = =
-  Refresh Matches Manually
+  Send Request, Create Match Document
   = = = = = = = = = */
+
+  static Future<Map<String, dynamic>> sendMatchRequest(String requestedUserId) async {
+    try {
+      // Get Session ID
+      String? sessionUserId = await UserActions.getCurrentUserId();
+      if (sessionUserId == null) {
+        return {
+          'success': false,
+          'message': 'Unable to fetch user session ID'
+        };
+      }
+
+      // Check if requested ID is valid
+      if (requestedUserId.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Invalid user ID provided'
+        };
+      }
+
+      // Check if requested ID is available
+      bool requestedUserHasActiveMatch = await MatchesHelper.findOutIfRequestedIsMatched(requestedUserId);
+      if (requestedUserHasActiveMatch) {
+        return {
+          'success': false,
+          'message': 'Requested User is already matched'
+        };
+      }
+
+      // Check if requester ID has 2 or less requested matches
+      bool hasExceededLimit = await MatchesHelper.hasExceededOutgoingLimit(sessionUserId);
+      if (hasExceededLimit) {
+        return {
+          'success': false, 
+          'message': 'You have reached the maximum limit of 3 outgoing match requests'
+        };
+      }
+
+      String matchId = MatchesHelper.createMatchId(sessionUserId, requestedUserId);
+
+      bool matchDocumentCreated = await MatchesHelper.createMatchDocument(matchId, sessionUserId, requestedUserId);
+      if (!matchDocumentCreated) {
+        return {
+          'success': false,
+          'message': 'Failed to create match document'
+        };
+      }
+
+      return {
+        'success': true,
+        'message': 'Match request sent successfully!',
+        'matchId': matchId
+      };
+
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in sendMatchRequest: $e');
+      }
+      return {
+        'success': false,
+        'message': 'An unexpected error occurred while sending match request'
+      };
+    }
+  }
+
+  /* = = = = = = = = =
+  Deny Request
+  = = = = = = = = = */
+  
+
+  /* = = = = = = = = =
+  Ignore Request
+  = = = = = = = = = */
+
+  // Timer function for ignoring 
+
+  /* = = = = = = = = =
+  Accept Request
+  = = = = = = = = = */
+
+  // Send Acceptance Here
+
+  // Listener for New Match Here
+
+  /* = = = = = = = = =
+  UnMatch
+  = = = = = = = = = */
+
+  // Send UnMatch Here
+
+  // Listener for New UnMatch Here
+
+  /* = = = = = = = = =
+  Fetch Sent Requests
+  = = = = = = = = = */
+
+  Future<List<Map<String, dynamic>>> fetchSentRequests({
+    required bool fromFirebase,
+    bool forceFresh = false,
+  }) async {
+    try {
+      List<Map<String, dynamic>> requests = [];
+      
+      // Get current user ID
+      String? currentUserId = await UserActions.getCurrentUserId();
+      if (currentUserId == null) {
+        if (kDebugMode) {
+          print('Error: Unable to get current user ID');
+        }
+        return [];
+      }
+
+      if (fromFirebase) {
+        // Fetch from Firebase
+        if (forceFresh) {
+          await _clearRequestsCache();
+        }
+        requests = await FetchDataService.fetchSentRequestsFromFirebase(currentUserId);
+        await SaveDataService().cacheSentRequestsToSharedPrefs(requests, currentUserId);
+      } else {
+        // Fetch from SharedPreferences (cache)
+        requests = await FetchDataService().fetchSentRequestsFromSharedPreferences(currentUserId);
+      }
+
+      if (kDebugMode) {
+        print('📤 Fetched ${requests.length} sent requests from ${fromFirebase ? 'Firebase' : 'cache'}');
+      }
+      
+      return requests;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching sent requests: $e');
+      }
+      return [];
+    }
+  }
+
+  Future<void> _clearRequestsCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Get current user ID
+      final currentUserId = await UserActions.getCurrentUserId();
+      
+      if (currentUserId != null) {
+        await prefs.remove('sent_requests_$currentUserId');
+        print('🧹 Cleared cached sent requests');
+      }
+    } catch (e) {
+      print('❌ Error clearing requests cache: $e');
+    }
+  }
+
+  /* = = = = = = = = =
+  Fetch Received Requests
+  = = = = = = = = = */
+
+  Future<List<Map<String, dynamic>>> fetchReceivedRequests({
+    required bool fromFirebase,
+    bool forceFresh = false,
+  }) async {
+    try {
+      List<Map<String, dynamic>> requests = [];
+      
+      // Get current user ID
+      String? currentUserId = await UserActions.getCurrentUserId();
+      if (currentUserId == null) {
+        if (kDebugMode) {
+          print('Error: Unable to get current user ID');
+        }
+        return [];
+      }
+
+      if (fromFirebase) {
+        // Fetch from Firebase
+        if (forceFresh) {
+          await _clearRequestsCache();
+        }
+        requests = await FetchDataService.fetchReceivedRequestsFromFirebase(currentUserId);
+        await SaveDataService().cacheReceivedRequestsToSharedPrefs(requests, currentUserId);
+      } else {
+        // Fetch from SharedPreferences (cache)
+        requests = await FetchDataService().fetchReceivedRequestsFromSharedPreferences(currentUserId);
+      }
+
+      if (kDebugMode) {
+        print('📤 Fetched ${requests.length} sent requests from ${fromFirebase ? 'Firebase' : 'cache'}');
+      }
+      
+      return requests;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching sent requests: $e');
+      }
+      return [];
+    }
+  }
+
+  // Listener for new Incoming Here
+
+  /* = = = = = = = = =
+  Refresh Matches
+  = = = = = = = = = */
+
   Future<void> refreshMatches(BuildContext context) async {
     try {
       final id = await UserActions.getCurrentUserId(context: context);
@@ -34,99 +240,41 @@ class MatchesService {
   }
 
   /* = = = = = = = = =
-  Calculate + Filter Matches
-  = = = = = = = = = */
-  Future<List<Map<String, dynamic>>> calculateMatches({bool useCache = true}) async {
-    try {
-      return [];
-    } catch (e) {
-      print('Error in calculateMatches: $e');
-      return [];
-    }
-  }
-  Future<bool> unmatchUsers(
-    BuildContext context,
-    String targetUserId
-  ) async {
-    try {
-      // Save local status
-      // Get local data
-      // Unmatch in Firestore
-      // Recalculate matches
-      // Update route - go back to matches screen
-      /*_routeService.navigateReplace(context, '/matches');*/
-      return true;
-    } catch (e) {
-      print('Error in unmatchUsers: $e');
-      return false;
-    }
-  }
-  Future<List<Map<String, dynamic>>> getUnmatchedFromUser(
-    BuildContext context
-  ) async {
-    try {
-      // Get user data
-      // Save locally
-      // Calculate matches (force refresh)
-      // Update route status
-      /*_routeService.updateRouteStatus('/discover');*/
-      return [];
-    } catch (e) {
-      print('Error in getUnmatchedFromUser: $e');
-      return [];
-    }
-  }
-
-  /* = = = = = = = = =
   Fetch Matches
   = = = = = = = = = */
+
   Future<List<Map<String, dynamic>>> fetchMatches({
-    DataSource source = DataSource.cache,
+    required bool fromFirebase,
     bool onlyWithPhotos = false,
     bool forceFresh = false,
     Map<String, dynamic>? additionalFilters,
   }) async {
     try {
       List<Map<String, dynamic>> profiles = [];
-      switch (source) {
-        case DataSource.cache:
-          profiles = await FetchDataService().fetchMatchesFromSharedPreferences();
-          break;
-        case DataSource.firebase:
-          if (forceFresh) {
-            await _clearUserCache();
-          }
-          profiles = await FetchDataService().fetchMatchesFromFirebase(
-            onlyWithPhotos: onlyWithPhotos,
-            additionalFilters: additionalFilters,
-          );
-          final cleanedUsers = profiles.map((user) => FetchDataService().cleanUserData(user)).toList();
-          await SaveDataService().cacheFetchedProfilesToSharedPrefs(cleanedUsers);
-          profiles = cleanedUsers;
-          break;
+      
+      if (fromFirebase) {
+        // Fetch from Firebase
+        if (forceFresh) {
+          await _clearUserCache();
+        }
+        profiles = await FetchDataService().fetchMatchesFromFirebase(
+          onlyWithPhotos: onlyWithPhotos,
+          additionalFilters: additionalFilters,
+        );
+        final cleanedUsers = profiles.map((user) => FetchDataService().cleanUserData(user)).toList();
+        await SaveDataService().cacheFetchedProfilesToSharedPrefs(cleanedUsers);
+        profiles = cleanedUsers;
+      } else {
+        // Fetch from SharedPreferences (cache)
+        profiles = await FetchDataService().fetchMatchesFromSharedPreferences();
       }
-      print('📱 Discovered ${profiles.length} profiles from ${source.name}');
+      
+      print('📱 Discovered ${profiles.length} profiles from ${fromFirebase ? 'Firebase' : 'cache'}');
       return profiles;
     } catch (e) {
       print('❌ Error discovering profiles: $e');
       return [];
     }
-  }
-
-  Future<List<Map<String, dynamic>>> fetchMatchesFromSharedPreferences() async {
-    return await fetchMatches(source: DataSource.cache);
-  }
-  Future<List<Map<String, dynamic>>> fetchMatchesFromFirebase({
-    bool onlyWithPhotos = true,
-    bool forceFresh = false,
-    Map<String, dynamic>? additionalFilters,
-  }) async {
-    return await fetchMatches(
-      source: DataSource.firebase,
-      onlyWithPhotos: onlyWithPhotos,
-      forceFresh: forceFresh,
-      additionalFilters: additionalFilters,
-    );
   }
 
   Future<void> _clearUserCache() async {
@@ -149,4 +297,5 @@ class MatchesService {
       print('❌ Error clearing cache: $e');
     }
   }
+
 }

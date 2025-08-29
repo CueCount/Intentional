@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/shortcarousel.dart'; 
+import '../../functions/matchesService.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/profileInfoCarousel.dart';
 import '../../widgets/pill.dart'; 
-import 'package:firebase_auth/firebase_auth.dart';
-
+import '../../router/router.dart';
 
 class Match extends StatefulWidget {
   const Match({super.key});
@@ -250,6 +251,41 @@ class _Match extends State<Match> {
                           color: ColorPalette.peach,
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      // CTA Here
+                      TextButton(
+                        onPressed: () async {
+                          final targetUserId = profile?['userId'];
+                          if (targetUserId != null) {
+                            try {
+                              await MatchesService.sendMatchRequest(targetUserId);
+                              if (context.mounted) {
+                                Navigator.pushNamed(context, AppRoutes.guideRequestSent);
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error: $e')),
+                                );
+                              }
+                            }
+                          }
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Send Match Request',
+                              style: AppTextStyles.headingMedium.copyWith(
+                                color: ColorPalette.peach,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.favorite_outline, color: ColorPalette.peach, size: 24),
+                          ],
+                        ),
+                      ),
+
                     ],
                   ),
                 ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/Chat/chat.dart';
-import '../pages/Educational/landingPage.dart';
+import '../pages/Guides/landingPage.dart';
 import '../pages/Matches/matches.dart';
 import '../pages/Matches/match.dart';
 import '../pages/Needs/qual.dart';
@@ -20,6 +20,9 @@ import '../pages/Profile/register.dart';
 import '../pages/Profile/settings.dart';
 import '../pages/Profile/editneeds.dart';
 import '../pages/Profile/userprofile.dart';
+import '../pages/Profile/requestsReceived.dart';
+import '../pages/Profile/requestsSent.dart';
+import '../pages/Guides/guideRequestSent.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -45,7 +48,9 @@ class AppRoutes {
   static const String userprofile = '/userprofile';
   static const String editNeeds = '/editNeeds';
   static const String settings = '/settings';
-
+  static const String guideRequestSent= '/guideRequestSent';
+  static const String requestsSent= '/requestsSent';
+  static const String requestsReceived= '/requestsReceived';
   
   static Route<dynamic> generateRoute(RouteSettings settings) {
     final arguments = settings.arguments;
@@ -83,6 +88,10 @@ class AppRoutes {
         return const Matches();
       case match:
         return const Match();
+      case requestsReceived:
+        return const RequestReceived();
+      case requestsSent:
+        return const RequestSent();
       case photos:
         return const PhotoUploadPage();
       case photoCrop:
@@ -95,6 +104,8 @@ class AppRoutes {
         return const EditNeeds();
       case settings:
         return const Settings();
+      case guideRequestSent:
+        return const GuideRequestSent();
       default:
         return const Matches();
     }
@@ -126,6 +137,8 @@ class AppRoutes {
         return const RegisterPage();
       case subscription:
         return SubscriptionPage();
+      case guideRequestSent:
+        return const GuideRequestSent();
       case home:
         return const MyHomePage(title: 'Landing Page',);
       default:
