@@ -4,7 +4,7 @@ import '../router/router.dart';
 import 'dart:async';
 import 'helpers/fetchData_service.dart';
 import 'helpers/saveData_service.dart';
-import 'userActionsService.dart';
+import 'uiService.dart';
 import 'package:flutter/foundation.dart';
 import 'helpers/matchesHelper.dart';
 
@@ -13,7 +13,7 @@ enum DataSource { cache, firebase }
 class MatchesService {
 
   /* = = = = = = = = =
-  Send Request, Create Match Document
+  Send Match Request
   = = = = = = = = = */
 
   static Future<Map<String, dynamic>> sendMatchRequest(String requestedUserId) async {
@@ -55,11 +55,19 @@ class MatchesService {
 
       String matchId = MatchesHelper.createMatchId(sessionUserId, requestedUserId);
 
-      bool matchDocumentCreated = await MatchesHelper.createMatchDocument(matchId, sessionUserId, requestedUserId);
+      bool matchDocumentCreated = await MatchesHelper.saveMatchDocumentToFirebase(matchId, sessionUserId, requestedUserId);
       if (!matchDocumentCreated) {
         return {
           'success': false,
           'message': 'Failed to create match document'
+        };
+      }
+
+      bool matchDocumentSavedLocal = await MatchesHelper.saveMatchDocumentToSharedPrefs(matchId, sessionUserId, requestedUserId);
+      if (!matchDocumentSavedLocal) {
+        return {
+          'success': false,
+          'message': 'Failed to save match document to local'
         };
       }
 
@@ -73,6 +81,7 @@ class MatchesService {
       if (kDebugMode) {
         print('Error in sendMatchRequest: $e');
       }
+
       return {
         'success': false,
         'message': 'An unexpected error occurred while sending match request'
@@ -84,6 +93,7 @@ class MatchesService {
   Deny Request
   = = = = = = = = = */
   
+
 
   /* = = = = = = = = =
   Ignore Request
@@ -160,7 +170,7 @@ class MatchesService {
       final currentUserId = await UserActions.getCurrentUserId();
       
       if (currentUserId != null) {
-        await prefs.remove('sent_requests_$currentUserId');
+        await prefs.remove('matches_$currentUserId');
         print('🧹 Cleared cached sent requests');
       }
     } catch (e) {
@@ -295,6 +305,37 @@ class MatchesService {
       print('🧹 Cleared ${keys.length} cached user profiles (preserved current user)');
     } catch (e) {
       print('❌ Error clearing cache: $e');
+    }
+  }
+
+  /* = = = = = = = = =
+  Check for Pending Document Local Requests 
+  = = = = = = = = = */
+
+  static Future<bool> checkPendingRequest(String targetUserId) async {
+    try {
+      final currentUserId = await UserActions.getCurrentUserId();
+    
+      if (currentUserId == null || targetUserId.isEmpty) {
+        return false;
+      }
+
+      // Get sent requests from SharedPreferences
+      final sentRequests = await FetchDataService().fetchSentRequestsFromSharedPreferences(currentUserId);
+      print('📦 Sent Requests Data: $sentRequests');
+
+      // Check if any request matches the target user and has pending status
+      final hasPending = sentRequests.any((request) => 
+        request['requestedUserId'] == targetUserId && 
+        request['matchData']?['status'] == 'pending'
+      );
+
+      return hasPending;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking pending request: $e');
+      }
+      return false;
     }
   }
 

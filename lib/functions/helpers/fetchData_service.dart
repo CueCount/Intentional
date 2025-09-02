@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../data/inputState.dart';
+import '../../providers/inputState.dart';
 
 class FetchDataService {
 
@@ -188,12 +188,13 @@ class FetchDataService {
   Future<List<Map<String, dynamic>>> fetchSentRequestsFromSharedPreferences(String userId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final requestsJson = prefs.getStringList('sent_requests_$userId') ?? [];
+      final requestsJson = prefs.getStringList('matches_$userId') ?? [];
       final requests = requestsJson.map((requestStr) => 
         Map<String, dynamic>.from(jsonDecode(requestStr))
       ).toList();
       
       print('📦 Loaded ${requests.length} sent requests from SharedPreferences cache');
+      
       return requests;
     } catch (e) {
       print('❌ Error fetching sent requests from SharedPreferences: $e');
@@ -230,7 +231,11 @@ class FetchDataService {
           requests.add({
             'matchId': matchDoc.id,
             'matchData': matchData,
-            'userData': userData,
+            'userData': {
+              'photos': [userData['photos']?[0]], // Only first photo
+              'firstName': userData['firstName'],
+              'birthDate': userData['birthDate'],
+            },
             'requestedUserId': requestedUserId,
           });
         }

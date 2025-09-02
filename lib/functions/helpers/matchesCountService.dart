@@ -100,4 +100,5 @@ class MatchCountService {
       'atMinimum': newCount <= _minCount
     };
   }
+
 }

@@ -175,10 +175,17 @@ class RequestCard extends StatelessWidget {
 
   void _openUserProfile(BuildContext context, String userId) {
     final userData = request['userData'] as Map<String, dynamic>;
+    
+    // Add the userId to the userData before passing it
+    final profileData = {
+      ...userData,
+      'userId': request['requestedUserId'], // Add the missing userId field
+    };
+    
     Navigator.pushNamed(
       context,
       AppRoutes.match,
-      arguments: userData,
+      arguments: profileData,
     );
   }
 }

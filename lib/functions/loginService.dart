@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'userActionsService.dart';
+import 'uiService.dart';
 import 'helpers/saveData_service.dart';
 import 'helpers/fetchData_service.dart';
 import '/router/router.dart';

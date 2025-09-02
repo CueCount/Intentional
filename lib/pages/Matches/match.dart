@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../../widgets/shortcarousel.dart'; 
+import '../../functions/uiService.dart';
 import '../../functions/matchesService.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
-import '../../widgets/profileInfoCarousel.dart';
 import '../../widgets/pill.dart'; 
-import '../../router/router.dart';
+import '../../widgets/matchCTA.dart';
 
 class Match extends StatefulWidget {
   const Match({super.key});
@@ -16,14 +14,13 @@ class Match extends StatefulWidget {
 
 class _Match extends State<Match> {
   Map<String, dynamic>? profile; 
-  int _currentImageIndex = 1; 
-  int _currentMatchQualityIndex = 0;
+  RequestStatus _requestStatus = RequestStatus.loading;
 
   @override
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final Map<String, dynamic>? profileData = 
       ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
 
@@ -35,63 +32,21 @@ class _Match extends State<Match> {
       setState(() {
         profile = profileData;
       });
+
+      // Check pending request status
+      final targetUserId = profile?['userId'];
+      if (targetUserId != null) {
+        final hasPending = await MatchesService.checkPendingRequest(targetUserId);
+        setState(() {
+          _requestStatus = hasPending ? RequestStatus.pending : RequestStatus.available;
+        });
+      } else {
+        setState(() {
+          _requestStatus = RequestStatus.available;
+        });
+      }
     });
-  }
-
-  bool _isOwnProfile(String? profileUserId) {
-    final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
-    return currentUserId != null && currentUserId == profileUserId;
-  }
-
-  String? getNextImage() {
-    if (profile == null) return null;
-    final photos = profile!['photos'] as List;
-    if (_currentImageIndex >= photos.length) {
-      _currentImageIndex = 0; // Loop back to start if we run out
-    }
-    final imageUrl = photos[_currentImageIndex];
-    _currentImageIndex++; // Increment for next call
-    return imageUrl;
-  }
-
-  Map<String, dynamic>? getNextMatchQuality() {
-    final matchQualities = getMatchQualities();
-    if (_currentMatchQualityIndex >= matchQualities.length) {
-      _currentMatchQualityIndex = 0; // Loop back to start if we run out
-    }
-    final quality = matchQualities[_currentMatchQualityIndex];
-    _currentMatchQualityIndex++; // Increment for next call
-    return quality;
-  }
-
-  List<Map<String, dynamic>> getMatchQualities() {
-    return [
-      {
-        'percentage': '80% Personality Match',
-        'description': 'You each have complimenting emotional qualities. You each have complimenting emotional qualities.',
-        'color': ColorPalette.peach,
-      },
-      {
-        'percentage': '58% Lifestyle Match',
-        'description': 'You each have complimenting emotional qualities',
-        'color': ColorPalette.violet,
-      },
-      {
-        'percentage': '40% Dynamic Match',
-        'description': 'You each have complimenting emotional qualities',
-        'color': ColorPalette.green,
-      },
-      {
-        'percentage': '75% Interest Match',
-        'description': 'Shared passions and hobbies that bring you together',
-        'color': ColorPalette.peach,
-      },
-      {
-        'percentage': '62% Values Match',
-        'description': 'Similar life goals and moral compass alignment',
-        'color': ColorPalette.violet,
-      },
-    ];
+  
   }
 
   @override
@@ -106,194 +61,284 @@ class _Match extends State<Match> {
     
     return Scaffold(
       body: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                const CustomStatusBar(),
-
-                // First Photo
-                Container(
-                  width: double.infinity,
-                  height: 400,
-                  padding: const EdgeInsets.all(16),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
-                      photos[0],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-
-                // Match Info Section
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                  margin: const EdgeInsets.only(bottom: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '95% Match',
-                        style: AppTextStyles.headingLarge.copyWith(
-                          color: ColorPalette.peach,
-                          fontSize: 32,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const CustomStatusBar(),
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Column (
+                  children: [
+                    /* = = = = = = = = = 
+                    First Photo
+                    = = = = = = = = = = */
+                    if (photos.isNotEmpty)
+                      Container(
+                        width: double.infinity,
+                        height: 400,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            photos[0],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                              );
+                            },
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      PillText(text: 'complimenting emotional qualities'),
-                      const SizedBox(height: 8),
-                      PillText(text: 'best friend in a partner'),
-                      const SizedBox(height: 8),
-                      PillText(text: 'bar hopping'),
-                    ],
-                  ),
-                ),
 
-                // Dynamic Carousels
-                TwoItemCarousel(
-                  type: CarouselType.matchQualityImage,
-                  alignment: CarouselAlignment.left,
-                  getNextImage: getNextImage,
-                  getNextMatchQuality: getNextMatchQuality,
-                ),
-
-                TwoItemCarousel(
-                  type: CarouselType.imageMatchQuality,
-                  alignment: CarouselAlignment.right,
-                  getNextImage: getNextImage,
-                  getNextMatchQuality: getNextMatchQuality,
-                ),
-                
-                TwoItemCarousel(
-                  type: CarouselType.matchQualityImage,
-                  alignment: CarouselAlignment.left,
-                  getNextImage: getNextImage,
-                  getNextMatchQuality: getNextMatchQuality,
-                ),
-
-                // Profile Info Carousel - uses profile data directly
-                ProfileInfoCarousel(
-                  profileData: profile!,
-                  height: 150, 
-                ),
-
-                // Other Matching Qualities Header
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  margin: const EdgeInsets.only(bottom: 20),
-                  child:
-                    Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '5 Other Matching Qualities',
-                        style: AppTextStyles.headingLarge.copyWith(
-                          color: ColorPalette.peach,
-                          fontSize: 28,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const SizedBox(height: 8),
-                      PillText(text: 'complimenting emotional qualities'),
-                      const SizedBox(height: 8),
-                      PillText(text: 'best friend in a partner'),
-                      const SizedBox(height: 8),
-                      PillText(text: 'bar hopping'),
-                    ],
-                  ),
-                ),
-
-                // Additional Images
-                TwoItemCarousel(
-                  type: CarouselType.imageImage,
-                  alignment: CarouselAlignment.left,
-                  getNextImage: getNextImage,
-                ),
-
-                // 
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Like What You See?',
-                        style: AppTextStyles.headingLarge.copyWith(
-                          color: ColorPalette.peach,
-                          fontSize: 28,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Find out if it’s mutual. If she accepts your request you will be exclusively matched with her. ',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: ColorPalette.peach,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Hopefully she gets to you before someone else does ;) ',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: ColorPalette.peach,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // CTA Here
-                      TextButton(
-                        onPressed: () async {
-                          final targetUserId = profile?['userId'];
-                          if (targetUserId != null) {
-                            try {
-                              await MatchesService.sendMatchRequest(targetUserId);
-                              if (context.mounted) {
-                                Navigator.pushNamed(context, AppRoutes.guideRequestSent);
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Error: $e')),
-                                );
-                              }
-                            }
-                          }
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Send Match Request',
-                              style: AppTextStyles.headingMedium.copyWith(
-                                color: ColorPalette.peach,
-                              ),
+                    /* = = = = = = = = = 
+                    Match Overview
+                    = = = = = = = = = = */
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      margin: const EdgeInsets.only(bottom: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            '95% Match',
+                            style: AppTextStyles.headingLarge.copyWith(
+                              color: ColorPalette.peach,
+                              fontSize: 48,
                             ),
-                            const SizedBox(width: 8),
-                            const Icon(Icons.favorite_outline, color: ColorPalette.peach, size: 24),
-                          ],
+                          ),
+                          Text(
+                            "${profile?['firstName'] ?? 'Unknown'}, ${UserActions().calculateAge(profile?['birthDate'])}",
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: ColorPalette.peach,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    /* = = = = = = = = = 
+                    Key Match Indicators
+                    = = = = = = = = = = */
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: ColorPalette.peachLite,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Key Match Indicators',
+                            style: AppTextStyles.headingMedium.copyWith(
+                              color: ColorPalette.peach,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          PillText(text: 'complimenting emotional qualities', colorVariant: "white"),
+                          const SizedBox(height: 8),
+                          PillText(text: 'best friend in a partner', colorVariant: "white"),
+                          const SizedBox(height: 8),
+                          PillText(text: 'bar hopping', colorVariant: "white"),
+                        ],
+                      ),
+                    ),
+
+                    /* = = = = = = = = = 
+                    Second Photo
+                    = = = = = = = = = = */
+                    if (photos.length > 1)
+                      Container(
+                        width: double.infinity,
+                        height: 400,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            photos[1],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                              );
+                            },
+                          ),
                         ),
                       ),
 
-                    ],
-                  ),
+                    /* = = = = = = = = = 
+                    Personality Match
+                    = = = = = = = = = = */
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: ColorPalette.peach,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '95%',
+                            style: AppTextStyles.headingLarge.copyWith(
+                              color: ColorPalette.white,
+                            ),
+                          ),
+                          Text(
+                            'Personality Match',
+                            style: AppTextStyles.headingMedium.copyWith(
+                              color: ColorPalette.white,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          PillText(text: 'complimenting emotional qualities', colorVariant: "peachLite"),
+                          const SizedBox(height: 8),
+                          PillText(text: 'best friend in a partner', colorVariant: "peachLite"),
+                          const SizedBox(height: 8),
+                          PillText(text: 'bar hopping', colorVariant: "peachLite"),
+                        ],
+                      ),
+                    ),
+
+                    /* = = = = = = = = = 
+                    Third Photo
+                    = = = = = = = = = = */
+                    if (photos.length > 2)
+                      Container(
+                        width: double.infinity,
+                        height: 400,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            photos[2],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
+                    /* = = = = = = = = = 
+                    LifeStyle Match
+                    = = = = = = = = = = */
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: ColorPalette.violet,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '95%',
+                            style: AppTextStyles.headingLarge.copyWith(
+                              color: ColorPalette.white,
+                            ),
+                          ),
+                          Text(
+                            'LifeStyle Match',
+                            style: AppTextStyles.headingMedium.copyWith(
+                              color: ColorPalette.white,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          PillText(text: 'complimenting emotional qualities', colorVariant: "violetLite"),
+                          const SizedBox(height: 8),
+                          PillText(text: 'best friend in a partner', colorVariant: "violetLite"),
+                          const SizedBox(height: 8),
+                          PillText(text: 'bar hopping', colorVariant: "violetLite"),
+                        ],
+                      ),
+                    ),
+
+                    /* = = = = = = = = = 
+                    Fourth Photo
+                    = = = = = = = = = = */
+                    if (photos.length > 3)
+                      Container(
+                        width: double.infinity,
+                        height: 400,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            photos[3],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
+                    /* = = = = = = = = = 
+                    Dynamics Match
+                    = = = = = = = = = = */
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: ColorPalette.green,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '95%',
+                            style: AppTextStyles.headingLarge.copyWith(
+                              color: ColorPalette.white,
+                            ),
+                          ),
+                          Text(
+                            'Dynamics Match',
+                            style: AppTextStyles.headingMedium.copyWith(
+                              color: ColorPalette.white,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          PillText(text: 'complimenting emotional qualities', colorVariant: "greenLite"),
+                          const SizedBox(height: 8),
+                          PillText(text: 'best friend in a partner', colorVariant: "greenLite"),
+                          const SizedBox(height: 8),
+                          PillText(text: 'bar hopping', colorVariant: "greenLite"),
+                        ],
+                      ),
+                    ),
+
+                    /* = = = = = = = = = 
+                    Call to Action
+                    = = = = = = = = = = */ 
+                    MatchCTA(
+                      status: _requestStatus,
+                      targetUserId: profile?['userId'] ?? '',
+                    ),
+                 
+                  ],
                 ),
-              
-              ],
-            ),
+              ),  
+            ],
           ),
-        
+        ),
       ),
     );
   }

@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/bottomNavigationBar.dart';
 import '../../router/router.dart';
-import '../../data/inputState.dart';
+import '../../providers/inputState.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:vector_math/vector_math_64.dart' show Vector3;
 

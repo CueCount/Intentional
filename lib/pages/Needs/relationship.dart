@@ -3,12 +3,12 @@ import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/inputCheckbox.dart';  
-import '../../data/inputState.dart';
+import '../../providers/inputState.dart';
 import '../../styles.dart';
 import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../functions/userActionsService.dart';
+import '../../functions/uiService.dart';
 class Relationship extends StatefulWidget {
   const Relationship({super.key});
   @override

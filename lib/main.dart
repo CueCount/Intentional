@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import 'router/router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'data/inputState.dart'; // Import the updated input state
+import 'providers/inputState.dart';
+import 'providers/matchState.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +15,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => InputState()),
+        ChangeNotifierProvider(create: (_) => MatchSyncProvider()),
         // Add more providers here as needed
       ],
       child: const MyApp(),

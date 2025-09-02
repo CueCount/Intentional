@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import '../../data/inputState.dart';
+import '../../providers/inputState.dart';
 import '../../router/router.dart';
 import 'fetchData_service.dart';
 import 'saveData_service.dart';
@@ -175,4 +175,5 @@ class AuthService {
       return null;
     }
   }
+
 }

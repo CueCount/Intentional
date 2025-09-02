@@ -3,7 +3,7 @@ import '../functions/helpers/matchesCountService.dart';
 import '../styles.dart';
 import 'menu.dart';
 import '../router/router.dart';
-import '../functions/userActionsService.dart';
+import '../functions/uiService.dart';
 import '../functions/matchesService.dart';
 
 class CustomStatusBar extends StatefulWidget {
@@ -20,7 +20,7 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
   bool infoIncomplete = true;
   bool needsUpdated = false;
   bool _isLoading = true;
-  bool _isDisposed = false; // Add disposal tracking
+  bool _isDisposed = false;
 
   @override
   void initState() {

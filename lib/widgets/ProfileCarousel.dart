@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../router/router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../functions/userActionsService.dart';
+import '../functions/uiService.dart';
 import '../../widgets/pill.dart'; 
 import '../styles.dart';
 
@@ -137,9 +137,9 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        PillText(text: 'Emotional Qualities'),
+                        PillText(text: 'Emotional Qualities', colorVariant: "peachLite",),
                         const SizedBox(height: 8),
-                        PillText(text: 'Bar Hopping'),
+                        PillText(text: 'Bar Hopping', colorVariant: "peachLite"),
                         const SizedBox(height: 8),
                         TextButton(
                           onPressed: () {

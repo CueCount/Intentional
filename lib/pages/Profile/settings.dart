@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../data/inputState.dart';
+import '../../providers/inputState.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/link.dart';
 import '/router/router.dart';

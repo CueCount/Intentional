@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/inputState.dart';
+import '../providers/inputState.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;

@@ -5,7 +5,7 @@ import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import '../../functions/onboardingService.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../functions/userActionsService.dart';
+import '../../functions/uiService.dart';
 
 class Age extends StatefulWidget {
  const Age({Key? key}) : super(key: key);

@@ -3,12 +3,12 @@ import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/photogrid.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
-import '../../data/inputState.dart';
+import '../../providers/inputState.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import '../../functions/onboardingService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../functions/userActionsService.dart';
+import '../../functions/uiService.dart';
 
 class PhotoUploadPage extends StatefulWidget {
   const PhotoUploadPage({Key? key}) : super(key: key);

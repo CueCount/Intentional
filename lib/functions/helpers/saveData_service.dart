@@ -9,7 +9,7 @@ import 'photo_service.dart';
 class SaveDataService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static String? _tempUserId;
-    
+  
   /* = = = = = = = = = 
   Save to Shared Preferences 
   = = = = = = = = = */
@@ -35,7 +35,7 @@ class SaveDataService {
       'temp_user_id': userId,
       'last_updated': DateTime.now().toIso8601String(),
     };
-    
+
     await prefs.setString(key, json.encode(mergedData));
     print('✅ Data saved to SharedPreferences under key "$key":\n$mergedData');
   }
@@ -178,8 +178,13 @@ class SaveDataService {
   Future<void> cacheSentRequestsToSharedPrefs(List<Map<String, dynamic>> requests, String userId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final requestsJson = requests.map((request) => jsonEncode(request)).toList();
-      await prefs.setStringList('sent_requests_$userId', requestsJson);
+
+      final processedRequests = requests.map((request) => _convertTimestampsToStrings(request)).toList();
+
+      final requestsJson = processedRequests.map((request) => jsonEncode(request)).toList();
+
+      await prefs.setStringList('matches_$userId', requestsJson);
+
       print('💾 Cached ${requests.length} sent requests to SharedPreferences');
     } catch (e) {
       print('❌ Error caching sent requests to SharedPreferences: $e');
@@ -194,7 +199,7 @@ class SaveDataService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final requestsJson = requests.map((request) => jsonEncode(request)).toList();
-      await prefs.setStringList('received_requests_$userId', requestsJson);
+      await prefs.setStringList('matches_$userId', requestsJson);
       print('💾 Cached ${requests.length} received requests to SharedPreferences');
     } catch (e) {
       print('❌ Error caching received requests to SharedPreferences: $e');
@@ -217,4 +222,20 @@ class SaveDataService {
     }
   }
 
+
+  /* = = = = = = = = = 
+  Converting Time Stamps to Strings for Shared Prefences
+  = = = = = = = = = */
+
+  dynamic _convertTimestampsToStrings(dynamic data) {
+    if (data is Timestamp) {
+      return data.toDate().toIso8601String();
+    } else if (data is Map<String, dynamic>) {
+      return data.map((key, value) => MapEntry(key, _convertTimestampsToStrings(value)));
+    } else if (data is List) {
+      return data.map((item) => _convertTimestampsToStrings(item)).toList();
+    }
+    return data;
+  }
+  
 }

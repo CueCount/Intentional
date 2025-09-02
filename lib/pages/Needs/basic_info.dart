@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import '../../functions/onboardingService.dart';
-import '../../functions/userActionsService.dart';
+import '../../functions/uiService.dart';
 
 class BasicProfilePage extends StatefulWidget {
  const BasicProfilePage({Key? key}) : super(key: key);

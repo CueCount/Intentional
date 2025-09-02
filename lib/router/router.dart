@@ -19,7 +19,6 @@ import '../pages/Profile/login.dart';
 import '../pages/Profile/register.dart';
 import '../pages/Profile/settings.dart';
 import '../pages/Profile/editneeds.dart';
-import '../pages/Profile/userprofile.dart';
 import '../pages/Profile/requestsReceived.dart';
 import '../pages/Profile/requestsSent.dart';
 import '../pages/Guides/guideRequestSent.dart';
@@ -98,8 +97,7 @@ class AppRoutes {
         return PhotoCropPage(imageFile: arguments['imageFile'],);
       case subscription:
         return const SubscriptionPage();
-      case userprofile:
-        return const UserProfile();
+
       case editNeeds:
         return const EditNeeds();
       case settings:

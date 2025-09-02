@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import 'helpers/saveData_service.dart';
 import 'helpers/fetchData_service.dart';
-import '../../data/inputState.dart';
+import '../providers/inputState.dart';
 import 'dart:convert'; 
 import 'package:image_picker/image_picker.dart';
 import 'helpers/photo_service.dart';
@@ -65,6 +65,12 @@ class UserActions {
       return null;
     }
   }
+
+  /* = = = = = = = = =
+  Query Management
+  = = = = = = = = = */
+
+  
 
   /* = = = = = = = = =
   Save to Local / Firebase 
@@ -185,7 +191,6 @@ class UserActions {
   }
 }
 
-  
   /* = = = = = = = = =
   Utilities
   = = = = = = = = = */

@@ -13,7 +13,7 @@ class AppTextStyles {
   static TextStyle headingLarge = const TextStyle(
     fontFamily: 'Fraunces',
     fontSize: 38,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     color: Colors.white,
     height: 1,
   );
@@ -21,7 +21,7 @@ class AppTextStyles {
   static TextStyle headingMedium = const TextStyle(
     fontFamily: 'Fraunces',
     fontSize: 28,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w600,
     color: Colors.white,
     height: 1.1,
   );
@@ -60,6 +60,8 @@ class ColorPalette {
   static const Color dark = Color(0xFF250E0E);
   static const Color grey = Color(0xFF867A7A);
   static const Color peachLite = Color(0xFFFFD5D5);
+  static const Color greenLite = Color(0xFF35C6B6);
+  static const Color violetLite = Color(0xFFF46AEB);
   static const LinearGradient brandGradient = LinearGradient(
     colors: [Color(0xFFDC1C56), Color(0xFFFF294C)], // Colors from the screenshot
     begin: Alignment.topLeft, // Adjust as needed
