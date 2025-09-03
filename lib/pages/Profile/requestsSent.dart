@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../functions/matchesService.dart';
+import 'package:provider/provider.dart';
+import '../../providers/matchState.dart';
+import '../../providers/userState.dart';
+import '../../functions/uiService.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/requestCard.dart';
@@ -21,38 +24,20 @@ class _RequestSentState extends State<RequestSent> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      print('🧠 shouldUpdate value for requests: ${widget.shouldUpdate}');
-      loadOutgoingRequests();
+      _ensureListenersActive();
       _initialized = true;
     }
   }
 
-  Future<void> loadOutgoingRequests() async {
-    if (mounted) {
-      setState(() {
-        isLoading = true;
-      });
-    }
+  Future<void> _ensureListenersActive() async {
+    final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
+    final userSync = Provider.of<UserSyncProvider>(context, listen: false);
 
-    try {
-      List<Map<String, dynamic>> requests = await MatchesService().fetchSentRequests(
-        fromFirebase: widget.shouldUpdate,
-        forceFresh: widget.shouldUpdate,
-      );
-      
-      if (mounted) {
-        setState(() {
-          outgoingRequests = requests;
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('❌ Error loading outgoing requests: $e');
-      
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+    if (!matchSync.isListening || !userSync.isListening) {
+      final userId = await UserActions.getCurrentUserId();
+      if (userId != null && userId.isNotEmpty) {
+        await userSync.startListening(userId); // Start users first
+        await matchSync.startListening(userId); // Then matches
       }
     }
   }
@@ -79,60 +64,75 @@ class _RequestSentState extends State<RequestSent> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'You\'ve used ${outgoingRequests.length}/3 match Requests',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: ColorPalette.peach,
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
+                    Consumer<MatchSyncProvider>(
+                      builder: (context, matchSync, child) {
+                        return Text(
+                          'You\'ve used ${matchSync.pendingRequestsCount}/3 match Requests',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: ColorPalette.peach,
+                            fontSize: 16,
+                          ),
+                          textAlign: TextAlign.center,
+                        );
+                      },
                     ),
                     const SizedBox(height: 30),
                     
-                    // Loading state
-                    if (isLoading)
-                      const Center(
-                        child: CircularProgressIndicator(
-                          color: ColorPalette.peach,
-                        ),
-                      ),
-                    
-                    // Empty state
-                    if (!isLoading && outgoingRequests.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(40),
-                        child: Column(
+                    Consumer<MatchSyncProvider>(
+                      builder: (context, matchSync, child) {
+                        final outgoingRequests = matchSync.sentRequests;
+                        final isLoading = !matchSync.isListening && outgoingRequests.isEmpty;
+                        
+                        return Column(
                           children: [
-                            Icon(
-                              Icons.send_outlined,
-                              size: 80,
-                              color: Colors.grey[300],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No requests sent yet',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: Colors.grey[600],
+                            // Loading state
+                            if (isLoading)
+                              const Center(
+                                child: CircularProgressIndicator(
+                                  color: ColorPalette.peach,
+                                ),
                               ),
-                            ),
+                            
+                            // Empty state
+                            if (!isLoading && outgoingRequests.isEmpty)
+                              Container(
+                                padding: const EdgeInsets.all(40),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.send_outlined,
+                                      size: 80,
+                                      color: Colors.grey[300],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No requests sent yet',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            
+                            // Requests list
+                            if (!isLoading && outgoingRequests.isNotEmpty)
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: outgoingRequests.length,
+                                itemBuilder: (context, index) {
+                                  final request = outgoingRequests[index];
+                                  
+                                  return RequestCard(
+                                    request: request,
+                                  );
+                                },
+                              ),
                           ],
-                        ),
-                      ),
-                    
-                    // Requests list
-                    if (!isLoading && outgoingRequests.isNotEmpty)
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: outgoingRequests.length,
-                        itemBuilder: (context, index) {
-                          final request = outgoingRequests[index];
-                          
-                          return RequestCard(
-                            request: request,
-                          );
-                        },
-                      ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -142,5 +142,4 @@ class _RequestSentState extends State<RequestSent> {
       ),
     );
   }
-
 }

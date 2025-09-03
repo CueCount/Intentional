@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'providers/inputState.dart';
 import 'providers/matchState.dart';
+import 'providers/userState.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => InputState()),
         ChangeNotifierProvider(create: (_) => MatchSyncProvider()),
+        ChangeNotifierProvider(create: (_) => UserSyncProvider()),
         // Add more providers here as needed
       ],
       child: const MyApp(),

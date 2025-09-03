@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/profileCarousel.dart';
 import '../../widgets/navigation.dart';
-import '../../functions/matchesService.dart';
+import '../../providers/userState.dart'; // Add this import
+import '../../functions/uiService.dart'; // For getCurrentUserId()
 
 class Matches extends StatefulWidget {
   final bool shouldUpdate;
@@ -13,48 +14,25 @@ class Matches extends StatefulWidget {
 }
 
 class _Matches extends State<Matches> {
-  List<Map<String, dynamic>> users = [];
-  bool isLoading = true;
-  final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
   bool _initialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      print('🧠 shouldUpdate value from constructor: ${widget.shouldUpdate}');
-      fetchMatches();
+      _ensureUserListenersActive();
       _initialized = true;
     }
   }
 
-  Future<void> fetchMatches() async {    
-    if (mounted) {
-      setState(() {
-        isLoading = true;
-      });
-    }
+  Future<void> _ensureUserListenersActive() async {
+    final userSync = Provider.of<UserSyncProvider>(context, listen: false);
 
-    try {
-      final fetchedUsers = await MatchesService().fetchMatches(
-        fromFirebase: widget.shouldUpdate,
-        onlyWithPhotos: true,
-        forceFresh: widget.shouldUpdate,
-      );
-      
-      if (mounted) {
-        setState(() {
-          users = fetchedUsers;
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('❌ Error in fetchMatches: $e');
-      
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+    if (!userSync.isListening) {
+      final userId = await UserActions.getCurrentUserId();
+      if (userId != null && userId.isNotEmpty) {
+        await userSync.startListening(userId);
+        print('User Provider: Started listening for available users');
       }
     }
   }
@@ -67,9 +45,17 @@ class _Matches extends State<Matches> {
           children: [
             const CustomStatusBar(),
             Expanded(
-              child: ProfileCarousel(
-                userData: users,
-                isLoading: isLoading,
+              child: Consumer<UserSyncProvider>(
+                builder: (context, userSync, child) {
+                  // Get users with photos only (for matching)
+                  final availableUsers = userSync.getUsersWithPhotos();
+                  final isLoading = !userSync.isListening && availableUsers.isEmpty;
+                  
+                  return ProfileCarousel(
+                    userData: availableUsers,
+                    isLoading: isLoading,
+                  );
+                },
               ),
             ),
           ],

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -19,12 +18,17 @@ class MatchSyncProvider extends ChangeNotifier {
   // Cached match data
   List<Map<String, dynamic>> _sentRequests = [];
   List<Map<String, dynamic>> _receivedRequests = [];
+  List<Map<String, dynamic>> _activeMatch = [];
   
   // Getters for cached data
   List<Map<String, dynamic>> get sentRequests => List.from(_sentRequests);
   List<Map<String, dynamic>> get receivedRequests => List.from(_receivedRequests);
+  List<Map<String, dynamic>> get activeMatch => List.from(_activeMatch);
   
-  // Initialize listeners for a user
+  /* = = = = = = = = = 
+  Start / Stop Listening
+  = = = = = = = = = */
+
   Future<void> startListening(String userId) async {
     if (_isListening && _currentUserId == userId) {
       if (kDebugMode) {
@@ -42,8 +46,8 @@ class MatchSyncProvider extends ChangeNotifier {
       await _initialSync(userId);
       
       // Start real-time listeners
-      _startOutgoingListener(userId);
-      _startIncomingListener(userId);
+      _startSentRequestListener(userId);
+      _startReceivedRequestListener(userId);
       
       _isListening = true;
       notifyListeners();
@@ -58,7 +62,6 @@ class MatchSyncProvider extends ChangeNotifier {
     }
   }
   
-  // Stop all listeners
   Future<void> stopListening() async {
     await _outgoingMatchesListener?.cancel();
     await _incomingMatchesListener?.cancel();
@@ -75,14 +78,13 @@ class MatchSyncProvider extends ChangeNotifier {
     }
   }
   
-  // Start outgoing matches listener
-  void _startOutgoingListener(String userId) {
+  void _startSentRequestListener(String userId) {
     _outgoingMatchesListener = FirebaseFirestore.instance
         .collection('matches')
         .where('requesterUserId', isEqualTo: userId)
         .snapshots()
         .listen(
-          (snapshot) => _handleOutgoingChanges(snapshot, userId),
+          (snapshot) => _handleMatchChanges(snapshot, userId),
           onError: (error) {
             if (kDebugMode) {
               print('❌ Outgoing listener error: $error');
@@ -91,14 +93,13 @@ class MatchSyncProvider extends ChangeNotifier {
         );
   }
   
-  // Start incoming matches listener
-  void _startIncomingListener(String userId) {
+  void _startReceivedRequestListener(String userId) {
     _incomingMatchesListener = FirebaseFirestore.instance
         .collection('matches')
         .where('requestedUserId', isEqualTo: userId)
         .snapshots()
         .listen(
-          (snapshot) => _handleIncomingChanges(snapshot, userId),
+          (snapshot) => _handleMatchChanges(snapshot, userId),
           onError: (error) {
             if (kDebugMode) {
               print('❌ Incoming listener error: $error');
@@ -107,96 +108,91 @@ class MatchSyncProvider extends ChangeNotifier {
         );
   }
   
-  // Handle outgoing match changes
-  Future<void> _handleOutgoingChanges(QuerySnapshot snapshot, String userId) async {
+  /* = = = = = = = = = 
+  Handle Changes
+  = = = = = = = = = */
+
+  Future<void> _handleMatchChanges(QuerySnapshot snapshot, String userId) async {
     try {
-      final matches = snapshot.docs.map((doc) {
+      // Process each document one by one to handle async properly
+      final List<Map<String, dynamic>> matches = [];
+      
+      for (var doc in snapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        return {
-          'matchId': doc.id,
-          'requesterUserId': data['requesterUserId'],
+        
+        // Determine which user's profile data we need
+        final targetUserId = data['requesterUserId'] == userId 
+            ? data['requestedUserId']
+            : data['requesterUserId'];
+        
+        // Await the user data lookup
+        final userData = await _getUserDataForMatch(targetUserId);
+        
+        final match = {
           'requestedUserId': data['requestedUserId'],
-          'status': data['status'],
-          'createdAt': data['createdAt']?.toDate()?.toIso8601String() ?? DateTime.now().toIso8601String(),
-          'updatedAt': data['updatedAt']?.toDate()?.toIso8601String() ?? DateTime.now().toIso8601String(),
+          'requesterUserId': data['requesterUserId'],
+          'matchData': {
+            'matchId': doc.id,
+            'status': data['status'],
+            'createdAt': data['createdAt']?.toDate()?.toIso8601String() ?? DateTime.now().toIso8601String(),
+            'updatedAt': data['updatedAt']?.toDate()?.toIso8601String() ?? DateTime.now().toIso8601String(),
+          },
+          'userData': userData, // Now this is resolved data, not a Future
         };
-      }).toList();
+        
+        matches.add(match);
+      }
       
-      // Update local cache
-      _sentRequests = matches;
-      
-      // Update SharedPreferences
-      await _saveToSharedPrefs('sent_requests_$userId', matches);
-      
-      // Notify listeners (UI will update)
+      await _mergeMatchesToSharedPrefs(matches, userId);
       notifyListeners();
       
-      if (kDebugMode) {
-        print('🔄 Updated ${matches.length} sent requests');
-      }
+      print('Match Provider: Updated ${matches.length} matches');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error handling outgoing changes: $e');
-      }
+      print('Match Provider Error: Failed to handle match changes - $e');
     }
   }
   
-  // Handle incoming match changes
-  Future<void> _handleIncomingChanges(QuerySnapshot snapshot, String userId) async {
-    try {
-      final matches = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return {
-          'matchId': doc.id,
-          'requesterUserId': data['requesterUserId'],
-          'requestedUserId': data['requestedUserId'],
-          'status': data['status'],
-          'createdAt': data['createdAt']?.toDate()?.toIso8601String() ?? DateTime.now().toIso8601String(),
-          'updatedAt': data['updatedAt']?.toDate()?.toIso8601String() ?? DateTime.now().toIso8601String(),
-        };
-      }).toList();
-      
-      // Update local cache
-      _receivedRequests = matches;
-      
-      // Update SharedPreferences
-      await _saveToSharedPrefs('received_requests_$userId', matches);
-      
-      // Notify listeners (UI will update)
-      notifyListeners();
-      
-      if (kDebugMode) {
-        print('🔄 Updated ${matches.length} received requests');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error handling incoming changes: $e');
-      }
-    }
-  }
-  
-  // Initial sync from Firebase
+  /* = = = = = = = = = 
+  Fetching and Saving Data 
+  = = = = = = = = = */
+
   Future<void> _initialSync(String userId) async {
     try {
-      // Load cached data first (fast)
+      // Always load cached data first (instant)
       await _loadFromSharedPrefs(userId);
       
-      // Then sync from Firebase (accurate)
-      final outgoingSnapshot = await FirebaseFirestore.instance
-          .collection('matches')
-          .where('requesterUserId', isEqualTo: userId)
-          .get();
+      // Check if we need to sync from Firebase
+      final shouldSync = await _shouldSyncFromFirebase(userId);
       
-      final incomingSnapshot = await FirebaseFirestore.instance
-          .collection('matches')
-          .where('requestedUserId', isEqualTo: userId)
-          .get();
-      
-      await _handleOutgoingChanges(outgoingSnapshot, userId);
-      await _handleIncomingChanges(incomingSnapshot, userId);
-      
-      if (kDebugMode) {
-        print('✅ Initial sync completed');
+      if (shouldSync) {
+        if (kDebugMode) {
+          print('🔄 Syncing from Firebase (cache is stale or missing)');
+        }
+        
+        // Sync from Firebase
+        final outgoingSnapshot = await FirebaseFirestore.instance
+            .collection('matches')
+            .where('requesterUserId', isEqualTo: userId)
+            .get();
+        
+        final incomingSnapshot = await FirebaseFirestore.instance
+            .collection('matches')
+            .where('requestedUserId', isEqualTo: userId)
+            .get();
+        
+        await _handleMatchChanges(outgoingSnapshot, userId);
+        await _handleMatchChanges(incomingSnapshot, userId);
+        
+        // Update last sync timestamp
+        await _updateLastSyncTimestamp(userId);
+        
+        if (kDebugMode) {
+          print('✅ Firebase sync completed');
+        }
+      } else {
+        if (kDebugMode) {
+          print('💾 Using cached data (still fresh)');
+        }
       }
     } catch (e) {
       if (kDebugMode) {
@@ -205,32 +201,27 @@ class MatchSyncProvider extends ChangeNotifier {
     }
   }
   
-  // Load from SharedPreferences
   Future<void> _loadFromSharedPrefs(String userId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       
-      // Load sent requests
-      final sentJson = prefs.getStringList('sent_requests_$userId') ?? [];
-      _sentRequests = sentJson.map((jsonString) => 
+      // Load all matches from single key
+      final allMatchesJson = prefs.getStringList('matches_$userId') ?? [];
+      final allMatches = allMatchesJson.map((jsonString) => 
         Map<String, dynamic>.from(jsonDecode(jsonString))
       ).toList();
       
-      // Load received requests
-      final receivedJson = prefs.getStringList('received_requests_$userId') ?? [];
-      _receivedRequests = receivedJson.map((jsonString) => 
-        Map<String, dynamic>.from(jsonDecode(jsonString))
-      ).toList();
+      // Filter into sent/received arrays
+      _updateLocalArrays(allMatches, userId);
       
       notifyListeners();
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error loading from SharedPreferences: $e');
+        print('Error loading from SharedPreferences: $e');
       }
     }
   }
   
-  // Save to SharedPreferences
   Future<void> _saveToSharedPrefs(String key, List<Map<String, dynamic>> matches) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -242,24 +233,153 @@ class MatchSyncProvider extends ChangeNotifier {
       }
     }
   }
+
+  Future<void> _mergeMatchesToSharedPrefs(List<Map<String, dynamic>> newMatches, String userId) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Get existing matches
+    final existingJson = prefs.getStringList('matches_$userId') ?? [];
+    List<Map<String, dynamic>> allMatches = existingJson
+        .map((json) => Map<String, dynamic>.from(jsonDecode(json)))
+        .toList();
+    
+    // Update or add new matches
+    for (var newMatch in newMatches) {
+      final matchId = newMatch['matchData']['matchId'];
+      final existingIndex = allMatches.indexWhere((m) => m['matchData']['matchId'] == matchId);
+      
+      if (existingIndex >= 0) {
+        allMatches[existingIndex] = newMatch; // Update existing
+      } else {
+        allMatches.add(newMatch); // Add new
+      }
+    }
+    
+    // Save back to SharedPreferences
+    await _saveToSharedPrefs('matches_$userId', allMatches);
+    
+    // Update local arrays by filtering
+    _updateLocalArrays(allMatches, userId);
+  } catch (e) {
+    print('Error merging matches to cache: $e');
+  }
+}
+
+  void _updateLocalArrays(List<Map<String, dynamic>> allMatches, String userId) {
+    _sentRequests = allMatches.where((match) => 
+      match['requesterUserId'] == userId
+    ).toList();
+    
+    _receivedRequests = allMatches.where((match) => 
+      match['requestedUserId'] == userId
+    ).toList();
+  }
   
-  // Check if user has exceeded outgoing limit
+  /* = = = = = = = = = 
+  Helpers
+  = = = = = = = = = */
+
   bool hasExceededOutgoingLimit() {
     final pendingRequests = _sentRequests.where((request) => 
-      request['status'] == 'pending'
+      request['matchData']['status'] == 'pending'
     ).toList();
     
     return pendingRequests.length >= 3;
   }
-  
-  // Get pending requests count
+
   int get pendingRequestsCount {
-    return _sentRequests.where((request) => request['status'] == 'pending').length;
+    return _sentRequests.where((request) => 
+      request['matchData']['status'] == 'pending'
+    ).length;
   }
   
+  Future<bool> _shouldSyncFromFirebase(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Check if we have any cached data
+      final sentCached = prefs.getStringList('matches_$userId');
+      final receivedCached = prefs.getStringList('matches_$userId');
+      
+      // If no cached data exists, definitely sync
+      if ((sentCached?.isEmpty ?? true) && (receivedCached?.isEmpty ?? true)) {
+        return true;
+      }
+      
+      // Check last sync timestamp
+      final lastSyncString = prefs.getString('last_sync_$userId');
+      if (lastSyncString == null) {
+        return true; // No sync timestamp, sync needed
+      }
+      
+      final lastSync = DateTime.parse(lastSyncString);
+      final now = DateTime.now();
+      final timeDifference = now.difference(lastSync);
+      
+      // Sync if last sync was more than 5 minutes ago
+      const syncThreshold = Duration(minutes: 5);
+      return timeDifference > syncThreshold;
+      
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error checking sync status: $e');
+      }
+      return true; // On error, sync to be safe
+    }
+  }
+  
+  Future<void> _updateLastSyncTimestamp(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_sync_$userId', DateTime.now().toIso8601String());
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error updating sync timestamp: $e');
+      }
+    }
+  }
+
+  Future<Map<String, dynamic>> _getUserDataForMatch(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = prefs.getStringList('users_${_currentUserId}') ?? [];
+      
+      for (String userJson in usersJson) {
+        final user = jsonDecode(userJson);
+        if (user['userId'] == userId) {
+          return {
+            'userId': userId,
+            'nameFirst': user['nameFirst'],
+            'birthDate': user['birthDate'],
+            'photos': user['photos'],
+          };
+        }
+      }
+      
+      // Fallback if user not found
+      return {
+        'userId': userId,
+        'nameFirst': 'Not Found',
+        'photos': null,
+      };
+    } catch (e) {
+      return {
+        'userId': userId,
+        'nameFirst': 'Unknown',
+        'photos': null,
+      };
+    }
+  }
+
+  /* = = = = = = = = = 
+  Override
+  = = = = = = = = = */
+
   @override
   void dispose() {
     stopListening();
     super.dispose();
   }
+
 }

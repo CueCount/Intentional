@@ -329,7 +329,6 @@ class _Match extends State<Match> {
                     Call to Action
                     = = = = = = = = = = */ 
                     MatchCTA(
-                      status: _requestStatus,
                       targetUserId: profile?['userId'] ?? '',
                     ),
                  
