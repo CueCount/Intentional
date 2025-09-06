@@ -18,12 +18,12 @@ class MatchSyncProvider extends ChangeNotifier {
   // Cached match data
   List<Map<String, dynamic>> _sentRequests = [];
   List<Map<String, dynamic>> _receivedRequests = [];
-  List<Map<String, dynamic>> _activeMatch = [];
+  List<Map<String, dynamic>> _allMatches = [];
   
   // Getters for cached data
   List<Map<String, dynamic>> get sentRequests => List.from(_sentRequests);
   List<Map<String, dynamic>> get receivedRequests => List.from(_receivedRequests);
-  List<Map<String, dynamic>> get activeMatch => List.from(_activeMatch);
+  List<Map<String, dynamic>> get allMatches => List.from(_allMatches);
   
   /* = = = = = = = = = 
   Start / Stop Listening
@@ -152,6 +152,65 @@ class MatchSyncProvider extends ChangeNotifier {
     }
   }
   
+  Future<Map<String, dynamic>> updateMatchStatus(String matchId, String newStatus) async {
+    try {
+      // Update Firebase
+      await FirebaseFirestore.instance
+          .collection('matches')
+          .doc(matchId)
+          .update({
+        'status': newStatus,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Update local data
+      await _updateLocalMatchStatus(matchId, newStatus);
+
+      return {
+        'success': true,
+        'message': 'Match status updated successfully!',
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating match status: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Failed to update match status',
+      };
+    }
+  }
+
+  Future<void> _updateLocalMatchStatus(String matchId, String newStatus) async {
+    if (_currentUserId == null) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final allMatchesJson = prefs.getStringList('matches_$_currentUserId') ?? [];
+      List<Map<String, dynamic>> allMatches = allMatchesJson
+          .map((json) => Map<String, dynamic>.from(jsonDecode(json)))
+          .toList();
+
+      // Find and update the specific match
+      for (var match in allMatches) {
+        if (match['matchData']['matchId'] == matchId) {
+          match['matchData']['status'] = newStatus;
+          match['matchData']['updatedAt'] = DateTime.now().toIso8601String();
+          break;
+        }
+      }
+
+      // Save and update local arrays
+      await _saveToSharedPrefs('matches_$_currentUserId', allMatches);
+      _updateLocalArrays(allMatches, _currentUserId!);
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating local match status: $e');
+      }
+    }
+  }
+
   /* = = = = = = = = = 
   Fetching and Saving Data 
   = = = = = = = = = */
@@ -211,6 +270,24 @@ class MatchSyncProvider extends ChangeNotifier {
         Map<String, dynamic>.from(jsonDecode(jsonString))
       ).toList();
       
+      // Check if cached data has the correct structure
+      bool hasCorruptedData = false;
+      for (var match in allMatches) {
+        if (match['matchData'] == null) {
+          hasCorruptedData = true;
+          break;
+        }
+      }
+    
+      if (hasCorruptedData) {
+        print('🧹 Found corrupted cache data, clearing and will rebuild from Firebase');
+        await prefs.remove('matches_$userId');
+        await prefs.remove('last_sync_$userId');
+        _sentRequests = [];
+        _receivedRequests = [];
+        return; // Will trigger Firebase sync due to empty cache
+      }
+      
       // Filter into sent/received arrays
       _updateLocalArrays(allMatches, userId);
       
@@ -243,6 +320,16 @@ class MatchSyncProvider extends ChangeNotifier {
     List<Map<String, dynamic>> allMatches = existingJson
         .map((json) => Map<String, dynamic>.from(jsonDecode(json)))
         .toList();
+
+    // Debug: Check existing matches for null matchData
+    for (int i = 0; i < allMatches.length; i++) {
+      final match = allMatches[i];
+      if (match['matchData'] == null) {
+        print('⚠️ Found null matchData at index $i: $match');
+      } else if (match['matchData']['status'] == null) {
+        print('⚠️ Found null status at index $i: ${match['matchData']}');
+      }
+    }
     
     // Update or add new matches
     for (var newMatch in newMatches) {
@@ -267,13 +354,19 @@ class MatchSyncProvider extends ChangeNotifier {
 }
 
   void _updateLocalArrays(List<Map<String, dynamic>> allMatches, String userId) {
+
+    _allMatches = List.from(allMatches);
+
     _sentRequests = allMatches.where((match) => 
-      match['requesterUserId'] == userId
+      match['requesterUserId'] == userId &&
+      match['matchData']['status'] == 'pending'
     ).toList();
     
     _receivedRequests = allMatches.where((match) => 
-      match['requestedUserId'] == userId
+      match['requestedUserId'] == userId &&
+      match['matchData']['status'] == 'pending'
     ).toList();
+    
   }
   
   /* = = = = = = = = = 
@@ -286,6 +379,46 @@ class MatchSyncProvider extends ChangeNotifier {
     ).toList();
     
     return pendingRequests.length >= 3;
+  }
+
+  bool get hasActiveMatch {
+    if (_currentUserId == null) return false;
+    
+    return _allMatches.any((match) => 
+      match['matchData'] != null &&
+      match['matchData']['status'] == 'active' &&
+      (match['requesterUserId'] == _currentUserId || match['requestedUserId'] == _currentUserId)
+    );
+  }
+
+  Map<String, dynamic>? getActiveMatchUserFromUserProvider(List<Map<String, dynamic>> allUsers) {
+    if (_currentUserId == null) return null;
+    
+    // Find the active match first
+    String? matchedUserId;
+    for (var match in _allMatches) {
+      if (match['matchData'] != null && 
+          match['matchData']['status'] == 'active' &&
+          (match['requesterUserId'] == _currentUserId || match['requestedUserId'] == _currentUserId)) {
+        
+        // Get the other person's userId
+        matchedUserId = match['requesterUserId'] == _currentUserId 
+            ? match['requestedUserId'] 
+            : match['requesterUserId'];
+        break;
+      }
+    }
+    
+    if (matchedUserId == null) return null;
+    
+    // Find the full user data from UserProvider
+    for (var user in allUsers) {
+      if (user['userId'] == matchedUserId) {
+        return user;
+      }
+    }
+    
+    return null;
   }
 
   int get pendingRequestsCount {
@@ -370,6 +503,20 @@ class MatchSyncProvider extends ChangeNotifier {
         'photos': null,
       };
     }
+  }
+
+  Map<String, dynamic>? get activeMatchData {
+    if (_currentUserId == null) return null;
+    
+    for (var match in _allMatches) {
+      if (match['matchData'] != null && 
+          match['matchData']['status'] == 'active' &&
+          (match['requesterUserId'] == _currentUserId || match['requestedUserId'] == _currentUserId)) {
+        return match;
+      }
+    }
+    
+    return null;
   }
 
   /* = = = = = = = = = 

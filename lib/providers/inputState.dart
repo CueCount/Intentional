@@ -27,14 +27,13 @@ class Input {
     );
   }
 
-  
 }
 
 class InputPhoto {
-  final Uint8List? croppedBytes; // for Web
-  final String? localPath;       // for Native
+  final Uint8List? croppedBytes;
+  final String? localPath;
   InputPhoto({this.croppedBytes, this.localPath});
-  Map<String, dynamic> toJson() => {}; // not used for now
+  Map<String, dynamic> toJson() => {};
 }
 
 class InputState extends ChangeNotifier {

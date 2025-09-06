@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../functions/matchesService.dart';
-import '../../functions/helpers/fetchData_service.dart';
+import 'package:provider/provider.dart';
+import '../../providers/matchState.dart';
+import '../../providers/userState.dart';
+import '../../functions/uiService.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/requestCard.dart';
@@ -10,50 +12,30 @@ class RequestReceived extends StatefulWidget {
   const RequestReceived({Key? key, this.shouldUpdate = true}) : super(key: key);
   
   @override
-  State<RequestReceived> createState() => _RequestReceived();
+  State<RequestReceived> createState() => _RequestReceivedState();
 }
 
-class _RequestReceived extends State<RequestReceived> {
-  List<Map<String, dynamic>> outgoingRequests = [];
-  bool isLoading = true;
+class _RequestReceivedState extends State<RequestReceived> {
   bool _initialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      print('🧠 shouldUpdate value for requests: ${widget.shouldUpdate}');
-      loadOutgoingRequests();
+      _ensureListenersActive();
       _initialized = true;
     }
   }
 
-  Future<void> loadOutgoingRequests() async {
-    if (mounted) {
-      setState(() {
-        isLoading = true;
-      });
-    }
+  Future<void> _ensureListenersActive() async {
+    final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
+    final userSync = Provider.of<UserSyncProvider>(context, listen: false);
 
-    try {
-      List<Map<String, dynamic>> requests = await MatchesService().fetchReceivedRequests(
-        fromFirebase: widget.shouldUpdate,
-        forceFresh: widget.shouldUpdate,
-      );
-      
-      if (mounted) {
-        setState(() {
-          outgoingRequests = requests;
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('❌ Error loading outgoing requests: $e');
-      
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+    if (!matchSync.isListening || !userSync.isListening) {
+      final userId = await UserActions.getCurrentUserId();
+      if (userId != null && userId.isNotEmpty) {
+        await userSync.startListening(userId); // Start users first
+        await matchSync.startListening(userId); // Then matches
       }
     }
   }
@@ -90,51 +72,61 @@ class _RequestReceived extends State<RequestReceived> {
                     ),
                     const SizedBox(height: 30),
                     
-                    // Loading state
-                    if (isLoading)
-                      const Center(
-                        child: CircularProgressIndicator(
-                          color: ColorPalette.peach,
-                        ),
-                      ),
-                    
-                    // Empty state
-                    if (!isLoading && outgoingRequests.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(40),
-                        child: Column(
+                    Consumer<MatchSyncProvider>(
+                      builder: (context, matchSync, child) {
+                        final receivedRequests = matchSync.receivedRequests;
+                        final isLoading = !matchSync.isListening && receivedRequests.isEmpty;
+                        
+                        return Column(
                           children: [
-                            Icon(
-                              Icons.send_outlined,
-                              size: 80,
-                              color: Colors.grey[300],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No requests received yet',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: Colors.grey[600],
+                            // Loading state
+                            if (isLoading)
+                              const Center(
+                                child: CircularProgressIndicator(
+                                  color: ColorPalette.peach,
+                                ),
                               ),
-                            ),
+                            
+                            // Empty state
+                            if (!isLoading && receivedRequests.isEmpty)
+                              Container(
+                                padding: const EdgeInsets.all(40),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.send_outlined,
+                                      size: 80,
+                                      color: Colors.grey[300],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No requests received yet',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            
+                            // Requests list
+                            if (!isLoading && receivedRequests.isNotEmpty)
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: receivedRequests.length,
+                                itemBuilder: (context, index) {
+                                  final request = receivedRequests[index];
+                                  
+                                  return RequestCard(
+                                    request: request,
+                                  );
+                                },
+                              ),
                           ],
-                        ),
-                      ),
-                    
-                    // Requests list
-                    if (!isLoading && outgoingRequests.isNotEmpty)
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: outgoingRequests.length,
-                        itemBuilder: (context, index) {
-                          final request = outgoingRequests[index];
-                          
-                          return RequestCard(
-                            request: request,
-                            onProfileTap: () => _openUserProfile(request['requestedUserId']),
-                          );
-                        },
-                      ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -145,25 +137,4 @@ class _RequestReceived extends State<RequestReceived> {
     );
   }
 
-  // Navigate to user profile
-  void _openUserProfile(String userId) {
-    // TODO: Implement navigation to user profile page
-    // Example: Navigator.pushNamed(context, '/profile', arguments: userId);
-    print('Opening profile for user: $userId');
-    
-    // Placeholder - you can replace this with your actual profile navigation
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Profile'),
-        content: Text('Would open profile for user: $userId'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
 }

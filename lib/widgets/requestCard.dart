@@ -83,9 +83,7 @@ class RequestCard extends StatelessWidget {
                       color: ColorPalette.peach,
                     ),
                   ),
-                  
                   const SizedBox(height: 4),
-                  
                   // Match Percentage (placeholder)
                   Text(
                     '95% Match',
@@ -94,9 +92,7 @@ class RequestCard extends StatelessWidget {
                       fontSize: 24,
                     ),
                   ),
-                  
                   const SizedBox(height: 4),
-                  
                   // Time Left (calculated from createdAt)
                   Text(
                     _getTimeLeft(matchData['createdAt']),
@@ -110,7 +106,7 @@ class RequestCard extends StatelessWidget {
             
             // Profile Icon
             GestureDetector(
-              onTap: onProfileTap ?? () => _openUserProfile(context, request['requestedUserId']),
+              onTap: onProfileTap ?? () => _openUserProfile(context, userData['userId']),
               child: const Icon(
                 Icons.open_in_full,
                 color: ColorPalette.peach,
@@ -123,7 +119,6 @@ class RequestCard extends StatelessWidget {
     );
   }
 
-  // Helper function to calculate age from birthDate
   int _calculateAge(dynamic birthDate) {
     if (birthDate == null) return 0;
     
@@ -144,7 +139,6 @@ class RequestCard extends StatelessWidget {
     return age;
   }
 
-  // Helper function to calculate time left from createdAt
   String _getTimeLeft(dynamic createdAt) {
     if (createdAt == null) return '1.5 Days Left';
     
@@ -179,7 +173,7 @@ class RequestCard extends StatelessWidget {
     // Add the userId to the userData before passing it
     final profileData = {
       ...userData,
-      'userId': request['requestedUserId'], // Add the missing userId field
+      'userId': userId, // Add the missing userId field
     };
     
     Navigator.pushNamed(
@@ -188,4 +182,5 @@ class RequestCard extends StatelessWidget {
       arguments: profileData,
     );
   }
+
 }

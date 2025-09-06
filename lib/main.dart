@@ -27,15 +27,21 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+  
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      onGenerateRoute: AppRoutes.generateRoute,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: Color.fromRGBO(255, 255, 255, 1),
+    return Center(
+      child: Container(
+        constraints: BoxConstraints(maxWidth: 380), // Adjust width as needed
+        child: MaterialApp(
+          onGenerateRoute: AppRoutes.generateRoute,
+          theme: ThemeData(
+            useMaterial3: true,
+            scaffoldBackgroundColor: Color.fromRGBO(255, 255, 255, 1),
+          ),
+          debugShowCheckedModeBanner: false,
+        ),
       ),
-      debugShowCheckedModeBanner: false,
     );
   }
 }

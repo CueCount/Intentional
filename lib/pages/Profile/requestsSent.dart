@@ -10,7 +10,7 @@ import '../../widgets/requestCard.dart';
 class RequestSent extends StatefulWidget {
   final bool shouldUpdate;
   const RequestSent({Key? key, this.shouldUpdate = true}) : super(key: key);
-  
+
   @override
   State<RequestSent> createState() => _RequestSentState();
 }
@@ -36,8 +36,8 @@ class _RequestSentState extends State<RequestSent> {
     if (!matchSync.isListening || !userSync.isListening) {
       final userId = await UserActions.getCurrentUserId();
       if (userId != null && userId.isNotEmpty) {
-        await userSync.startListening(userId); // Start users first
-        await matchSync.startListening(userId); // Then matches
+        await userSync.startListening(userId); 
+        await matchSync.startListening(userId);
       }
     }
   }
@@ -76,6 +76,7 @@ class _RequestSentState extends State<RequestSent> {
                         );
                       },
                     ),
+
                     const SizedBox(height: 30),
                     
                     Consumer<MatchSyncProvider>(

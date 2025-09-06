@@ -15,10 +15,10 @@ class UserSyncProvider extends ChangeNotifier {
   String? get currentUserId => _currentUserId;
   
   // Cached user data
-  List<Map<String, dynamic>> _availableUsers = [];
+  List<Map<String, dynamic>> _allUsers = [];
   
   // Getters for cached data
-  List<Map<String, dynamic>> get availableUsers => List.from(_availableUsers);
+  List<Map<String, dynamic>> get allUsers => List.from(_allUsers);
   
   /* = = = = = = = = = 
   Start / Stop Listening
@@ -106,21 +106,13 @@ class UserSyncProvider extends ChangeNotifier {
             };
           })
           .toList();
-      
-      // Filter out users who have active matches
-      final availableUsers = await _filterOutActiveMatches(allUsers, userId);
-      
-      // Update local cache
-      _availableUsers = availableUsers;
+    
       
       // Save to SharedPreferences
-      await _saveUsersToSharedPrefs(availableUsers, userId);
+      await _saveUsersToSharedPrefs(allUsers, userId);
       
       notifyListeners();
-      
-      if (kDebugMode) {
-        print('User Provider: Updated ${availableUsers.length} available users (filtered from ${allUsers.length} total)');
-      }
+
     } catch (e) {
       if (kDebugMode) {
         print('User Provider Error: Failed to handle user changes - $e');
@@ -128,7 +120,6 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
   
-  // Placeholder for future user filtering logic
   Map<String, dynamic> _applyUserFilters(Map<String, dynamic> userData) {
     // TODO: Add filtering logic based on user preferences
     // Example: age range, location radius, interests, etc.
@@ -137,48 +128,6 @@ class UserSyncProvider extends ChangeNotifier {
       'passesLocationFilter': true,
       'passesInterestFilter': true,
     };
-  }
-  
-  // Filter out users who have active matches
-  Future<List<Map<String, dynamic>>> _filterOutActiveMatches(List<Map<String, dynamic>> allUsers, String userId) async {
-    try {
-      // Get active matches from Firebase
-      final activeMatchesSnapshot = await FirebaseFirestore.instance
-          .collection('matches')
-          .where('status', isEqualTo: 'active')
-          .get();
-      
-      // Extract user IDs that are in active matches
-      final Set<String> activeMatchUserIds = {};
-      for (var doc in activeMatchesSnapshot.docs) {
-        final data = doc.data();
-        final requesterUserId = data['requesterUserId'];
-        final requestedUserId = data['requestedUserId'];
-        
-        // If current user is in this match, exclude the other user
-        if (requesterUserId == userId) {
-          activeMatchUserIds.add(requestedUserId);
-        } else if (requestedUserId == userId) {
-          activeMatchUserIds.add(requesterUserId);
-        }
-      }
-      
-      // Filter out users who are in active matches
-      final availableUsers = allUsers.where((user) => 
-        !activeMatchUserIds.contains(user['userId'])
-      ).toList();
-      
-      if (kDebugMode) {
-        print('User Provider: Filtered out ${activeMatchUserIds.length} users with active matches');
-      }
-      
-      return availableUsers;
-    } catch (e) {
-      if (kDebugMode) {
-        print('User Provider Error: Failed to filter active matches - $e');
-      }
-      return allUsers; // Return unfiltered list on error
-    }
   }
   
   /* = = = = = = = = = 
@@ -224,7 +173,7 @@ class UserSyncProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       
       final usersJson = prefs.getStringList('users_$userId') ?? [];
-      _availableUsers = usersJson.map((jsonString) => 
+      _allUsers = usersJson.map((jsonString) => 
         Map<String, dynamic>.from(jsonDecode(jsonString))
       ).toList();
       
@@ -248,28 +197,15 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
   
+  List<Map<String, dynamic>> getAllUsers() {
+    print('UserProvider getAllUsers called: ${_allUsers.length} users available');
+    return List.from(_allUsers);
+  }
+
   /* = = = = = = = = = 
   Helper Methods
   = = = = = = = = = */
-
-  // Get a specific user by ID
-  Map<String, dynamic>? getUserById(String userId) {
-    try {
-      return _availableUsers.firstWhere((user) => user['userId'] == userId);
-    } catch (e) {
-      return null;
-    }
-  }
   
-  // Get users with photos only
-  List<Map<String, dynamic>> getUsersWithPhotos() {
-    return _availableUsers.where((user) => 
-      user['photos'] != null && 
-      (user['photos'] is List && (user['photos'] as List).isNotEmpty)
-    ).toList();
-  }
-  
-  // Check if sync is needed
   Future<bool> _shouldSyncFromFirebase(String userId) async {
     try {
       final prefs = await SharedPreferences.getInstance();

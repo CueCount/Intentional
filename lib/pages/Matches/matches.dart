@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/profileCarousel.dart';
 import '../../widgets/navigation.dart';
-import '../../providers/userState.dart'; // Add this import
-import '../../functions/uiService.dart'; // For getCurrentUserId()
+import '../../providers/userState.dart'; 
+import '../../providers/matchState.dart'; 
+import '../../functions/uiService.dart'; 
 
 class Matches extends StatefulWidget {
   final bool shouldUpdate;
@@ -20,19 +21,24 @@ class _Matches extends State<Matches> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      _ensureUserListenersActive();
+      _ensureListenersActive();
       _initialized = true;
     }
   }
 
-  Future<void> _ensureUserListenersActive() async {
+  Future<void> _ensureListenersActive() async {
     final userSync = Provider.of<UserSyncProvider>(context, listen: false);
+    final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
 
-    if (!userSync.isListening) {
-      final userId = await UserActions.getCurrentUserId();
-      if (userId != null && userId.isNotEmpty) {
+    final userId = await UserActions.getCurrentUserId();
+    if (userId != null && userId.isNotEmpty) {
+      if (!userSync.isListening) {
         await userSync.startListening(userId);
         print('User Provider: Started listening for available users');
+      }
+      if (!matchSync.isListening) {
+        await matchSync.startListening(userId);
+        print('Match Provider: Started listening for matches');
       }
     }
   }
@@ -45,16 +51,28 @@ class _Matches extends State<Matches> {
           children: [
             const CustomStatusBar(),
             Expanded(
-              child: Consumer<UserSyncProvider>(
-                builder: (context, userSync, child) {
-                  // Get users with photos only (for matching)
-                  final availableUsers = userSync.getUsersWithPhotos();
-                  final isLoading = !userSync.isListening && availableUsers.isEmpty;
-                  
-                  return ProfileCarousel(
-                    userData: availableUsers,
-                    isLoading: isLoading,
-                  );
+              child: Consumer2<MatchSyncProvider, UserSyncProvider>(
+                builder: (context, matchSync, userSync, child) {
+                  if (matchSync.hasActiveMatch) {
+                    final allUsers = userSync.getAllUsers();
+                    final matchedUser = matchSync.getActiveMatchUserFromUserProvider(allUsers);
+                    final availableUsers = matchedUser != null ? [matchedUser] : <Map<String, dynamic>>[];
+
+                    final isLoading = !matchSync.isListening && availableUsers.isEmpty;
+                    
+                    return ProfileCarousel(
+                      userData: availableUsers,
+                      isLoading: isLoading,
+                    );
+                  } else {
+                    final availableUsers = userSync.getAllUsers();
+                    final isLoading = !userSync.isListening && availableUsers.isEmpty;
+                    
+                    return ProfileCarousel(
+                      userData: availableUsers,
+                      isLoading: isLoading,
+                    );
+                  }
                 },
               ),
             ),

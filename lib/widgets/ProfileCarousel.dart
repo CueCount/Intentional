@@ -38,6 +38,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
         height: 700,
         autoPlay: false,
         enlargeCenterPage: true,
+        enableInfiniteScroll: false,
       ),
 
       items: List<Widget>.from(profiles.map<Widget>((profile) {

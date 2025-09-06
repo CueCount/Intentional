@@ -5,7 +5,7 @@ import '../functions/matchesService.dart';
 import '../providers/matchState.dart';
 import '../router/router.dart';
 
-enum RequestStatus { loading, available, pending }
+enum RequestStatus { loading, available, pending, received, matched }
 
 class MatchCTA extends StatelessWidget {
   final String targetUserId;
@@ -20,7 +20,9 @@ class MatchCTA extends StatelessWidget {
     return Consumer<MatchSyncProvider>(
       builder: (context, matchSync, child) {
         // Determine status based on provider data
-        final status = _getRequestStatus(matchSync, targetUserId);
+        final result = _getRequestStatus(matchSync, targetUserId);
+        final status = result['status'] as RequestStatus;
+        final matchId = result['matchId'] as String?;
         
         switch (status) {
           case RequestStatus.loading:
@@ -29,6 +31,75 @@ class MatchCTA extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.only(bottom: 20),
               child: const Center(child: CircularProgressIndicator()),
+            );
+
+          case RequestStatus.matched:
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.pink.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'You\'re Matched!',
+                    style: AppTextStyles.headingLarge.copyWith(
+                      color: ColorPalette.peach,
+                      fontSize: 28,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'You and this person are exclusively connected. Start chatting to get to know each other better!',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: ColorPalette.peach,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, AppRoutes.chat);
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: ColorPalette.peach.withOpacity(0.2),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: Text(
+                      'Go to Chat',
+                      style: AppTextStyles.headingMedium.copyWith(
+                        color: ColorPalette.peach,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () async {
+                      if (matchId != null) {
+                        final updateResult = await matchSync.updateMatchStatus(matchId, 'unmatched');
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(updateResult['message'])),
+                          );
+                        }
+                      }
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.red.withOpacity(0.1),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      'Unmatch',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             );
 
           case RequestStatus.pending:
@@ -56,6 +127,90 @@ class MatchCTA extends StatelessWidget {
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: ColorPalette.peach,
                     ),
+                  ),
+                ],
+              ),
+            );
+
+          case RequestStatus.received:
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'You Have a Match Request!',
+                    style: AppTextStyles.headingLarge.copyWith(
+                      color: ColorPalette.peach,
+                      fontSize: 28,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This person wants to match with you - accept to start an exclusive connection or reject to pass.',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: ColorPalette.peach,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () async {
+                            if (matchId != null) {
+                              final result = await matchSync.updateMatchStatus(matchId, 'active');
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(result['message'])),
+                                );
+                              }
+                            }
+                          },
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.green.withOpacity(0.2),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text(
+                            'Accept',
+                            style: AppTextStyles.headingMedium.copyWith(
+                              color: Colors.green,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () async {
+                            if (matchId != null) {
+                              final result = await matchSync.updateMatchStatus(matchId, 'rejected');
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(result['message'])),
+                                );
+                              }
+                            }
+                          },
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.red.withOpacity(0.2),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text(
+                            'Reject',
+                            style: AppTextStyles.headingMedium.copyWith(
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -150,22 +305,50 @@ class MatchCTA extends StatelessWidget {
   }
   
   // Helper method to determine request status from provider data
-  RequestStatus _getRequestStatus(MatchSyncProvider matchSync, String targetUserId) {
+  Map<String, dynamic> _getRequestStatus(MatchSyncProvider matchSync, String targetUserId) {
     // If provider isn't listening yet, show loading
     if (!matchSync.isListening) {
-      return RequestStatus.loading;
+      return {'status': RequestStatus.loading, 'matchId': null};
     }
     
-    // Check if there's already a pending request to this user
+    // Check if there's already a pending request to this user (sent by current user)
     final existingRequest = matchSync.sentRequests.any((request) =>
       request['requestedUserId'] == targetUserId &&
       request['matchData']['status'] == 'pending'
     );
+
+    // Check if there's a pending request FROM this user TO current user (received by current user)
+    final receivedRequest = matchSync.receivedRequests.firstWhere(
+      (request) => 
+        request['requesterUserId'] == targetUserId &&
+        request['matchData']['status'] == 'pending',
+      orElse: () => <String, dynamic>{},
+    );
+
+    final matched = matchSync.allMatches.firstWhere(
+      (match) => (
+        (match['requesterUserId'] == targetUserId && match['requestedUserId'] == matchSync.currentUserId) ||
+        (match['requestedUserId'] == targetUserId && match['requesterUserId'] == matchSync.currentUserId)
+      ) &&
+      match['matchData']['status'] == 'active',
+      orElse: () => <String, dynamic>{},
+    );
     
-    if (existingRequest) {
-      return RequestStatus.pending;
+    if (receivedRequest.isNotEmpty) {
+      return {
+        'status': RequestStatus.received, 
+        'matchId': receivedRequest['matchData']['matchId']
+      };
+    } else if (existingRequest) {
+      return {'status': RequestStatus.pending, 'matchId': null};
+    } else if (matched.isNotEmpty) {
+      return {
+        'status': RequestStatus.matched, 
+        'matchId': matched['matchData']['matchId']
+      };
+    } else {
+      return {'status': RequestStatus.available, 'matchId': null};
     }
-    
-    return RequestStatus.available;
   }
+
 }

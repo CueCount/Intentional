@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../functions/uiService.dart';
-import '../../functions/matchesService.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/pill.dart'; 
@@ -14,7 +13,6 @@ class Match extends StatefulWidget {
 
 class _Match extends State<Match> {
   Map<String, dynamic>? profile; 
-  RequestStatus _requestStatus = RequestStatus.loading;
 
   @override
   void initState() {
@@ -33,18 +31,6 @@ class _Match extends State<Match> {
         profile = profileData;
       });
 
-      // Check pending request status
-      final targetUserId = profile?['userId'];
-      if (targetUserId != null) {
-        final hasPending = await MatchesService.checkPendingRequest(targetUserId);
-        setState(() {
-          _requestStatus = hasPending ? RequestStatus.pending : RequestStatus.available;
-        });
-      } else {
-        setState(() {
-          _requestStatus = RequestStatus.available;
-        });
-      }
     });
   
   }
