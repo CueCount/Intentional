@@ -67,12 +67,6 @@ class UserActions {
   }
 
   /* = = = = = = = = =
-  Query Management
-  = = = = = = = = = */
-
-  
-
-  /* = = = = = = = = =
   Save to Local / Firebase 
   = = = = = = = = = */
   

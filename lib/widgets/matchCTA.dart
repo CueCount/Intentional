@@ -19,7 +19,6 @@ class MatchCTA extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<MatchSyncProvider>(
       builder: (context, matchSync, child) {
-        // Determine status based on provider data
         final result = _getRequestStatus(matchSync, targetUserId);
         final status = result['status'] as RequestStatus;
         final matchId = result['matchId'] as String?;
@@ -303,8 +302,7 @@ class MatchCTA extends StatelessWidget {
       },
     );
   }
-  
-  // Helper method to determine request status from provider data
+
   Map<String, dynamic> _getRequestStatus(MatchSyncProvider matchSync, String targetUserId) {
     // If provider isn't listening yet, show loading
     if (!matchSync.isListening) {
@@ -314,41 +312,43 @@ class MatchCTA extends StatelessWidget {
     // Check if there's already a pending request to this user (sent by current user)
     final existingRequest = matchSync.sentRequests.any((request) =>
       request['requestedUserId'] == targetUserId &&
-      request['matchData']['status'] == 'pending'
+      request['status'] == 'pending'  // Direct access, not nested
     );
 
     // Check if there's a pending request FROM this user TO current user (received by current user)
     final receivedRequest = matchSync.receivedRequests.firstWhere(
       (request) => 
         request['requesterUserId'] == targetUserId &&
-        request['matchData']['status'] == 'pending',
+        request['status'] == 'pending',  // Direct access, not nested
       orElse: () => <String, dynamic>{},
     );
 
+    // Check if there's an active match with this user
     final matched = matchSync.allMatches.firstWhere(
       (match) => (
         (match['requesterUserId'] == targetUserId && match['requestedUserId'] == matchSync.currentUserId) ||
         (match['requestedUserId'] == targetUserId && match['requesterUserId'] == matchSync.currentUserId)
       ) &&
-      match['matchData']['status'] == 'active',
+      match['status'] == 'active',  // Direct access, not nested
       orElse: () => <String, dynamic>{},
     );
     
     if (receivedRequest.isNotEmpty) {
       return {
         'status': RequestStatus.received, 
-        'matchId': receivedRequest['matchData']['matchId']
+        'matchId': receivedRequest['matchId']  // Direct access, not nested
       };
     } else if (existingRequest) {
       return {'status': RequestStatus.pending, 'matchId': null};
     } else if (matched.isNotEmpty) {
       return {
         'status': RequestStatus.matched, 
-        'matchId': matched['matchData']['matchId']
+        'matchId': matched['matchId']  // Direct access, not nested
       };
     } else {
       return {'status': RequestStatus.available, 'matchId': null};
     }
+    
   }
 
 }

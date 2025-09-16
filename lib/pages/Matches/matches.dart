@@ -4,7 +4,7 @@ import '../../widgets/profileCarousel.dart';
 import '../../widgets/navigation.dart';
 import '../../providers/userState.dart'; 
 import '../../providers/matchState.dart'; 
-import '../../functions/uiService.dart'; 
+import '../../providers/authState.dart';
 
 class Matches extends StatefulWidget {
   final bool shouldUpdate;
@@ -15,30 +15,44 @@ class Matches extends StatefulWidget {
 }
 
 class _Matches extends State<Matches> {
-  bool _initialized = false;
+  List<Map<String, dynamic>> _userData = [];
+  bool _isLoading = true;
+  bool _hasLoaded = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_initialized) {
-      _ensureListenersActive();
-      _initialized = true;
+    if (!_hasLoaded) {
+      _loadUsers();
+      _hasLoaded = true;
     }
   }
 
-  Future<void> _ensureListenersActive() async {
-    final userSync = Provider.of<UserSyncProvider>(context, listen: false);
-    final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
-
-    final userId = await UserActions.getCurrentUserId();
-    if (userId != null && userId.isNotEmpty) {
-      if (!userSync.isListening) {
-        await userSync.startListening(userId);
-        print('User Provider: Started listening for available users');
+  void _loadUsers() async {
+    try {
+      final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
+      final userSync = Provider.of<UserSyncProvider>(context, listen: false);
+      
+      final activeMatchUser = await matchSync.getActiveMatchUser();
+      
+      if (activeMatchUser.isNotEmpty) {
+        _userData = activeMatchUser;
+      } else {
+        _userData = await userSync.loadUsers();
       }
-      if (!matchSync.isListening) {
-        await matchSync.startListening(userId);
-        print('Match Provider: Started listening for matches');
+      
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+      if (mounted) {
+        setState(() {
+          _userData = [];
+          _isLoading = false;
+        });
       }
     }
   }
@@ -51,29 +65,9 @@ class _Matches extends State<Matches> {
           children: [
             const CustomStatusBar(),
             Expanded(
-              child: Consumer2<MatchSyncProvider, UserSyncProvider>(
-                builder: (context, matchSync, userSync, child) {
-                  if (matchSync.hasActiveMatch) {
-                    final allUsers = userSync.getAllUsers();
-                    final matchedUser = matchSync.getActiveMatchUserFromUserProvider(allUsers);
-                    final availableUsers = matchedUser != null ? [matchedUser] : <Map<String, dynamic>>[];
-
-                    final isLoading = !matchSync.isListening && availableUsers.isEmpty;
-                    
-                    return ProfileCarousel(
-                      userData: availableUsers,
-                      isLoading: isLoading,
-                    );
-                  } else {
-                    final availableUsers = userSync.getAllUsers();
-                    final isLoading = !userSync.isListening && availableUsers.isEmpty;
-                    
-                    return ProfileCarousel(
-                      userData: availableUsers,
-                      isLoading: isLoading,
-                    );
-                  }
-                },
+              child: ProfileCarousel(
+                userData: _userData,
+                isLoading: _isLoading,
               ),
             ),
           ],

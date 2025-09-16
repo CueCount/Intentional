@@ -90,38 +90,10 @@ class MatchesService {
   }
 
   /* = = = = = = = = =
-  Deny Request
-  = = = = = = = = = */
-  
-
-
-  /* = = = = = = = = =
-  Ignore Request
-  = = = = = = = = = */
-
-  // Timer function for ignoring 
-
-  /* = = = = = = = = =
-  Accept Request
-  = = = = = = = = = */
-
-  // Send Acceptance Here
-
-  // Listener for New Match Here
-
-  /* = = = = = = = = =
-  UnMatch
-  = = = = = = = = = */
-
-  // Send UnMatch Here
-
-  // Listener for New UnMatch Here
-
-  /* = = = = = = = = =
   Fetch Sent Requests
   = = = = = = = = = */
 
-  Future<List<Map<String, dynamic>>> fetchSentRequests({
+  /*Future<List<Map<String, dynamic>>> fetchSentRequests({
     required bool fromFirebase,
     bool forceFresh = false,
   }) async {
@@ -160,9 +132,9 @@ class MatchesService {
       }
       return [];
     }
-  }
+  }*/
 
-  Future<void> _clearRequestsCache() async {
+  /*Future<void> _clearRequestsCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       
@@ -176,13 +148,13 @@ class MatchesService {
     } catch (e) {
       print('❌ Error clearing requests cache: $e');
     }
-  }
+  }*/
 
   /* = = = = = = = = =
   Fetch Received Requests
   = = = = = = = = = */
 
-  Future<List<Map<String, dynamic>>> fetchReceivedRequests({
+  /*Future<List<Map<String, dynamic>>> fetchReceivedRequests({
     required bool fromFirebase,
     bool forceFresh = false,
   }) async {
@@ -221,15 +193,13 @@ class MatchesService {
       }
       return [];
     }
-  }
-
-  // Listener for new Incoming Here
+  }*/
 
   /* = = = = = = = = =
   Refresh Matches
   = = = = = = = = = */
 
-  Future<void> refreshMatches(BuildContext context) async {
+  /*Future<void> refreshMatches(BuildContext context) async {
     try {
       final id = await UserActions.getCurrentUserId(context: context);
       if (id != null && id.isNotEmpty) {
@@ -247,13 +217,13 @@ class MatchesService {
     } catch (e) {
       print('❌ Error in refreshMatches: $e');
     }
-  }
+  }*/
 
   /* = = = = = = = = =
   Fetch Matches
   = = = = = = = = = */
 
-  Future<List<Map<String, dynamic>>> fetchMatches({
+  /*Future<List<Map<String, dynamic>>> fetchMatches({
     required bool fromFirebase,
     bool onlyWithPhotos = false,
     bool forceFresh = false,
@@ -285,9 +255,9 @@ class MatchesService {
       print('❌ Error discovering profiles: $e');
       return [];
     }
-  }
+  }*/
 
-  Future<void> _clearUserCache() async {
+  /*Future<void> _clearUserCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       
@@ -306,13 +276,13 @@ class MatchesService {
     } catch (e) {
       print('❌ Error clearing cache: $e');
     }
-  }
+  }*/
 
   /* = = = = = = = = =
   Check for Pending Document Local Requests 
   = = = = = = = = = */
 
-  static Future<bool> checkPendingRequest(String targetUserId) async {
+  /*static Future<bool> checkPendingRequest(String targetUserId) async {
     try {
       final currentUserId = await UserActions.getCurrentUserId();
     
@@ -337,6 +307,6 @@ class MatchesService {
       }
       return false;
     }
-  }
+  }*/
 
 }

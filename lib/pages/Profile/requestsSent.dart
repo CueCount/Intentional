@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/matchState.dart';
-import '../../providers/userState.dart';
 import '../../functions/uiService.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
@@ -16,6 +15,7 @@ class RequestSent extends StatefulWidget {
 }
 
 class _RequestSentState extends State<RequestSent> {
+  String? userId;
   List<Map<String, dynamic>> outgoingRequests = [];
   bool isLoading = true;
   bool _initialized = false;
@@ -25,18 +25,17 @@ class _RequestSentState extends State<RequestSent> {
     super.didChangeDependencies();
     if (!_initialized) {
       _ensureListenersActive();
+      MatchSyncProvider.debugPrintAllStorage();
       _initialized = true;
     }
   }
 
   Future<void> _ensureListenersActive() async {
     final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
-    final userSync = Provider.of<UserSyncProvider>(context, listen: false);
 
-    if (!matchSync.isListening || !userSync.isListening) {
+    if (!matchSync.isListening) {
       final userId = await UserActions.getCurrentUserId();
       if (userId != null && userId.isNotEmpty) {
-        await userSync.startListening(userId); 
         await matchSync.startListening(userId);
       }
     }
@@ -54,7 +53,6 @@ class _RequestSentState extends State<RequestSent> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Header
                     Text(
                       'Sent',
                       style: AppTextStyles.headingLarge.copyWith(
@@ -63,7 +61,9 @@ class _RequestSentState extends State<RequestSent> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+
                     const SizedBox(height: 8),
+
                     Consumer<MatchSyncProvider>(
                       builder: (context, matchSync, child) {
                         return Text(
@@ -86,7 +86,6 @@ class _RequestSentState extends State<RequestSent> {
                         
                         return Column(
                           children: [
-                            // Loading state
                             if (isLoading)
                               const Center(
                                 child: CircularProgressIndicator(
@@ -94,7 +93,6 @@ class _RequestSentState extends State<RequestSent> {
                                 ),
                               ),
                             
-                            // Empty state
                             if (!isLoading && outgoingRequests.isEmpty)
                               Container(
                                 padding: const EdgeInsets.all(40),
@@ -116,7 +114,6 @@ class _RequestSentState extends State<RequestSent> {
                                 ),
                               ),
                             
-                            // Requests list
                             if (!isLoading && outgoingRequests.isNotEmpty)
                               ListView.builder(
                                 shrinkWrap: true,

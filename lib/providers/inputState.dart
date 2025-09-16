@@ -41,6 +41,16 @@ class InputState extends ChangeNotifier {
   String _userId = '';
   String get userId => _userId;
 
+  void setUserId(String userId) {
+    _userId = userId;
+    notifyListeners();
+  }
+
+  void clearUserId() {
+    _userId = '';
+    notifyListeners();
+  }
+
   void clearAllData() {
     _cachedInputs.clear();
     _userId = '';

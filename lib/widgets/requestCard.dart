@@ -16,7 +16,7 @@ class RequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userData = request['userData'] as Map<String, dynamic>;
-    final matchData = request['matchData'] as Map<String, dynamic>;
+    //final matchData = request['matchData'] as Map<String, dynamic>;
     String? imageUrl;
     if (userData['photos'] != null) {
       if (userData['photos'] is List && (userData['photos'] as List).isNotEmpty) {
@@ -95,7 +95,7 @@ class RequestCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   // Time Left (calculated from createdAt)
                   Text(
-                    _getTimeLeft(matchData['createdAt']),
+                    _getTimeLeft(request['createdAt']),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: ColorPalette.peach,
                     ),

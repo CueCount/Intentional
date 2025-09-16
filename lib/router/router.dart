@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/Chat/chat.dart';
 import '../pages/Guides/landingPage.dart';
 import '../pages/Matches/matches.dart';
@@ -51,12 +50,21 @@ class AppRoutes {
   static const String requestsSent= '/requestsSent';
   static const String requestsReceived= '/requestsReceived';
   
-  static Route<dynamic> generateRoute(RouteSettings settings) {
+  static Route<dynamic> generateRoute(RouteSettings settings, bool isLoggedIn) {
     final arguments = settings.arguments;
+    
     return MaterialPageRoute(
       settings: settings,
-      builder: (_) => _buildAuthWrapper(settings, arguments),
+      builder: (_) => _buildRouteWidget(settings.name, arguments, isLoggedIn),
     );
+  }
+
+  static Widget _buildRouteWidget(String? routeName, dynamic arguments, bool isLoggedIn) {
+    if (isLoggedIn) {
+      return _loggedInRoutes(routeName, arguments);
+    } else {
+      return _loggedOutRoutes(routeName);
+    }
   }
 
   static Widget _loggedInRoutes(String? routeName, [dynamic arguments]) {
@@ -97,7 +105,6 @@ class AppRoutes {
         return PhotoCropPage(imageFile: arguments['imageFile'],);
       case subscription:
         return const SubscriptionPage();
-
       case editNeeds:
         return const EditNeeds();
       case settings:
@@ -142,34 +149,5 @@ class AppRoutes {
       default:
         return const MyHomePage(title: 'Landing Page',);
     }
-  }
-
-  static Widget _buildAuthWrapper(RouteSettings settings, [dynamic arguments]) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        //final user = FirebaseAuth.instance.currentUser;
-        //print('Auth state: ${user != null ? 'Logged in as ${user.uid}' : 'Logged out'}');
-        
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final bool isLoggedIn = snapshot.hasData && snapshot.data != null;
-        print('Auth state: ${snapshot.hasData ? 'Logged in as ${snapshot.data!.uid}' : 'Logged out'}');
-        
-        if (snapshot.hasData) {
-          try {
-            return _loggedInRoutes(settings.name, arguments);
-          } catch (e) {
-            return const Matches();
-          }
-        } else {
-          return _loggedOutRoutes(settings.name);
-        }
-      },
-    );
   }
 }

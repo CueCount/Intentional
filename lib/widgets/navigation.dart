@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import '../functions/helpers/matchesCountService.dart';
-import '../styles.dart';
+import 'package:provider/provider.dart';
+import '../providers/userState.dart';
 import 'menu.dart';
 import '../router/router.dart';
-import '../functions/uiService.dart';
-import '../functions/matchesService.dart';
 
 class CustomStatusBar extends StatefulWidget {
   const CustomStatusBar({
@@ -19,62 +17,10 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
   int refinedMatchesCount = 12000;
   bool infoIncomplete = true;
   bool needsUpdated = false;
-  bool _isLoading = true;
-  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
-    // Add small delay to prevent immediate rebuild conflicts
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (!_isDisposed) {
-        _checkNotificationStatus();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _isDisposed = true;
-    super.dispose();
-  }
-
-  Future<void> _checkNotificationStatus() async {
-    if (_isDisposed || !mounted) return;
-    
-    try {
-      String? userId = await UserActions.getCurrentUserId();
-      
-      if (_isDisposed || !mounted) return;
-      
-      if (userId == null) {
-        // Handle no user case
-        return;
-      }
-
-      // Read status once here
-      Map<String, bool> status = await UserActions.readStatus(userId, [
-        'infoIncomplete', 
-        'needsUpdated', 
-        'available'
-      ]);
-      
-      if (!_isDisposed && mounted) {
-        setState(() {
-          infoIncomplete = status['infoIncomplete'] ?? true;
-          needsUpdated = status['needsUpdated'] ?? false;
-          _isLoading = false;
-        });
-      }
-      
-    } catch (e) {
-      print('❌ Error checking notification status: $e');
-      if (!_isDisposed && mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 
   @override
@@ -90,7 +36,13 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
               AppMenuOverlay.show(context); 
             },
           ), 
-          _buildNotificationText(context),
+          ElevatedButton(
+            onPressed: () async {
+              final userSync = Provider.of<UserSyncProvider>(context, listen: false);
+              await userSync.refreshDiscoverableUsers(context);
+            },
+            child: const Text('Refresh Users'),
+          ),
           IconButton(
             icon: const Icon(Icons.filter_list, color: Colors.black),
             onPressed: () {
@@ -102,36 +54,5 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
     );
   }
 
-  Widget _buildNotificationText(BuildContext context) {
-    if (infoIncomplete) {
-      return Text(
-        '$refinedMatchesCount Matches',
-        style: AppTextStyles.bodySmall.copyWith(color: ColorPalette.grey,),
-      );
-    } 
-    else if (needsUpdated) {
-      return GestureDetector(
-        onTap: () async {
-          await MatchesService().refreshMatches(context);
-        },
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.refresh,
-              size: 18,
-              color: ColorPalette.grey,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              'Refresh Matches',
-              style: AppTextStyles.bodySmall.copyWith(color: ColorPalette.grey,),
-            ),
-          ],
-        ),
-      );
-    } else {
-      return const SizedBox.shrink();
-    }
-  }
+  
 }

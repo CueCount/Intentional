@@ -31,10 +31,9 @@ class _RequestReceivedState extends State<RequestReceived> {
     final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
     final userSync = Provider.of<UserSyncProvider>(context, listen: false);
 
-    if (!matchSync.isListening || !userSync.isListening) {
+    if (!matchSync.isListening) {
       final userId = await UserActions.getCurrentUserId();
       if (userId != null && userId.isNotEmpty) {
-        await userSync.startListening(userId); // Start users first
         await matchSync.startListening(userId); // Then matches
       }
     }
