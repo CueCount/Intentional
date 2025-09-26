@@ -15,85 +15,85 @@ class AuthService {
   
   // Register a new user with email and password
   Future<bool> registerAuth(
-  BuildContext context,
-  String email, 
-  String password,
-  ) async {
-  
-  try {
-    print('🔄 Starting registration process...');
+    BuildContext context,
+    String email, 
+    String password,
+    ) async {
     
-    final prefs = await SharedPreferences.getInstance();
-    final tempId = prefs.getString('current_temp_id');
-    
-    print('Found temp_id: $tempId');
-    
-    if (tempId == null) {
-      print('❌ No temp_id found in SharedPreferences');
-      return false;
-    }
-    
-    // Get all temp user data from SharedPreferences
-    final tempUserDataString = prefs.getString('user_data_$tempId');
-    print('Found temp user data string: $tempUserDataString');
-    
-    Map<String, dynamic> tempUserData = {};
-    
-    if (tempUserDataString != null) {
-      tempUserData = json.decode(tempUserDataString);
-    } else {
-      print('⚠️ No temp user data found, but continuing with registration...');
-    }
-          
-    // Create user with email and password
-    final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-    
-    print('✅ Firebase user created successfully');
-    
-    // Transfer temp data to authenticated user
-    if (userCredential.user != null) {
-      final authenticatedUserId = userCredential.user!.uid;
-      print('🆔 Authenticated user ID: $authenticatedUserId');
+    try {
+      print('🔄 Starting registration process...');
+      
+      final prefs = await SharedPreferences.getInstance();
+      final tempId = prefs.getString('current_temp_id');
+      
+      print('Found temp_id: $tempId');
+      
+      if (tempId == null) {
+        print('❌ No temp_id found in SharedPreferences');
+        return false;
+      }
+      
+      // Get all temp user data from SharedPreferences
+      final tempUserDataString = prefs.getString('user_data_$tempId');
+      print('Found temp user data string: $tempUserDataString');
+      
+      Map<String, dynamic> tempUserData = {};
+      
+      if (tempUserDataString != null) {
+        tempUserData = json.decode(tempUserDataString);
+      } else {
+        print('⚠️ No temp user data found, but continuing with registration...');
+      }
+            
+      // Create user with email and password
+      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      
+      print('✅ Firebase user created successfully');
       
       // Transfer temp data to authenticated user
-      await _transferTempDataToAuthenticatedUser(tempId, authenticatedUserId, tempUserData, email);
-      print('✅ Temp data transfer completed');
-      
-      // Fetch fresh data from Firebase and populate SharedPreferences
-      final freshData = await FetchDataService.fetchUserFromFirebase(authenticatedUserId);
-      if (freshData.isNotEmpty) {
-        final cleanedData = FetchDataService().cleanUserData(freshData);
-        await SaveDataService.saveToSharedPref(data: cleanedData, userId: authenticatedUserId);
-        print('✅ Fresh data loaded from Firebase to SharedPreferences');
-      }
-      
-      // Clear Provider data to avoid confusion
-      if (context.mounted) {
-        final inputState = Provider.of<InputState>(context, listen: false);
-        inputState.clearAllData();
-        print('✅ Cleared Provider data for fresh start');
+      if (userCredential.user != null) {
+        final authenticatedUserId = userCredential.user!.uid;
+        print('🆔 Authenticated user ID: $authenticatedUserId');
         
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.basicInfo,
-          (route) => false,
-        );
+        // Transfer temp data to authenticated user
+        await _transferTempDataToAuthenticatedUser(tempId, authenticatedUserId, tempUserData, email);
+        print('✅ Temp data transfer completed');
+        
+        // Fetch fresh data from Firebase and populate SharedPreferences
+        final freshData = await FetchDataService.fetchUserFromFirebase(authenticatedUserId);
+        if (freshData.isNotEmpty) {
+          final cleanedData = FetchDataService().cleanUserData(freshData);
+          //await SaveDataService.saveToSharedPref(data: cleanedData, userId: authenticatedUserId);
+          print('✅ Fresh data loaded from Firebase to SharedPreferences');
+        }
+        
+        // Clear Provider data to avoid confusion
+        if (context.mounted) {
+          final inputState = Provider.of<InputState>(context, listen: false);
+          inputState.clearAllData();
+          print('✅ Cleared Provider data for fresh start');
+          
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.subscription,
+            (route) => false,
+          );
+        }
+        
+        return true;
       }
       
-      return true;
+      print('❌ User credential was null');
+      return false;
+    } catch (e, stackTrace) {
+      print('❌ Registration failed: $e');
+      print('Stack trace: $stackTrace');
+      return false;
     }
-    
-    print('❌ User credential was null');
-    return false;
-  } catch (e, stackTrace) {
-    print('❌ Registration failed: $e');
-    print('Stack trace: $stackTrace');
-    return false;
   }
-}
   
   // Transfer all temp data to authenticated user and destroy temp ID
   Future<void> _transferTempDataToAuthenticatedUser(
@@ -157,23 +157,4 @@ class AuthService {
     }
   }
   
-  // Helper function to get temp user data (for debugging)
-  static Future<Map<String, dynamic>?> getTempUserData() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final tempId = prefs.getString('temp_id');
-      
-      if (tempId != null) {
-        final tempUserDataString = prefs.getString('user_data_$tempId');
-        if (tempUserDataString != null) {
-          return json.decode(tempUserDataString);
-        }
-      }
-      return null;
-    } catch (e) {
-      print('❌ Error getting temp user data: $e');
-      return null;
-    }
-  }
-
 }

@@ -4,7 +4,7 @@ import '../../widgets/profileCarousel.dart';
 import '../../widgets/navigation.dart';
 import '../../providers/userState.dart'; 
 import '../../providers/matchState.dart'; 
-import '../../providers/authState.dart';
+import '../../providers/inputState.dart';
 
 class Matches extends StatefulWidget {
   final bool shouldUpdate;
@@ -32,13 +32,14 @@ class _Matches extends State<Matches> {
     try {
       final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
       final userSync = Provider.of<UserSyncProvider>(context, listen: false);
+      final inputState = Provider.of<InputState>(context, listen: false);
       
       final activeMatchUser = await matchSync.getActiveMatchUser();
       
       if (activeMatchUser.isNotEmpty) {
         _userData = activeMatchUser;
       } else {
-        _userData = await userSync.loadUsers();
+        _userData = await userSync.loadUsers(inputState);
       }
       
       if (mounted) {

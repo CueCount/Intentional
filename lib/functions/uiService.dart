@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import 'helpers/saveData_service.dart';
-import 'helpers/fetchData_service.dart';
 import '../providers/inputState.dart';
-import 'dart:convert'; 
 import 'package:image_picker/image_picker.dart';
 import 'helpers/photo_service.dart';
 import '../router/router.dart';
@@ -14,103 +10,15 @@ import '../router/router.dart';
 class UserActions {
   
   /* = = = = = = = = =
-  ID Management
-  = = = = = = = = = */
-  
-  static Future<String?> getCurrentUserId({BuildContext? context}) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      // 1. Check Firebase Auth first (highest priority for authenticated users)
-      final firebaseUser = FirebaseAuth.instance.currentUser;
-      if (firebaseUser != null && firebaseUser.uid.isNotEmpty) {
-        print('📱 Using Firebase Auth ID: ${firebaseUser.uid}');
-        // Optionally save to SharedPreferences for quick access
-        await prefs.setString('current_user_id', firebaseUser.uid);
-        return firebaseUser.uid;
-      }
-      
-      // 2. Check stored current user ID
-      String? userId = prefs.getString('current_user_id');
-      if (userId != null && userId.isNotEmpty && !userId.startsWith('temp_')) {
-        print('📱 Using stored user ID: $userId');
-        return userId;
-      }
-      
-      // 3. Check for temp ID (for onboarding users)
-      userId = prefs.getString('current_temp_id');
-      if (userId != null && userId.isNotEmpty) {
-        print('📱 Using temp ID: $userId');
-        return userId;
-      }
-      
-      // 4. Fallback to Provider if context available
-      if (context != null) {
-        try {
-          final inputState = Provider.of<InputState>(context, listen: false);
-          if (inputState.userId.isNotEmpty) {
-            print('📱 Using Provider ID as fallback: ${inputState.userId}');
-            return inputState.userId;
-          }
-        } catch (e) {
-          print('❌ Provider fallback failed: $e');
-        }
-      }
-      
-      print('⚠️ No user ID found anywhere');
-      return null;
-      
-    } catch (e) {
-      print('❌ getCurrentUserId failed: $e');
-      return null;
-    }
-  }
-
-  /* = = = = = = = = =
   Save to Local / Firebase 
   = = = = = = = = = */
-  
-  Future<void> saveNeedLocally(BuildContext context, Map<String, dynamic>? needData) async {
-    try {
-      final authenticatedUserId = await getCurrentUserId(context: context);
-      if (authenticatedUserId == null) {throw Exception("User not authenticated");}
-      if (needData != null) {
-        await SaveDataService.saveToSharedPref(data: needData, userId: authenticatedUserId);
-      }
-      await setStatus(authenticatedUserId, {
-        'needsUpdated': true,
-      });
-      print("✅ saveNeedLocally: Success");
-    } catch (e) {
-      print('❌ saveNeedLocally: Failed - $e');
-      throw e;
-    }
-  }
 
-  Future<void> saveNeedToFirebase(BuildContext context) async {
-    try {
-      // Use centralized ID function
-      final authenticatedUserId = await getCurrentUserId(context: context);
-      
-      if (authenticatedUserId == null) {throw Exception("User not authenticated");}
-      
-      final allUserData = await FetchDataService.fetchUserFromSharedPreferences(authenticatedUserId);
-      
-      await SaveDataService.saveToFirestore(data: allUserData, userId: authenticatedUserId);
-      
-      print("✅ saveNeedToFirebase: Success");
-      
-    } catch (e) {
-      print('❌ saveNeedToFirebase: Failed - $e');
-      throw e;
-    }
-  }
-
+  // Only used on Photos page, uses the saveToFirestore function, only one to use that. 
+  // Want to consolodate into one function and move to Input Provider
   Future<void> savePhotosToFirebase(BuildContext context) async {
     try {
       final inputState = Provider.of<InputState>(context, listen: false);
-      // Use centralized ID function
-      final authenticatedUserId = await getCurrentUserId(context: context);
+      final authenticatedUserId = inputState.userId;
       if (authenticatedUserId == null) {
         throw Exception("User not authenticated");
       }
@@ -137,53 +45,6 @@ class UserActions {
       }
     }
   }
-
-  /* = = = = = = = = =
-  Status Services
-  = = = = = = = = = */
-
-  static Future<void> setStatus(String userId, Map<String, bool> flags) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      Map<String, dynamic> userData = {};
-      try {
-        userData = await FetchDataService.fetchUserFromSharedPreferences(userId);
-      } catch (e) {
-        print('No existing user data, creating new entry');
-      }
-      
-      flags.forEach((fieldName, value) {
-        userData[fieldName] = value;
-      });
-      
-      final key = 'user_data_$userId';
-      await prefs.setString(key, json.encode(userData));
-      print('✅ Set flags $flags for user: $userId');
-    } catch (e) {
-      print('❌ setUserFlags: Failed - $e');
-    }
-  }
-
-  static Future<Map<String, bool>> readStatus(String userId, List<String> statusNames) async {
-  try {
-    Map<String, dynamic> userData = await FetchDataService.fetchUserFromSharedPreferences(userId);
-    
-    Map<String, bool> currentStatus = {};
-    for (String statusName in statusNames) {
-      if (userData.containsKey(statusName)) {
-        currentStatus[statusName] = userData[statusName];
-      }
-    }
-    
-    print('✅ Read status $currentStatus for user: $userId');
-    return currentStatus;
-    
-  } catch (e) {
-    print('❌ readUserStatus: Failed - $e');
-    return {}; 
-  }
-}
 
   /* = = = = = = = = =
   Utilities
@@ -228,18 +89,64 @@ class UserActions {
     return age;
   }
 
-  Future<void> sendPhotoToCrop(BuildContext context) async {
+  /*Future<void> sendPhotoToCrop(BuildContext context) async {
     try {
       final XFile? selectedImage = await PhotoService.pickImage(context);
       if (selectedImage != null) {
         Navigator.pushNamed(context, AppRoutes.photoCrop, arguments: {'imageFile': selectedImage,},);
       }
+
       if (selectedImage == null) { 
         return; 
       }
     } catch (e) {
       print('Error in upload photo process: $e');
     }
+  }*/
+
+  Future<void> sendPhotoToCrop(BuildContext context) async {
+  try {
+    print('📸 1. Starting sendPhotoToCrop');
+    
+    final XFile? selectedImage = await PhotoService.pickImage();
+    
+    if (selectedImage == null) {
+      print('📸 2. No image selected by user (cancelled)');
+      return;
+    }
+    
+    print('📸 3. Image selected successfully');
+    print('📸 4. Image path: ${selectedImage.path}');
+    print('📸 5. Image name: ${selectedImage.name}');
+    
+    // Verify the image exists and can be read
+    try {
+      final bytes = await selectedImage.readAsBytes();
+      print('📸 6. Image size: ${bytes.length} bytes');
+    } catch (e) {
+      print('📸 ERROR: Cannot read image bytes: $e');
+    }
+    
+    print('📸 7. Creating navigation arguments');
+    final args = {'imageFile': selectedImage};
+    
+    print('📸 8. Arguments created, navigating to photoCrop...');
+    print('📸 9. Route: ${AppRoutes.photoCrop}');
+    print('📸 10. Arguments type: ${args.runtimeType}');
+    print('📸 11. ImageFile type: ${selectedImage.runtimeType}');
+    
+    await Navigator.pushNamed(
+      context, 
+      AppRoutes.photoCrop, 
+      arguments: args,
+    );
+    
+    print('📸 12. Navigation to photoCrop completed');
+    
+  } catch (e, stackTrace) {
+    print('📸 ERROR in sendPhotoToCrop: $e');
+    print('📸 Stack trace: $stackTrace');
   }
+}
 
 }

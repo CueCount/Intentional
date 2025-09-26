@@ -4,7 +4,7 @@ import '../../providers/inputState.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/link.dart';
 import '/router/router.dart';
-import '../../functions/loginService.dart';
+import '../../providers/authState.dart';
 import '../../styles.dart';
 
 class Settings extends StatefulWidget {
@@ -84,7 +84,8 @@ class _SettingsState extends State<Settings> {
                           onTap: () {
                             // Handle logout
                             // You might want to show a confirmation dialog here
-                            AccountService.logout(context);
+                            final authProvider = Provider.of<AppAuthProvider>(context, listen: false);
+                            authProvider.signOut();
                           },
                         ),
                         LinkWidget(

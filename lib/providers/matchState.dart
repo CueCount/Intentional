@@ -555,81 +555,129 @@ class MatchSyncProvider extends ChangeNotifier {
     });
   }
 
-  static Future<void> debugPrintAllStorage() async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    print('\n========== FULL SHARED PREFERENCES DUMP ==========');
-    
-    final allKeys = prefs.getKeys().toList()..sort();
-    
-    for (String key in allKeys) {
-      print('\n📦 KEY: $key');
-      
-      try {
-        // Try to get as StringList FIRST (since that's what we're using for matches_ and users_)
-        final listValue = prefs.getStringList(key);
-        if (listValue != null) {
-          print('  Type: StringList with ${listValue.length} items');
-          for (int i = 0; i < listValue.length && i < 3; i++) {
-            try {
-              final decoded = jsonDecode(listValue[i]);
-              print('  [$i]: ${const JsonEncoder.withIndent('    ').convert(decoded).substring(0, 300)}...');
-            } catch (_) {
-              print('  [$i]: ${listValue[i].substring(0, 100.clamp(0, listValue[i].length))}...');
-            }
-          }
-          if (listValue.length > 3) {
-            print('  ... and ${listValue.length - 3} more items');
-          }
-          continue;
-        }
-        
-        // Try to get as String if not a StringList
-        final stringValue = prefs.getString(key);
-        if (stringValue != null) {
-          print('  Type: String');
-          // Try to decode as JSON to pretty print
-          try {
-            final decoded = jsonDecode(stringValue);
-            print('  Value (decoded): ${const JsonEncoder.withIndent('  ').convert(decoded).substring(0, 500)}...');
-          } catch (_) {
-            print('  Value (raw): ${stringValue.substring(0, 200.clamp(0, stringValue.length))}...');
-          }
-          continue;
-        }
-        
-        // Try other types
-        final boolValue = prefs.getBool(key);
-        if (boolValue != null) {
-          print('  Type: bool = $boolValue');
-          continue;
-        }
-        
-        final intValue = prefs.getInt(key);
-        if (intValue != null) {
-          print('  Type: int = $intValue');
-          continue;
-        }
-        
-        final doubleValue = prefs.getDouble(key);
-        if (doubleValue != null) {
-          print('  Type: double = $doubleValue');
-          continue;
-        }
-        
-        print('  Type: Unknown or null');
-        
-      } catch (e) {
-        print('  ERROR reading key: $e');
-      }
-    }
-    
-    print('\n========== END DUMP ==========\n');
-  }
-
   @override
   void dispose() {
     stopListening();
     super.dispose();
+  }
+  
+}
+
+class DebugPrefs {
+  static String _preview(String s, int max) =>
+      s.length <= max ? s : '${s.substring(0, max)}...';
+
+  static String _jsonPreview(dynamic v, {int max = 500}) {
+    try {
+      final pretty = const JsonEncoder.withIndent('  ').convert(v);
+      return _preview(pretty, max);
+    } catch (_) {
+      return _preview(v.toString(), max);
+    }
+  }
+
+  static List<String> _asStrList(dynamic v) =>
+      (v is List) ? v.map((e) => e.toString()).toList() : const <String>[];
+
+  /// Pass [uid] to get typed/pretty prints for inputs_<uid>, users_<uid>, matches_<uid>.
+  static Future<void> debugPrintAllStorage({String? uid}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final known = <String>{};
+
+    print('\n========== FULL SHARED PREFERENCES DUMP ==========');
+
+    // 1) Known simple string: currentSessionId
+    const kCurrentSessionId = 'currentSessionId';
+    known.add(kCurrentSessionId);
+    final currentSessionId = prefs.getString(kCurrentSessionId);
+    print('\n🔑 $kCurrentSessionId: ${currentSessionId ?? "(null)"}');
+
+    // 2) Known blobs keyed by uid (if provided)
+    if (uid != null && uid.isNotEmpty) {
+      // inputs_<uid> : JSON with lists
+      final inputsKey = 'inputs_$uid';
+      known.add(inputsKey);
+      final inputsRaw = prefs.getString(inputsKey);
+      print('\n📦 $inputsKey:');
+      if (inputsRaw == null) {
+        print('  (missing)');
+      } else {
+        try {
+          final decoded = jsonDecode(inputsRaw);
+          if (decoded is Map<String, dynamic>) {
+            final currentSessionList = _asStrList(decoded['currentSessionList']);
+            final ignoreList         = _asStrList(decoded['ignoreList']);
+            final deniedList         = _asStrList(decoded['deniedList']);
+            print('  • currentSessionList (${currentSessionList.length}): '
+                  '${_preview(currentSessionList.toString(), 300)}');
+            print('  • ignoreList         (${ignoreList.length}): '
+                  '${_preview(ignoreList.toString(), 300)}');
+            print('  • deniedList         (${deniedList.length}): '
+                  '${_preview(deniedList.toString(), 300)}');
+          } else {
+            print('  ⚠️ Not a JSON object. Raw: ${_preview(inputsRaw, 400)}');
+          }
+        } catch (_) {
+          print('  ⚠️ Not JSON. Raw: ${_preview(inputsRaw, 400)}');
+        }
+      }
+
+      // users_<uid> : JSON (structure app-specific)
+      for (final key in ['users_$uid', 'matches_$uid']) {
+        known.add(key);
+        final raw = prefs.getString(key);
+        print('\n📦 $key:');
+        if (raw == null) {
+          print('  (missing)');
+          continue;
+        }
+        try {
+          final decoded = jsonDecode(raw);
+          print('  ✅ JSON: ${_jsonPreview(decoded, max: 600)}');
+        } catch (_) {
+          print('  ⚠️ Not JSON. Raw: ${_preview(raw, 600)}');
+        }
+      }
+    }
+
+    // 3) Generic sweep: everything else (auto type detection)
+    print('\n—— Unscoped keys (everything else) ——');
+    final keys = prefs.getKeys().toList()..sort();
+    for (final key in keys) {
+      if (known.contains(key)) continue;
+
+      final value = prefs.get(key); // dynamic, may be String/List<String>/bool/int/double
+      if (value == null) {
+        print('\n🗂️  $key  [(null)]');
+        continue;
+      }
+
+      if (value is List<String>) {
+        print('\n🗂️  $key  [List<String>(${value.length})]: '
+              '${_preview(value.toString(), 400)}');
+        continue;
+      }
+
+      if (value is String) {
+        // Try JSON first for strings
+        try {
+          final decoded = jsonDecode(value);
+          print('\n🗂️  $key  [String(JSON)]: ${_jsonPreview(decoded, max: 600)}');
+        } catch (_) {
+          print('\n🗂️  $key  [String]: ${_preview(value, 600)}');
+        }
+        continue;
+      }
+
+      if (value is bool || value is int || value is double) {
+        print('\n🗂️  $key  [${value.runtimeType}]: $value');
+        continue;
+      }
+
+      // Fallback (unexpected type)
+      print('\n🗂️  $key  [${value.runtimeType}]: ${_preview(value.toString(), 400)}');
+    }
+
+    print('\n========== END PREFS DUMP ==========');
   }
 }

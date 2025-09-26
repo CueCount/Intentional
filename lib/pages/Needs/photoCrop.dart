@@ -10,8 +10,6 @@ import '../../router/router.dart';
 import '../../providers/inputState.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:vector_math/vector_math_64.dart' show Vector3;
-
-// Conditional import - will choose the right implementation
 import '../../functions/helpers/photo_service_web.dart' if (dart.library.io) '../../functions/helpers/photo_service_mobile.dart';
 
 class PhotoCropPage extends StatefulWidget {
@@ -155,7 +153,6 @@ class _PhotoCropPageState extends State<PhotoCropPage> {
       }
     } catch (e) {
       print("Error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
     } finally {
       setState(() => _isCropping = false);
     }
@@ -164,7 +161,6 @@ class _PhotoCropPageState extends State<PhotoCropPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Crop Photo")),
       body: _originalBytes == null
       ? const Center(child: CircularProgressIndicator())
       : Center(

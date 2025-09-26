@@ -21,6 +21,10 @@ import '../pages/Profile/editneeds.dart';
 import '../pages/Profile/requestsReceived.dart';
 import '../pages/Profile/requestsSent.dart';
 import '../pages/Guides/guideRequestSent.dart';
+import '../pages/Guides/guideAvailableMatches.dart';
+import 'package:image_picker/image_picker.dart';
+
+
 
 class AppRoutes {
   static const String home = '/';
@@ -49,7 +53,8 @@ class AppRoutes {
   static const String guideRequestSent= '/guideRequestSent';
   static const String requestsSent= '/requestsSent';
   static const String requestsReceived= '/requestsReceived';
-  
+  static const String guideAvailableMatches= '/guideAvailableMatches';
+
   static Route<dynamic> generateRoute(RouteSettings settings, bool isLoggedIn) {
     final arguments = settings.arguments;
     
@@ -116,7 +121,7 @@ class AppRoutes {
     }
   }
 
-  static Widget _loggedOutRoutes(String? routeName) {
+  static Widget _loggedOutRoutes(String? routeName, [dynamic arguments]) {
     switch (routeName) {
       case qual:
         return const QualifierRelDate();
@@ -132,6 +137,12 @@ class AppRoutes {
         return const Interests();
       case goals:
         return const Goals();
+      case guideAvailableMatches:
+        return const GuideAvailableMatches();
+      case photos:
+        return const PhotoUploadPage();
+      case photoCrop:
+        return PhotoCropPage(imageFile: arguments['imageFile'],);
       case matches:
         return const Matches();
       case match:

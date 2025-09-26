@@ -36,19 +36,13 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
               AppMenuOverlay.show(context); 
             },
           ), 
-          ElevatedButton(
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black),
             onPressed: () async {
               final userSync = Provider.of<UserSyncProvider>(context, listen: false);
               await userSync.refreshDiscoverableUsers(context);
             },
-            child: const Text('Refresh Users'),
           ),
-          IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.black),
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.editNeeds);
-            },
-          )
         ],
       ),
     );

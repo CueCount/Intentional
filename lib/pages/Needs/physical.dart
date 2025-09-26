@@ -23,19 +23,59 @@ class _physical extends State<Physical> {
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, dynamic> inputValues = {};
   Map<String, bool> selectedValues = {};
+  bool _isLoading = true;
+  
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final inputState = Provider.of<InputState>(context, listen: false); 
-      for (var input in inputState.physicalNeeds) {
-        for (var value in input.possibleValues) {
-          selectedValues[value] = input.possibleValues[1].toDouble();
-        }
-      }
-      setState(() {});
+      _loadExistingValues();
     });
   }
+
+  Future<void> _loadExistingValues() async {
+    final inputState = Provider.of<InputState>(context, listen: false);
+    
+    // Initialize with default values first
+    for (var input in inputState.physicalNeeds) {
+      if (input.type == "rangeSlider") {
+        // Default to middle range
+        double min = input.possibleValues[0].toDouble();
+        double max = input.possibleValues[1].toDouble();
+        inputValues[input.title] = [min + (max - min) * 0.25, min + (max - min) * 0.75];
+      } else if (input.type == "slider") {
+        // Default to middle value
+        double min = input.possibleValues[0].toDouble();
+        double max = input.possibleValues[1].toDouble();
+        inputValues[input.title] = min + (max - min) * 0.5;
+      }
+    }
+    
+    try {
+      // Get existing physical needs from provider
+      for (var input in inputState.physicalNeeds) {
+        final existingValue = await inputState.getInput(input.title);
+        
+        if (existingValue != null) {
+          inputValues[input.title] = existingValue;
+        }
+      }
+    } catch (e) {
+      print('Physical: Error loading existing values - $e');
+    }
+    
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Map<String, dynamic> getSelectedAttributes() {
+    return inputValues;
+  }
+
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  SCAFFOLD
+  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
   @override
   Widget build(BuildContext context) { 
@@ -109,14 +149,16 @@ class _physical extends State<Physical> {
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
           onPressed: () async {
             if (isLoggedIn) {
-              await UserActions().saveNeedLocally(context, inputData);
+              
+              await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+
+              await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
-                Navigator.pushNamed(context, AppRoutes.relationship, arguments: inputData);
+                Navigator.pushNamed(context, AppRoutes.relationship);
               }
             }
           },

@@ -22,7 +22,7 @@ void main() async {
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return GlobalErrorScreen(details: details);
   };
-  
+
   runApp(const AppRoot()); 
 }
 
@@ -33,29 +33,35 @@ class AppRoot extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<AuthProvider>(
-          create: (_) => AuthProvider()..init(),
+        ChangeNotifierProvider<AppAuthProvider>(
+          create: (_) {
+            return AppAuthProvider()..init();
+          },
         ),
 
-        ChangeNotifierProxyProvider<AuthProvider, InputState>(
-          create: (_) => InputState(),
+        ChangeNotifierProxyProvider<AppAuthProvider, InputState>(
+          create: (_) {
+            return InputState();
+          },
           update: (_, auth, input) {
             input ??= InputState();
             final uid = auth.userId;
            
             if (uid != null) {
               try {
-                input.setUserId(uid);
+                input.setCurrentSessionId(uid);
               } catch (_) {
-                input.clearUserId();
+                input.clearCurrentSessionId();
               }
             }
             return input;
           },
         ),
 
-        ChangeNotifierProxyProvider<AuthProvider, UserSyncProvider>(
-          create: (_) => UserSyncProvider(),
+        ChangeNotifierProxyProvider<AppAuthProvider, UserSyncProvider>(
+          create: (_) {
+            return UserSyncProvider();
+          },
           update: (_, auth, user) {
             user ??= UserSyncProvider();
             final uid = auth.userId;
@@ -70,7 +76,7 @@ class AppRoot extends StatelessWidget {
           },
         ),
 
-        ChangeNotifierProxyProvider<AuthProvider, MatchSyncProvider>(
+        ChangeNotifierProxyProvider<AppAuthProvider, MatchSyncProvider>(
           create: (_) => MatchSyncProvider(),
           update: (_, auth, match) {
             match ??= MatchSyncProvider();
@@ -99,7 +105,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
+    return Consumer<AppAuthProvider>(
       builder: (_, auth, __) {
         if (auth.isLoading || !auth.isInitialized) {
           return const MaterialApp(
@@ -108,7 +114,7 @@ class MyApp extends StatelessWidget {
           );
         }
 
-        return Consumer<AuthProvider>(
+        return Consumer<AppAuthProvider>(
           builder: (_, auth, __) {
             return MaterialApp(
               onGenerateRoute: (settings) => AppRoutes.generateRoute(settings, auth.isLoggedIn),

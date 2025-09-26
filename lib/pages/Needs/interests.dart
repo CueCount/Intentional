@@ -22,19 +22,63 @@ class _interests extends State<Interests> {
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, dynamic> inputValues = {};
   Map<String, bool> selectedValues = {};
+  bool _isLoading = true;
+  
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final inputState = Provider.of<InputState>(context, listen: false); 
-      for (var input in inputState.logisticNeeds) {
-        for (var value in input.possibleValues) {
-          selectedValues[value] = false; 
-        }
-      }
-      setState(() {});
+      _loadExistingValues();
     });
   }
+
+  Future<void> _loadExistingValues() async {
+    final inputState = Provider.of<InputState>(context, listen: false);
+    
+    // Initialize all possible values as false first
+    for (var input in inputState.logisticNeeds) {
+      for (var value in input.possibleValues) {
+        selectedValues[value] = false; 
+      }
+    }
+    
+    try {
+      // Get existing logistics/interests from provider using new array format
+      final existingLogisticNeeds = await inputState.getInput('LogisticNeed');
+      
+      if (existingLogisticNeeds != null && existingLogisticNeeds is List) {
+        // Mark existing selections as true
+        for (String selectedValue in existingLogisticNeeds) {
+          if (selectedValues.containsKey(selectedValue)) {
+            selectedValues[selectedValue] = true;
+          }
+        }
+      } else {
+        // If LogisticNeed array doesn't exist, this might be a new user
+        // Just start with all false values (already initialized above)
+        print('Interests: No existing LogisticNeed array found, starting fresh');
+      }
+    } catch (e) {
+      print('Interests: Error loading existing values - $e');
+    }
+    
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Map<String, dynamic> getSelectedAttributes() {
+    return {
+      "LogisticNeed": selectedValues.entries
+          .where((entry) => entry.value)  
+          .map((entry) => entry.key)       
+          .toList(),                       
+    };
+  }
+
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  SCAFFOLD
+  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +113,7 @@ class _interests extends State<Interests> {
                                   description: '',
                                   isSelected: selectedValues[attribute] ?? false,
                                 ),
-                                isHorizontal: false, // Keep vertical layout for 2-column grid
+                                isHorizontal: true, 
                                 onChanged: (isSelected) {
                                   setState(() {
                                     selectedValues[attribute] = isSelected;
@@ -92,20 +136,22 @@ class _interests extends State<Interests> {
     bottomNavigationBar: () {
         final user = FirebaseAuth.instance.currentUser;
         bool isLoggedIn = user != null;
-        final inputData = selectedValues;
+        final inputData = getSelectedAttributes();
         return CustomAppBar(
           buttonText: isLoggedIn ? 'Save' : 'Continue',
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
           onPressed: () async {
             if (isLoggedIn) {
-              await UserActions().saveNeedLocally(context, inputData);
+              
+              await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+
+              await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
-                Navigator.pushNamed(context, AppRoutes.goals, arguments: inputData);
+                Navigator.pushNamed(context, AppRoutes.goals);
               }
             }
           },

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../styles.dart';
 import '../functions/matchesService.dart';
 import '../providers/matchState.dart';
+import '../providers/inputState.dart';
 import '../router/router.dart';
 
 enum RequestStatus { loading, available, pending, received, matched }
@@ -22,6 +23,8 @@ class MatchCTA extends StatelessWidget {
         final result = _getRequestStatus(matchSync, targetUserId);
         final status = result['status'] as RequestStatus;
         final matchId = result['matchId'] as String?;
+        final inputState = Provider.of<InputState>(context, listen: false);
+        final currentSessionId = inputState.userId;
         
         switch (status) {
           case RequestStatus.loading:
@@ -262,7 +265,7 @@ class MatchCTA extends StatelessWidget {
                       onPressed: () async {
                         if (targetUserId.isNotEmpty) {
                           try {
-                            final result = await MatchesService.sendMatchRequest(targetUserId);
+                            final result = await MatchesService.sendMatchRequest(currentSessionId, targetUserId);
                             if (context.mounted) {
                               if (result['success']) {
                                 Navigator.pushNamed(context, AppRoutes.guideRequestSent);

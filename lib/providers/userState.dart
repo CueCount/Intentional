@@ -2,9 +2,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'dart:async';
-import 'matchState.dart';
+import 'inputState.dart';
 
 class UserSyncProvider extends ChangeNotifier {
   // Private variables
@@ -18,37 +19,22 @@ class UserSyncProvider extends ChangeNotifier {
   void setCurrentUserId(String userId) {
     _currentUserId = userId;
   }
-  
-  /* = = = = = = = = = 
-  NOT DOING THIS RIGHT NOW DUE TO READ COSTS
-  Listen for User Changes:
-  Listen to IDs in current_sesh_IDs
-  If the Doc is deleted clear it
-  If the Doc is in active match clear it
-  = = = = = = = = = */
 
   /* = = = = = = = = = 
   Load Users:
-  Look at current_sesh_IDs
+  Look at currentSessionIds
   Grab Docs from Shared Pref
   Query Firebase for Docs not in Shared Pref
   Return Docs
   = = = = = = = = = */ 
 
-  Future<List<Map<String, dynamic>>> loadUsers() async {
+  Future<List<Map<String, dynamic>>> loadUsers(InputState inputState) async {
     if (kDebugMode) {
       print('loadUsers called, currentUserId: $_currentUserId');
     }
     try {
-      if (_currentUserId == null) {
-        if (kDebugMode) {
-          print('User Provider Error: No current user ID set');
-        }
-        return [];
-      }
-
-      // Get current session IDs from SharedPreferences
-      final sessionUserIds = await _getCurrentSessionUserIds(_currentUserId!);
+      // Get session IDs using InputState
+      final sessionUserIds = await inputState.getInput('currentSessionList');
       
       if (sessionUserIds.isEmpty) {
         if (kDebugMode) {
@@ -110,29 +96,6 @@ class UserSyncProvider extends ChangeNotifier {
     } catch (e) {
       if (kDebugMode) {
         print('User Provider Error: Failed to load users - $e');
-      }
-      return [];
-    }
-  }
-
-  Future<List<String>> _getCurrentSessionUserIds(String currentUserId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userInputsJson = prefs.getString('inputs_$currentUserId');
-      
-      if (userInputsJson != null) {
-        final userInputs = jsonDecode(userInputsJson);
-        final sessionList = userInputs['currentSeshList'];
-        
-        if (sessionList is List) {
-          return List<String>.from(sessionList);
-        }
-      }
-      
-      return [];
-    } catch (e) {
-      if (kDebugMode) {
-        print('User Provider Error: Failed to get session user IDs - $e');
       }
       return [];
     }
@@ -245,72 +208,66 @@ class UserSyncProvider extends ChangeNotifier {
   = = = = = = = = = */ 
 
   Future<void> refreshDiscoverableUsers(BuildContext context) async {
-    if (kDebugMode) {
-      print("Refresh Triggered:");
-    }
+    if (kDebugMode) {print("Refresh Triggered:");}
+
+    final inputState = Provider.of<InputState>(context, listen: false);
+
     try {
       if (_currentUserId == null) return;
+      final prefs = await SharedPreferences.getInstance();
 
-      final currentSeshIds = await _getCurrentSessionUserIds(_currentUserId!);
-      final ignoreIds = await _getIgnoreIds(_currentUserId!);
-      final userInputs = await _getUserInputs(_currentUserId!);
-      final seekingInputs = _buildSeekingFilters(userInputs);
+      /* = = = = = = = = = 
+      Move currentSessionList Ids to ignoreList
+      = = = = = = = = = = */
+
+      final currentSessionIds = await inputState.getInput('currentSessionList');
+      // currentSessionIdsNonPending = currentSessionIds minus Ids that are in pending match docs with currentSessionId
+      // Move all currentSessionIdsNonPending to ignoreList
+      final ignoreIds = await inputState.getInput('ignoreList');
+
+      /* = = = = = = = = = 
+      Fetch all inputs and build filters
+      = = = = = = = = = = */
+
+      final userInputs = await await inputState.syncInputs();
+      // final seekingInputs = _buildSeekingFilters(userInputs);
+
+      /* = = = = = = = = = 
+      Query Firebase with filters
+      = = = = = = = = = = */
       
-      final newUsers = await _queryFilteredUsers(seekingInputs, ignoreIds);
-      final newUserIds = newUsers.map((user) => user['userId'] as String).toList();
+      // final newUsers = await _queryFilteredUsers(seekingInputs, ignoreIds, /* ids from current match docs pending */);
+
+      /* = = = = = = = = = 
+      Save New Users to Local, Remove Old Users
+      = = = = = = = = = = */
+
+      // final usersJson = newUsers.map((user) => jsonEncode(user)).toList();
+      // delete user docs in users_[currentSessionId] that match currentSessionIdsNonPending
+      // await prefs.setStringList('users_$currentUserId', usersJson);
+
+      /* = = = = = = = = = 
+      Save New User Ids to currentSessionList, Merge all Local Inputs with Firebase
+      = = = = = = = = = = */
+
+      // final newUserIds = newUsers.map((user) => user['userId'] as String).toList();
+      // call function to accept fetched userIds and add them to the currentSessionList
+      // await inputState.syncInputsToFirebase(userInputs, _currentUserId!);
       
-      await _saveNewSession(newUsers, newUserIds, _currentUserId!);
-      await _syncInputsToFirebase(userInputs, _currentUserId!);
-      
-      if (kDebugMode) {
-        print('User Provider: Refreshed ${newUsers.length} discoverable users');
-      }
+      /* = = = = = = = = = 
+      Navigate back to matches page - triggering loadUsers to load New Users
+      = = = = = = = = = = */
       
       Navigator.pushNamed(context, '/matches');
+
+      print("test of Refresh with only InputSync is complete");
+
+      // if (kDebugMode) {print('User Provider: Refreshed ${newUsers.length} discoverable users');}
       
     } catch (e) {
       if (kDebugMode) {
         print('User Provider Error: Refresh failed - $e');
       }
-    }
-  }
-
-  Future<List<String>> _getIgnoreIds(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final matchesJson = prefs.getStringList('matches_$userId') ?? [];
-      
-      final ignoreIds = <String>[];
-      for (String matchJson in matchesJson) {
-        final match = jsonDecode(matchJson);
-        final status = match['matchData']['status'];
-        
-        if (status == 'ignored' || status == 'pending') {
-          final targetUserId = match['requesterUserId'] == userId 
-              ? match['requestedUserId'] 
-              : match['requesterUserId'];
-          ignoreIds.add(targetUserId);
-        }
-      }
-      
-      return ignoreIds;
-    } catch (e) {
-      return [];
-    }
-  }
-
-  Future<Map<String, dynamic>> _getUserInputs(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final inputsJson = prefs.getString('inputs_$userId');
-      
-      if (inputsJson != null) {
-        return Map<String, dynamic>.from(jsonDecode(inputsJson));
-      }
-      
-      return {};
-    } catch (e) {
-      return {};
     }
   }
 
@@ -371,53 +328,8 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _saveNewSession(
-    List<Map<String, dynamic>> users, 
-    List<String> userIds, 
-    String currentUserId
-  ) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      final usersJson = users.map((user) => jsonEncode(user)).toList();
-      await prefs.setStringList('users_$currentUserId', usersJson);
-    
-      final currentUserInputs = await _getUserInputs(currentUserId);
-      currentUserInputs['currentSeshList'] = userIds;
-      await prefs.setString('inputs_$currentUserId', jsonEncode(currentUserInputs));
-      
-    } catch (e) {
-      if (kDebugMode) {
-        print('User Provider Error: Failed to save session - $e');
-      }
-    }
-  }
-
-  Future<void> _syncInputsToFirebase(Map<String, dynamic> inputs, String userId) async {
-    try {
-      if (inputs.isNotEmpty) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .update(inputs);
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('User Provider Error: Failed to sync inputs - $e');
-      }
-    }
-  }
-
   /* = = = = = = = = = 
-  Get User Doc by ID:
-  Receive userID and query Firebase for it's Doc
-  return user Doc
-  = = = = = = = = = */
-
-
-
-  /* = = = = = = = = = 
-  Helper Methods
+  MISC Helper Methods
   = = = = = = = = = */
 
   String? _convertDateToString(dynamic dateValue) {

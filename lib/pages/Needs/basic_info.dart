@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../widgets/bottomNavigationBar.dart';
+import 'package:provider/provider.dart';
+import '../../providers/inputState.dart';
 import '/router/router.dart';
-import '../../widgets/inputText.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
-import '../../functions/onboardingService.dart';
-import '../../functions/uiService.dart';
 
 class BasicProfilePage extends StatefulWidget {
  const BasicProfilePage({Key? key}) : super(key: key);
@@ -170,11 +168,6 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
       bottomNavigationBar: () {
         return FutureBuilder<bool>(
           future: () async {
-            String? userId = await UserActions.getCurrentUserId();
-            if (userId != null) {
-              Map<String, bool> status = await UserActions.readStatus(userId, ['infoIncomplete']);
-              return status['infoIncomplete'] ?? true;
-            }
             return true;
           }(),
           builder: (context, snapshot) {
@@ -184,15 +177,19 @@ class _BasicProfilePageState extends State<BasicProfilePage> {
               buttonIcon: infoIncomplete ? Icons.arrow_forward : Icons.edit,
               onPressed: () async {
                 Map<String, dynamic> inputData = getInputData();
+                final inputState = Provider.of<InputState>(context, listen: false);
+
                 if (infoIncomplete) {
-                  await AirTrafficController().saveAccountInputRegistrationFlow(context, inputData);
+
+                  await inputState.saveNeedLocally(inputData);
                   if (context.mounted) {
-                    Navigator.pushNamed(context, AppRoutes.photos, arguments: inputData);
+                    Navigator.pushNamed(context, AppRoutes.photos);
                   }
                 } else {
-                  await UserActions().saveNeedLocally(context, inputData);
+
+                  await inputState.saveNeedLocally(inputData);
                   if (context.mounted) {
-                    Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
+                    Navigator.pushNamed(context, AppRoutes.editNeeds);
                   }
                 }
               },

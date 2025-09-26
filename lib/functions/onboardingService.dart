@@ -1,52 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import 'dart:async';
+import '../providers/inputState.dart';
 import 'helpers/saveData_service.dart';
 import 'helpers/fetchData_service.dart';
 import 'helpers/register_service.dart';
-import 'dart:math';
-import 'uiService.dart';
 enum DataSource { cache, firebase }
 
 class AirTrafficController {
-
-  /* = = = = = = = = = 
-  Create Temporary ID 
-  = = = = = = = = = */ 
-
-  static Future<String> createUserId() async {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = Random(); // You'll need to import 'dart:math'
-    
-    // Create a truly random 28-character ID with temp prefix
-    final randomId = List.generate(28, (index) => chars[random.nextInt(chars.length)]).join();
-    
-    return 'temp_$randomId';
-  }
 
   /* = = = = = = = = =
   Saving Locally / Firebase
   = = = = = = = = = */
 
-  Future<void> saveNeedInOnboardingFlow(BuildContext context, Map<String, dynamic>? needData) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      String tempUserId = prefs.getString('current_temp_id') ?? 
-        await createUserId().then((newId) async {
-          await prefs.setString('current_temp_id', newId);
-          return newId;
-        });
-            
-      if (needData != null) {
-        await SaveDataService.saveToSharedPref(data: needData, userId: tempUserId);
-      }
-    } catch (e) {
-      print('Error in saveNeedInOnboardingFlow: $e');
-      throw e;
-    }
-  }
-  
+  // move to Auth Provider
   Future<bool> registerUserAndTransferSavedData(
     BuildContext context,
     String email, 
@@ -62,29 +29,13 @@ class AirTrafficController {
     }
   }
 
-  Future<void> saveAccountInputRegistrationFlow(BuildContext context, Map<String, dynamic>? accountData) async {
-    try {
-      final id = await UserActions.getCurrentUserId();
-                  
-      if (id != null && id.isNotEmpty && accountData != null && accountData.isNotEmpty) {
-        await SaveDataService.saveToSharedPref(data: accountData, userId: id);
-      }
-    } catch (e) {
-      print('Error in saveAccountInputRegistrationFlow: $e');
-      throw e;
-    }
-  }
-
+  // move to Auth Provider, used in photos
   Future<void> saveAccountDataToFirebase(BuildContext context) async {
     try {
-      final id = await UserActions.getCurrentUserId();
+      final inputState = Provider.of<InputState>(context, listen: false);
+      final id = inputState.userId;
 
       if (id != null && id.isNotEmpty) {
-        await UserActions.setStatus(id, {
-          'infoIncomplete': false,
-          'needsUpdated': false,
-          'available': true
-        });
         Map<String, dynamic> userData = await FetchDataService.fetchUserFromSharedPreferences(id);
         Map<String, dynamic> photoData = FetchDataService.fetchFromInputState(context);
         Map<String, dynamic> allData = {

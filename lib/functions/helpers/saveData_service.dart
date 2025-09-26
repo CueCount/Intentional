@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:firebase_auth/firebase_auth.dart'; 
@@ -11,49 +9,10 @@ class SaveDataService {
   static String? _tempUserId;
   
   /* = = = = = = = = = 
-  Save to Shared Preferences 
-  = = = = = = = = = */
-
-  static Future<void> saveToSharedPref({
-    required Map<String, dynamic> data,
-    required String userId,
-    String? customKey,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = customKey ?? 'user_data_$userId';
-    String? existingDataJson = prefs.getString(key);
-
-    Map<String, dynamic> existingData = {};
-    if (existingDataJson != null && existingDataJson.isNotEmpty) {
-      Map rawData = json.decode(existingDataJson);
-      rawData.forEach((k, v) => existingData[k.toString()] = v);
-    }
-
-    final mergedData = {
-      ...existingData,
-      ...data,
-      'temp_user_id': userId,
-      'last_updated': DateTime.now().toIso8601String(),
-    };
-
-    await prefs.setString(key, json.encode(mergedData));
-    print('✅ Data saved to SharedPreferences under key "$key":\n$mergedData');
-  }
-  
-  Future<void> cacheFetchedProfilesToSharedPrefs(List<Map<String, dynamic>> cleanedUsers) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    for (var user in cleanedUsers) {
-      final userId = user['id']; // Make sure 'id' exists here.
-      final userJson = jsonEncode(user); // Cleaned and Flutter-friendly already.
-      await prefs.setString('user_data_$userId', userJson);
-    }
-  }
-  
-  /* = = = = = = = = = 
   Save to Firebase 
   = = = = = = = = = */
-  
+
+  // This might be able to be handled by an existing function in input Provider, or Auth Provider, if not will move
   Future<void> saveToFirebaseOnRegister(BuildContext context, Map<String, dynamic> inputValues) async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
@@ -111,6 +70,7 @@ class SaveDataService {
     }
   }
   
+  // This should be handled by the merge function in Input Provider
   Future<void> _transferTempDataToAuthUser(String tempId, String authUserId, Map<String, dynamic> currentData) async {
     try {
       // Get temp document data
@@ -145,6 +105,7 @@ class SaveDataService {
     }
   }
 
+  // only photos uses this. Consoldate and move to Input Provider
   static Future<void> saveToFirestore({
     required Map<String, dynamic> data, 
     required String userId
@@ -171,71 +132,5 @@ class SaveDataService {
     }
   }
   
-  /* = = = = = = = = = 
-  Cache Sent Requests to Shared Preferences 
-  = = = = = = = = = */
-
-  Future<void> cacheSentRequestsToSharedPrefs(List<Map<String, dynamic>> requests, String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      final processedRequests = requests.map((request) => _convertTimestampsToStrings(request)).toList();
-
-      final requestsJson = processedRequests.map((request) => jsonEncode(request)).toList();
-
-      await prefs.setStringList('matches_$userId', requestsJson);
-
-      print('💾 Cached ${requests.length} sent requests to SharedPreferences');
-    } catch (e) {
-      print('❌ Error caching sent requests to SharedPreferences: $e');
-    }
-  }
-
-  /* = = = = = = = = = 
-  Cache Received Requests to Shared Preferences 
-  = = = = = = = = = */
-
-  Future<void> cacheReceivedRequestsToSharedPrefs(List<Map<String, dynamic>> requests, String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final requestsJson = requests.map((request) => jsonEncode(request)).toList();
-      await prefs.setStringList('matches_$userId', requestsJson);
-      print('💾 Cached ${requests.length} received requests to SharedPreferences');
-    } catch (e) {
-      print('❌ Error caching received requests to SharedPreferences: $e');
-    }
-  }
-
-  /* = = = = = = = = = 
-  Clear User Data from SharedPreferences 
-  = = = = = = = = = */
-
-  static Future<void> clearUserDataFromSharedPref(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final key = 'user_data_$userId';
-      
-      await prefs.remove(key);
-      print('✅ Cleared user data for: $userId');
-    } catch (e) {
-      print('❌ clearUserDataFromSharedPref: Failed - $e');
-    }
-  }
-
-
-  /* = = = = = = = = = 
-  Converting Time Stamps to Strings for Shared Prefences
-  = = = = = = = = = */
-
-  dynamic _convertTimestampsToStrings(dynamic data) {
-    if (data is Timestamp) {
-      return data.toDate().toIso8601String();
-    } else if (data is Map<String, dynamic>) {
-      return data.map((key, value) => MapEntry(key, _convertTimestampsToStrings(value)));
-    } else if (data is List) {
-      return data.map((item) => _convertTimestampsToStrings(item)).toList();
-    }
-    return data;
-  }
   
 }

@@ -21,17 +21,44 @@ class _goals extends State<Goals> {
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, dynamic> inputValues = {};
   Map<String, bool> selectedValues = {};
+  bool _isLoading = true;
+  
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final inputState = Provider.of<InputState>(context, listen: false); 
-      for (var input in inputState.lifeGoalNeeds) {
-        for (var value in input.possibleValues) {
-          selectedValues[value] = false; 
+      _loadExistingValues();
+    });
+  }
+
+  Future<void> _loadExistingValues() async {
+    final inputState = Provider.of<InputState>(context, listen: false);
+    
+    // Initialize all possible values as false first
+    for (var input in inputState.lifeGoalNeeds) {
+      for (var value in input.possibleValues) {
+        selectedValues[value] = false; 
+      }
+    }
+    
+    try {
+      // Get existing life goal needs from provider
+      final existingLifeGoalNeeds = await inputState.getInput('LifeGoalNeed');
+      
+      if (existingLifeGoalNeeds != null && existingLifeGoalNeeds is List) {
+        // Mark existing selections as true
+        for (String selectedValue in existingLifeGoalNeeds) {
+          if (selectedValues.containsKey(selectedValue)) {
+            selectedValues[selectedValue] = true;
+          }
         }
       }
-      setState(() {});
+    } catch (e) {
+      print('Goals: Error loading existing values - $e');
+    }
+    
+    setState(() {
+      _isLoading = false;
     });
   }
 
@@ -110,14 +137,16 @@ class _goals extends State<Goals> {
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
           onPressed: () async {
             if (isLoggedIn) {
-              await UserActions().saveNeedLocally(context, inputData);
+              
+              await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+
+              await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
-                Navigator.pushNamed(context, AppRoutes.matches, arguments: inputData);
+                Navigator.pushNamed(context, AppRoutes.guideAvailableMatches);
               }
             }
           },

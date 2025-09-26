@@ -21,17 +21,44 @@ class _relationship extends State<Relationship> {
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, dynamic> inputValues = {};
   Map<String, bool> selectedValues = {};
+  bool _isLoading = true;
+  
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final inputState = Provider.of<InputState>(context, listen: false); 
-      for (var input in inputState.chemistryNeeds) {
-        for (var value in input.possibleValues) {
-          selectedValues[value] = false; 
+      _loadExistingValues();
+    });
+  }
+
+  Future<void> _loadExistingValues() async {
+    final inputState = Provider.of<InputState>(context, listen: false);
+    
+    // Initialize all possible values as false first
+    for (var input in inputState.chemistryNeeds) {
+      for (var value in input.possibleValues) {
+        selectedValues[value] = false; 
+      }
+    }
+    
+    try {
+      // Get existing chemistry needs from provider
+      final existingChemistryNeeds = await inputState.getInput('ChemistryNeed');
+      
+      if (existingChemistryNeeds != null && existingChemistryNeeds is List) {
+        // Mark existing selections as true
+        for (String selectedValue in existingChemistryNeeds) {
+          if (selectedValues.containsKey(selectedValue)) {
+            selectedValues[selectedValue] = true;
+          }
         }
       }
-      setState(() {});
+    } catch (e) {
+      print('Relationship: Error loading existing values - $e');
+    }
+    
+    setState(() {
+      _isLoading = false;
     });
   }
 
@@ -58,7 +85,7 @@ class _relationship extends State<Relationship> {
             children: [
               const CustomStatusBar(),
               Container(
-                padding: const EdgeInsets.all(16), // Add some padding around the content
+                padding: const EdgeInsets.all(16), 
                 child: Column(
                   children: [
                     Text(
@@ -104,27 +131,31 @@ class _relationship extends State<Relationship> {
       ),
 
       bottomNavigationBar: () {
-      final user = FirebaseAuth.instance.currentUser;
-      bool isLoggedIn = user != null;
-      final inputData = getSelectedAttributes();
-      return CustomAppBar(
-        buttonText: isLoggedIn ? 'Save' : 'Continue',
-        buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
-        onPressed: () async {
-          if (isLoggedIn) {
-            await UserActions().saveNeedLocally(context, inputData);
-            if (context.mounted) {
-              Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
+        final user = FirebaseAuth.instance.currentUser;
+        bool isLoggedIn = user != null;
+        final inputData = getSelectedAttributes();
+
+        return CustomAppBar(
+          buttonText: isLoggedIn ? 'Save' : 'Continue',
+          buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
+          onPressed: () async {
+            if (isLoggedIn) {
+              
+              await inputState.saveNeedLocally(inputData);
+              if (context.mounted) {
+                Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
+              }
+            } else {
+
+              await inputState.saveNeedLocally(inputData);
+              if (context.mounted) {
+                Navigator.pushNamed(context, AppRoutes.interests);
+              }
             }
-          } else {
-            await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
-            if (context.mounted) {
-              Navigator.pushNamed(context, AppRoutes.interests, arguments: inputData);
-            }
-          }
-        },
-      );
-    }(),
+          },
+        );
+        
+      }(),
     );
   }
 }

@@ -54,72 +54,29 @@ class PhotoService {
     return downloadUrls;
   }
 
-  static Future<XFile?> pickImage(BuildContext context) async {
-    final ImagePicker picker = ImagePicker();
+  static Future<XFile?> pickImage() async {
     try {
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      final ImagePicker picker = ImagePicker();
       
-      if (image == null) return null;
+      if (kIsWeb) { print('Picking image on web platform...'); }
       
-      print('Selected image for upload: ${image.path}');
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
       
-      // Validate file type (JPG or PNG)
-      final String? mimeType = image.mimeType;
-
-      if (mimeType != null &&
-      !mimeType.contains('jpeg') &&
-      !mimeType.contains('png')) {
-        print('Please select a JPG or PNG image');
+      if (image == null) {
+        print('No image selected');
         return null;
       }
       
       return image;
-    } catch (e) {
+    } catch (e, stack) {
       print('Error picking image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error selecting photo: $e')),
-      );
+      print('Stack trace: $stack');
       return null;
-    }
-  }
-
-  static Future<List<String>> fetchExistingPhotos({
-    String? targetUid,
-    dynamic selection = "all",
-  }) async {
-    try {
-      // Use the provided UID, or default to the current user's UID
-      final userId = targetUid ?? FirebaseAuth.instance.currentUser!.uid;
-      print('Fetching photos for user: $userId');
-
-      // Fetch the user's document from Firestore
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-
-      // Check if photos exist in the user's document
-      if (userDoc.exists && userDoc.data()!.containsKey('photos')) {
-        final photos = List<String>.from(userDoc.data()!['photos'] ?? []);
-        
-        // Return based on the selection parameter
-        if (selection == "all") {
-          return photos; // Return all photos
-        } else if (selection == "last_uploaded") {
-          return photos.isNotEmpty ? [photos.last] : [];
-        } else if (selection is int && selection >= 0 && selection < photos.length) {
-          return [photos[selection]]; 
-        } else {
-          print('Invalid selection parameter: $selection');
-          return [];
-        }
-      } else {
-        print('No photos found in document');
-        return [];
-      }
-    } catch (e) {
-      print('Error fetching photos: $e');
-      throw Exception('Error loading photos: $e');
     }
   }
   
@@ -150,4 +107,5 @@ class PhotoService {
       );
     }
   }
+
 }

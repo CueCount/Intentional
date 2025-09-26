@@ -5,7 +5,6 @@ import 'dart:convert';
 import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/inputCheckbox.dart';  
-import '../../functions/onboardingService.dart';
 import '../../styles.dart';
 import '../../providers/inputState.dart';
 import '/router/router.dart';
@@ -271,14 +270,16 @@ class _QualifierRelDate extends State<QualifierRelDate> {
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
           onPressed: () async {
             if (isLoggedIn) {
-              await UserActions().saveNeedLocally(context, inputData);
+              
+              await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+              await inputState.saveNeedLocally(inputData);
+
               if (context.mounted) {
-                Navigator.pushNamed(context, AppRoutes.age, arguments: inputData);
+                Navigator.pushNamed(context, AppRoutes.age);
               }
             }
           },

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/bottomNavigationBar.dart';
 import '/router/router.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
-import '../../functions/onboardingService.dart';
+import '../../providers/inputState.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../functions/uiService.dart';
 
@@ -15,6 +16,8 @@ class Age extends StatefulWidget {
 
 class _Age extends State<Age> {
  DateTime? _selectedDate;
+
+
 
  Future<void> _selectDate(BuildContext context) async {
    final DateTime? picked = await showDatePicker(
@@ -97,21 +100,17 @@ class _Age extends State<Age> {
           buttonText: isLoggedIn ? 'Save' : 'Continue',
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
           onPressed: () async {
+            final inputState = Provider.of<InputState>(context, listen: false);
+
             if (isLoggedIn) {
-              await UserActions().saveNeedLocally(context, inputData);
+              await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              final id = await UserActions.getCurrentUserId();
-              if (id != null && id.isNotEmpty) {
-                await UserActions.setStatus(id, {
-                  'infoIncomplete': true,
-                });
-              }
-              await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+              await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
-                Navigator.pushNamed(context, AppRoutes.chemistry, arguments: inputData);
+                Navigator.pushNamed(context, AppRoutes.chemistry);
               }
             }
           },

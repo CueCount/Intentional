@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/matchState.dart';
-import '../../functions/uiService.dart';
+import '../../providers/inputState.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/requestCard.dart';
@@ -25,16 +25,18 @@ class _RequestSentState extends State<RequestSent> {
     super.didChangeDependencies();
     if (!_initialized) {
       _ensureListenersActive();
-      MatchSyncProvider.debugPrintAllStorage();
+      DebugPrefs.debugPrintAllStorage();
       _initialized = true;
     }
   }
 
   Future<void> _ensureListenersActive() async {
     final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
+    final inputState = Provider.of<InputState>(context, listen: false);
 
     if (!matchSync.isListening) {
-      final userId = await UserActions.getCurrentUserId();
+      
+      final userId = inputState.userId;
       if (userId != null && userId.isNotEmpty) {
         await matchSync.startListening(userId);
       }
