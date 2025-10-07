@@ -3,12 +3,10 @@ import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/inputCheckbox.dart';
-import '../../data/inputState.dart';
+import '../../providers/inputState.dart';
 import '../../styles.dart';
-import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../functions/userActionsService.dart';
 
 class Chemistry extends StatefulWidget {
   const Chemistry({super.key});
@@ -22,17 +20,44 @@ class _chemistry extends State<Chemistry> {
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, dynamic> inputValues = {};
   Map<String, bool> selectedValues = {};
+  bool _isLoading = true;
+  
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final inputState = Provider.of<InputState>(context, listen: false); 
-      for (var input in inputState.emotionalNeeds) {
-        for (var value in input.possibleValues) {
-          selectedValues[value] = false; 
+      _loadExistingValues();
+    });
+  }
+
+  Future<void> _loadExistingValues() async {
+    final inputState = Provider.of<InputState>(context, listen: false);
+    
+    // Initialize all possible values as false first
+    for (var input in inputState.emotionalNeeds) {
+      for (var value in input.possibleValues) {
+        selectedValues[value] = false; 
+      }
+    }
+    
+    try {
+      // Get existing emotional needs from provider
+      final existingEmotionalNeeds = await inputState.getInput('EmotionalNeed');
+      
+      if (existingEmotionalNeeds != null && existingEmotionalNeeds is List) {
+        // Mark existing selections as true
+        for (String selectedValue in existingEmotionalNeeds) {
+          if (selectedValues.containsKey(selectedValue)) {
+            selectedValues[selectedValue] = true;
+          }
         }
       }
-      setState(() {});
+    } catch (e) {
+      print('Chemistry: Error loading existing values - $e');
+    }
+    
+    setState(() {
+      _isLoading = false;
     });
   }
 
@@ -111,14 +136,16 @@ class _chemistry extends State<Chemistry> {
           onPressed: () async {
             final inputData = getSelectedAttributes();
             if (isLoggedIn) {
-              await UserActions().saveNeedLocally(context, inputData);
+
+              await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
+
+              await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
-                Navigator.pushNamed(context, AppRoutes.physical, arguments: inputData);
+                Navigator.pushNamed(context, AppRoutes.physical);
               }
             }
           },

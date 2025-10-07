@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/profileCarousel.dart';
 import '../../widgets/navigation.dart';
-import '../../functions/matchesService.dart';
+import '../../providers/userState.dart'; 
+import '../../providers/matchState.dart'; 
+import '../../providers/inputState.dart';
 
 class Matches extends StatefulWidget {
   final bool shouldUpdate;
@@ -13,53 +15,54 @@ class Matches extends StatefulWidget {
 }
 
 class _Matches extends State<Matches> {
-  List<Map<String, dynamic>> users = [];
-  bool isLoading = true;
-  final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
-  bool _initialized = false;
+  List<Map<String, dynamic>> _userData = [];
+  bool _isLoading = true;
+  bool _hasLoaded = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_initialized) {
-      print('🧠 shouldUpdate value from constructor: ${widget.shouldUpdate}');
-      howToFetchMatches(widget.shouldUpdate);
-      _initialized = true;
+    if (!_hasLoaded) {
+      _loadUsers();
+      _hasLoaded = true;
     }
   }
 
-  Future<void> howToFetchMatches(bool shouldUpdate) async {    
-    if (mounted) {
-      setState(() {
-        isLoading = true;
-      });
-    }
-
+  void _loadUsers() async {
     try {
-      final fetchedUsers = shouldUpdate
-        ? await MatchesService().fetchMatchesFromFirebase(onlyWithPhotos: true, forceFresh: true,).then((users) {
-            return users;
-          })
-        : await MatchesService().fetchMatchesFromSharedPreferences().then((users) {
-            return users;
-          });
+      final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
+      final userSync = Provider.of<UserSyncProvider>(context, listen: false);
+      final inputState = Provider.of<InputState>(context, listen: false);
+      
+      final activeMatchUser = await matchSync.getActiveMatchUser();
+      
+      if (activeMatchUser.isNotEmpty) {
+        _userData = activeMatchUser;
+      } else {
+        _userData = await userSync.loadUsers(inputState);
+      }
       
       if (mounted) {
         setState(() {
-          users = fetchedUsers;
-          isLoading = false;
+          _isLoading = false;
         });
       }
     } catch (e) {
-      print('❌ Error in howToFetchMatches: $e');
-      
+      print('Error loading user data: $e');
       if (mounted) {
         setState(() {
-          isLoading = false;
+          _userData = [];
+          _isLoading = false;
         });
       }
     }
   }
+
+  /* 
+    Function here to loop through Input Provider, loop through inputs_[currentSessionId] key in shared preferences 
+    Get first 2 Inputs that exist in Input Provider, but are not in inputs_[currentSessionId] key.
+    pass the input names of those 2 Inputs, pass through return inputData
+  */
 
   @override
   Widget build(BuildContext context) {
@@ -70,8 +73,9 @@ class _Matches extends State<Matches> {
             const CustomStatusBar(),
             Expanded(
               child: ProfileCarousel(
-                userData: users,
-                isLoading: isLoading,
+                userData: _userData,
+                // inputData: _inputData
+                isLoading: _isLoading,
               ),
             ),
           ],

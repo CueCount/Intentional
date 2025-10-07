@@ -3,24 +3,68 @@ import '../styles.dart';
 
 class PillText extends StatelessWidget {
   final String text;
+  final String colorVariant;
 
   const PillText({
     Key? key,
     required this.text,
+    required this.colorVariant,
   }) : super(key: key);
+
+  Color _getBackgroundColor() {
+    switch (colorVariant) {
+      case "white":
+        return ColorPalette.white;
+      case "peach":
+        return ColorPalette.peach;
+      case "peachLite":
+        return ColorPalette.peachLite;
+      case "green":
+        return ColorPalette.green;
+      case "greenLite":
+        return ColorPalette.greenLite;
+      case "violet":
+        return ColorPalette.violet;
+      case "violetLite":
+        return ColorPalette.violetLite;
+      default:
+        return ColorPalette.peach;
+    }
+  }
+
+  Color _getTextColor() {
+    switch (colorVariant) {
+      case "white":
+        return ColorPalette.peach;
+      case "peach":
+        return ColorPalette.white;
+      case "peachLite":
+        return ColorPalette.peach;
+      case "green":
+        return ColorPalette.white;
+      case "greenLite":
+        return ColorPalette.white;
+      case "violet":
+        return ColorPalette.white;
+      case "violetLite":
+        return ColorPalette.white;
+      default:
+        return ColorPalette.white;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: ColorPalette.peach.withOpacity(0.1),
+        color: _getBackgroundColor(),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         text,
         style: AppTextStyles.headingSmall.copyWith(
-          color: ColorPalette.peach,
+          color: _getTextColor(),
         ),
       ),
     );

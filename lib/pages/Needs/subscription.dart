@@ -71,7 +71,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         onPressed: () async {
           if (context.mounted) {
             // Update this route to wherever you want to navigate next
-            Navigator.pushNamed(context, AppRoutes.matches, arguments: inputData);
+            Navigator.pushNamed(context, AppRoutes.matches);
           }
         },
       ),

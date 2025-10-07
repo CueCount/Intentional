@@ -3,12 +3,10 @@ import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/inputCheckbox.dart';  
-import '../../data/inputState.dart';
+import '../../providers/inputState.dart';
 import '../../styles.dart';
-import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../functions/userActionsService.dart';
 class Relationship extends StatefulWidget {
   const Relationship({super.key});
   @override
@@ -21,17 +19,44 @@ class _relationship extends State<Relationship> {
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, dynamic> inputValues = {};
   Map<String, bool> selectedValues = {};
+  bool _isLoading = true;
+  
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final inputState = Provider.of<InputState>(context, listen: false); 
-      for (var input in inputState.chemistryNeeds) {
-        for (var value in input.possibleValues) {
-          selectedValues[value] = false; 
+      _loadExistingValues();
+    });
+  }
+
+  Future<void> _loadExistingValues() async {
+    final inputState = Provider.of<InputState>(context, listen: false);
+    
+    // Initialize all possible values as false first
+    for (var input in inputState.chemistryNeeds) {
+      for (var value in input.possibleValues) {
+        selectedValues[value] = false; 
+      }
+    }
+    
+    try {
+      // Get existing chemistry needs from provider
+      final existingChemistryNeeds = await inputState.getInput('ChemistryNeed');
+      
+      if (existingChemistryNeeds != null && existingChemistryNeeds is List) {
+        // Mark existing selections as true
+        for (String selectedValue in existingChemistryNeeds) {
+          if (selectedValues.containsKey(selectedValue)) {
+            selectedValues[selectedValue] = true;
+          }
         }
       }
-      setState(() {});
+    } catch (e) {
+      print('Relationship: Error loading existing values - $e');
+    }
+    
+    setState(() {
+      _isLoading = false;
     });
   }
 
@@ -58,12 +83,12 @@ class _relationship extends State<Relationship> {
             children: [
               const CustomStatusBar(),
               Container(
-                padding: const EdgeInsets.all(16), // Add some padding around the content
+                padding: const EdgeInsets.all(32), 
                 child: Column(
                   children: [
                     Text(
-                      'Relationship',
-                      style: AppTextStyles.headingLarge.copyWith(
+                      'Choose 3 Relationship Expectations You Have',
+                      style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.peach,
                       ),
                     ),
@@ -73,10 +98,11 @@ class _relationship extends State<Relationship> {
                     Wrap(
                       spacing: 10.0, // horizontal spacing between items
                       runSpacing: 10.0, // vertical spacing between rows
+                      alignment: WrapAlignment.start,
                       children: inputState.chemistryNeeds.isNotEmpty 
                         ? inputState.chemistryNeeds[0].possibleValues.map<Widget>((attribute) {
                             return SizedBox(
-                              width: MediaQuery.of(context).size.width - 32, // Full width minus padding
+                              //width: MediaQuery.of(context).size.width - 32, // Full width minus padding
                               child: CustomCheckbox(
                                 attribute: CheckboxAttribute(
                                   title: attribute,
@@ -84,6 +110,7 @@ class _relationship extends State<Relationship> {
                                   isSelected: selectedValues[attribute] ?? false,
                                 ),
                                 isHorizontal: true,
+                                shrinkWrap: true, 
                                 onChanged: (isSelected) {
                                   setState(() {
                                     selectedValues[attribute] = isSelected;
@@ -104,27 +131,31 @@ class _relationship extends State<Relationship> {
       ),
 
       bottomNavigationBar: () {
-      final user = FirebaseAuth.instance.currentUser;
-      bool isLoggedIn = user != null;
-      final inputData = getSelectedAttributes();
-      return CustomAppBar(
-        buttonText: isLoggedIn ? 'Save' : 'Continue',
-        buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
-        onPressed: () async {
-          if (isLoggedIn) {
-            await UserActions().saveNeedLocally(context, inputData);
-            if (context.mounted) {
-              Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
+        final user = FirebaseAuth.instance.currentUser;
+        bool isLoggedIn = user != null;
+        final inputData = getSelectedAttributes();
+
+        return CustomAppBar(
+          buttonText: isLoggedIn ? 'Save' : 'Continue',
+          buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
+          onPressed: () async {
+            if (isLoggedIn) {
+              
+              await inputState.saveNeedLocally(inputData);
+              if (context.mounted) {
+                Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
+              }
+            } else {
+
+              await inputState.saveNeedLocally(inputData);
+              if (context.mounted) {
+                Navigator.pushNamed(context, AppRoutes.interests);
+              }
             }
-          } else {
-            await AirTrafficController().saveNeedInOnboardingFlow(context, inputData);
-            if (context.mounted) {
-              Navigator.pushNamed(context, AppRoutes.interests, arguments: inputData);
-            }
-          }
-        },
-      );
-    }(),
+          },
+        );
+        
+      }(),
     );
   }
 }
