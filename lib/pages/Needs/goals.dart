@@ -5,10 +5,8 @@ import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/inputCheckbox.dart';  
 import '../../providers/inputState.dart';
 import '../../styles.dart';
-import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../functions/uiService.dart';
 class Goals extends StatefulWidget {
   const Goals({super.key});
   @override

@@ -25,7 +25,6 @@ class _RequestSentState extends State<RequestSent> {
     super.didChangeDependencies();
     if (!_initialized) {
       _ensureListenersActive();
-      DebugPrefs.debugPrintAllStorage();
       _initialized = true;
     }
   }

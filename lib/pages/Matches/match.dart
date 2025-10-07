@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../functions/uiService.dart';
+import '../../functions/miscService.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/pill.dart'; 
 import '../../widgets/matchCTA.dart';
+import '../../widgets/flagUser.dart';
+
 
 class Match extends StatefulWidget {
   const Match({super.key});
@@ -88,14 +90,14 @@ class _Match extends State<Match> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
-                            '95% Match',
+                            '${profile?['firstName'] ?? 'Unknown'}',
                             style: AppTextStyles.headingLarge.copyWith(
                               color: ColorPalette.peach,
                               fontSize: 48,
                             ),
                           ),
                           Text(
-                            "${profile?['firstName'] ?? 'Unknown'}, ${UserActions().calculateAge(profile?['birthDate'])}",
+                            "${MiscService().calculateAge(profile?['birthDate'])}, ${profile?['school']}, ${profile?['career']}",
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: ColorPalette.peach,
                             ),
@@ -105,7 +107,7 @@ class _Match extends State<Match> {
                     ),
 
                     /* = = = = = = = = = 
-                    Key Match Indicators
+                    Overview / Ennegram and 4 Letter thing overview
                     = = = = = = = = = = */
                     Container(
                       width: double.infinity,
@@ -119,17 +121,32 @@ class _Match extends State<Match> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Key Match Indicators',
+                            'Ennegram Match',
                             style: AppTextStyles.headingMedium.copyWith(
                               color: ColorPalette.peach,
                             ),
                           ),
                           const SizedBox(height: 8),
-                          PillText(text: 'complimenting emotional qualities', colorVariant: "white"),
+                          Text(
+                            'Lorium ipsum lorium ipsum',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: ColorPalette.peach,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'MBTI Match',
+                            style: AppTextStyles.headingMedium.copyWith(
+                              color: ColorPalette.peach,
+                            ),
+                          ),
                           const SizedBox(height: 8),
-                          PillText(text: 'best friend in a partner', colorVariant: "white"),
-                          const SizedBox(height: 8),
-                          PillText(text: 'bar hopping', colorVariant: "white"),
+                          Text(
+                            'Lorium ipsum lorium ipsum',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: ColorPalette.peach,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -317,6 +334,22 @@ class _Match extends State<Match> {
                     MatchCTA(
                       targetUserId: profile?['userId'] ?? '',
                     ),
+
+                    /* = = = = = = = = = 
+                    Flag User Button
+                    = = = = = = = = = = */ 
+                    IconButton(
+                      icon: const Icon(Icons.flag, color: Colors.red),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => FlagUserWidget(
+                            targetUserId: profile?['userId'] ?? '',
+                            chatId: 'optional_chat_id', // Optional - pass if flagging from a chat
+                          ),
+                        );
+                      },
+                    )
                  
                   ],
                 ),

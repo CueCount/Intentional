@@ -319,7 +319,7 @@ class AppCheckboxThemes {
 
   static TextStyle checkboxDescription(bool isSelected) {
     return TextStyle(
-      color: isSelected ? ColorPalette.white.withOpacity(0.9) : ColorPalette.grey,
+      color: isSelected ? ColorPalette.white : ColorPalette.grey,
       fontFamily: 'Fraunces',
       fontSize: 18,
       fontWeight: FontWeight.w500,
@@ -347,8 +347,8 @@ class AppCheckboxThemes {
   }
 
   // Padding for the checkbox content
-  static const EdgeInsets checkboxPadding = EdgeInsets.all(16.0);
-
+  static const EdgeInsets checkboxPadding = EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0);
+  
   // Height for consistent checkbox sizing
   // static const double checkboxHeight = 160.0;
 

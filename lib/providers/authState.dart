@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AppAuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -96,9 +97,9 @@ class AppAuthProvider extends ChangeNotifier {
       
       if (u != null) {
         // User is logged in - clean up temp session if it exists
-        if (_tempId != null) {
+        /*if (_tempId != null) {
           await _cleanupTempSession();
-        }
+        }*/
         _isLoading = false;
         if (!_isInitialized) _isInitialized = true;
         
@@ -119,17 +120,6 @@ class AppAuthProvider extends ChangeNotifier {
       }
     });
   }
-
-  /*void init() {
-    _sub?.cancel();
-    _sub = _auth.authStateChanges().listen((u) {
-      final changed = _user?.uid != u?.uid;
-      _user = u;
-      _isLoading = false;
-      if (!_isInitialized) _isInitialized = true;
-      if (changed) notifyListeners(); else notifyListeners(); // safe either way
-    });
-  }*/
 
   /* = = = = = = = =
   Logging In/Out User
@@ -165,22 +155,88 @@ class AppAuthProvider extends ChangeNotifier {
   Register User 
   = = = = = = = = */
 
-  Future<void> signUp(String email, String password) async {
-    _isLoading = true;
-    notifyListeners();
-    
+  Future<void> signUp(String email, String password, inputProvider) async {
     try {
-      await _auth.createUserWithEmailAndPassword(email: email, password: password);
-      // Cleanup will happen automatically in the auth state listener
+
+      _isLoading = true;
+      notifyListeners();
+      
+      // Get the temp ID 
+      final tempId = _tempId;
+      if (tempId == null || tempId.isEmpty) {
+        throw Exception('No temporary session found');
+      }
+      
+      // Get all temp data from SharedPreferences via InputProvider
+      final tempData = await inputProvider.getAllInputs();
+      tempData['email'] = email;
+      print('📱 Temp data retrieved: ${tempData.keys.toList()}');
+      print('📱 Has photos: ${tempData.containsKey('photos')}');
+      if (tempData.isEmpty) {
+        throw Exception('No temporary data to transfer');
+      }
+      
+      // Create Firebase Auth user
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      
+      if (userCredential.user == null) {
+        throw Exception('Failed to create user');
+      }
+      
+      final authenticatedUserId = userCredential.user!.uid;
+      
+      // Transfer temp data to authenticated user in Firestore
+      await inputProvider.syncInputs(
+        fromId: tempId,
+        toId: authenticatedUserId,
+      );
+
+      // Transfer the users list
+      await _transferUsersList(tempId, authenticatedUserId);
+      
+      // Update InputProvider to use the new authenticated session
+      inputProvider.setCurrentSessionId(authenticatedUserId);
+      
+      _isLoading = false;
+      notifyListeners();
+      
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      rethrow;
+      throw e;
     }
   }
 
   /* = = = = = = = =
-  Dispose
+  Helpers 
+  = = = = = = = = */
+
+  // this should probably be in the Input State, but whatever, this is a hack anyway
+  Future<void> _transferUsersList(String fromId, String toId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final usersList = prefs.getStringList('users_$fromId');
+      
+      if (usersList != null && usersList.isNotEmpty) {
+        await prefs.setStringList('users_$toId', usersList);
+        await prefs.remove('users_$fromId');
+        
+        if (kDebugMode) {
+          print('AuthProvider: Transferred ${usersList.length} users from users_$fromId to users_$toId');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('AuthProvider: Failed to transfer users list - $e');
+      }
+    }
+  }
+
+  /* = = = = = = = =
+  Dispose 
   = = = = = = = = */
 
   @override

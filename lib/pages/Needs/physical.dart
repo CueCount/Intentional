@@ -5,11 +5,9 @@ import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/inputSlider.dart';
 import '../../widgets/customRangeSlider.dart';
 import '../../providers/inputState.dart';
-import '../../functions/onboardingService.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../functions/uiService.dart';
 
 class Physical extends StatefulWidget {
   const Physical({super.key});

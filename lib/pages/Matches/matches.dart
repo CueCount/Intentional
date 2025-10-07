@@ -58,6 +58,12 @@ class _Matches extends State<Matches> {
     }
   }
 
+  /* 
+    Function here to loop through Input Provider, loop through inputs_[currentSessionId] key in shared preferences 
+    Get first 2 Inputs that exist in Input Provider, but are not in inputs_[currentSessionId] key.
+    pass the input names of those 2 Inputs, pass through return inputData
+  */
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,6 +74,7 @@ class _Matches extends State<Matches> {
             Expanded(
               child: ProfileCarousel(
                 userData: _userData,
+                // inputData: _inputData
                 isLoading: _isLoading,
               ),
             ),

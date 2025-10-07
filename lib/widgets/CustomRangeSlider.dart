@@ -43,15 +43,6 @@ class _CustomRangeSliderState extends State<CustomRangeSlider> {
       ),
       child: Column(
         children: [
-          Text(
-            "${_currentRangeValues.start.toStringAsFixed(1)} - ${_currentRangeValues.end.toStringAsFixed(1)}",
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: ColorPalette.peach,
-              fontSize: 16,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
           SliderTheme(
             data: AppRangeSliderThemes.sliderTheme.copyWith(
               trackHeight: 8.0,

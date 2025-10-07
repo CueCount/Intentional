@@ -5,10 +5,8 @@ import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/inputCheckbox.dart';  
 import '../../providers/inputState.dart';
 import '../../styles.dart';
-import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../functions/uiService.dart';
 class Relationship extends StatefulWidget {
   const Relationship({super.key});
   @override
@@ -85,12 +83,12 @@ class _relationship extends State<Relationship> {
             children: [
               const CustomStatusBar(),
               Container(
-                padding: const EdgeInsets.all(16), 
+                padding: const EdgeInsets.all(32), 
                 child: Column(
                   children: [
                     Text(
-                      'Relationship',
-                      style: AppTextStyles.headingLarge.copyWith(
+                      'Choose 3 Relationship Expectations You Have',
+                      style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.peach,
                       ),
                     ),
@@ -100,10 +98,11 @@ class _relationship extends State<Relationship> {
                     Wrap(
                       spacing: 10.0, // horizontal spacing between items
                       runSpacing: 10.0, // vertical spacing between rows
+                      alignment: WrapAlignment.start,
                       children: inputState.chemistryNeeds.isNotEmpty 
                         ? inputState.chemistryNeeds[0].possibleValues.map<Widget>((attribute) {
                             return SizedBox(
-                              width: MediaQuery.of(context).size.width - 32, // Full width minus padding
+                              //width: MediaQuery.of(context).size.width - 32, // Full width minus padding
                               child: CustomCheckbox(
                                 attribute: CheckboxAttribute(
                                   title: attribute,
@@ -111,6 +110,7 @@ class _relationship extends State<Relationship> {
                                   isSelected: selectedValues[attribute] ?? false,
                                 ),
                                 isHorizontal: true,
+                                shrinkWrap: true, 
                                 onChanged: (isSelected) {
                                   setState(() {
                                     selectedValues[attribute] = isSelected;

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'inputState.dart';
+import 'matchState.dart';
 
 class UserSyncProvider extends ChangeNotifier {
   // Private variables
@@ -33,7 +34,6 @@ class UserSyncProvider extends ChangeNotifier {
       print('loadUsers called, currentUserId: $_currentUserId');
     }
     try {
-      // Get session IDs using InputState
       final sessionUserIds = await inputState.getInput('currentSessionList');
       
       if (sessionUserIds.isEmpty) {
@@ -61,7 +61,6 @@ class UserSyncProvider extends ChangeNotifier {
               print('User Provider: Loaded $userId from cache');
             }
           } else {
-            // User data missing from cache - fetch from Firebase
             if (kDebugMode) {
               print('User Provider: User $userId missing, fetching from Firebase');
             }
@@ -69,7 +68,6 @@ class UserSyncProvider extends ChangeNotifier {
             userData = await getUserByID(userId);
             
             if (userData != null) {
-              // Store the fetched user data in cache
               await _storeUserInCache(userData, _currentUserId!);
               loadedUsers.add(userData);
               
@@ -208,124 +206,448 @@ class UserSyncProvider extends ChangeNotifier {
   = = = = = = = = = */ 
 
   Future<void> refreshDiscoverableUsers(BuildContext context) async {
-    if (kDebugMode) {print("Refresh Triggered:");}
-
+    if (kDebugMode) {print("🔄 Refresh Triggered");}
     final inputState = Provider.of<InputState>(context, listen: false);
+    final matchProvider = Provider.of<MatchSyncProvider>(context, listen: false);
 
     try {
       if (_currentUserId == null) return;
-      final prefs = await SharedPreferences.getInstance();
-
-      /* = = = = = = = = = 
-      Move currentSessionList Ids to ignoreList
-      = = = = = = = = = = */
-
-      final currentSessionIds = await inputState.getInput('currentSessionList');
-      // currentSessionIdsNonPending = currentSessionIds minus Ids that are in pending match docs with currentSessionId
-      // Move all currentSessionIdsNonPending to ignoreList
-      final ignoreIds = await inputState.getInput('ignoreList');
-
-      /* = = = = = = = = = 
-      Fetch all inputs and build filters
-      = = = = = = = = = = */
-
-      final userInputs = await await inputState.syncInputs();
-      // final seekingInputs = _buildSeekingFilters(userInputs);
-
-      /* = = = = = = = = = 
-      Query Firebase with filters
-      = = = = = = = = = = */
       
-      // final newUsers = await _queryFilteredUsers(seekingInputs, ignoreIds, /* ids from current match docs pending */);
-
-      /* = = = = = = = = = 
-      Save New Users to Local, Remove Old Users
-      = = = = = = = = = = */
-
-      // final usersJson = newUsers.map((user) => jsonEncode(user)).toList();
-      // delete user docs in users_[currentSessionId] that match currentSessionIdsNonPending
-      // await prefs.setStringList('users_$currentUserId', usersJson);
-
-      /* = = = = = = = = = 
-      Save New User Ids to currentSessionList, Merge all Local Inputs with Firebase
-      = = = = = = = = = = */
-
-      // final newUserIds = newUsers.map((user) => user['userId'] as String).toList();
-      // call function to accept fetched userIds and add them to the currentSessionList
-      // await inputState.syncInputsToFirebase(userInputs, _currentUserId!);
+      // Step 1: Clean up currentSessionList
+      final usersToRemove = await _filterAndMoveNonPendingUsers(inputState, matchProvider);
       
-      /* = = = = = = = = = 
-      Navigate back to matches page - triggering loadUsers to load New Users
-      = = = = = = = = = = */
+      // Step 2: Get user inputs and build filters
+      final userInputs = await inputState.getAllInputs();
+      final filterInputs = _buildFilterInputs(userInputs);
       
+      // Step 3: Get ignore list
+      final ignoreIds = await inputState.getInput('ignoreList') ?? [];
+      final ignoreIdsList = List<String>.from(ignoreIds);
+      
+      // Step 4: Query for new users with retry logic
+      final newUsers = await _queryWithRetryLogic(filterInputs, ignoreIdsList.toSet());
+      
+      // Step 5: Update local storage
+      await _updateLocalUserStorage(newUsers, usersToRemove, context);
+      
+      // Step 6: Update currentSessionList
+      await _updateCurrentSessionList(inputState, newUsers);
+      
+      // Navigate to matches page
       Navigator.pushNamed(context, '/matches');
-
-      print("test of Refresh with only InputSync is complete");
-
-      // if (kDebugMode) {print('User Provider: Refreshed ${newUsers.length} discoverable users');}
       
+      if (kDebugMode) {print('✅ Refresh complete: Found ${newUsers.length} new users');}
     } catch (e) {
-      if (kDebugMode) {
-        print('User Provider Error: Refresh failed - $e');
-      }
+      if (kDebugMode) {print('User Provider Error: Refresh failed - $e');}
     }
   }
 
-  Map<String, dynamic> _buildSeekingFilters(Map<String, dynamic> userInputs) {
-    final filters = <String, dynamic>{};
-    
-    if (userInputs['seeking'] != null) {
-      filters['gender'] = userInputs['seeking'];
-    }
-    
-    return filters;
-  }
-
-  Future<List<Map<String, dynamic>>> _queryFilteredUsers(
-    Map<String, dynamic> filters, 
-    List<String> ignoreIds
+  // Step 1: Filter and Move Non-Pending Users
+  Future<List<String>> _filterAndMoveNonPendingUsers(
+    InputState inputState,
+    MatchSyncProvider matchProvider
   ) async {
-    try {
-      Query query = FirebaseFirestore.instance.collection('users');
-      
-      if (filters['gender'] != null) {
-        query = query.where('gender', whereIn: filters['gender']);
-      }
-      
-      if (filters['minAge'] != null) {
-        query = query.where('age', isGreaterThanOrEqualTo: filters['minAge']);
-      }
-      
-      if (filters['maxAge'] != null) {
-        query = query.where('age', isLessThanOrEqualTo: filters['maxAge']);
-      }
-      
-      query = query.limit(20);
-      
-      final snapshot = await query.get();
-      
-      final users = snapshot.docs
-          .where((doc) => !ignoreIds.contains(doc.id))
-          .where((doc) => doc.id != _currentUserId)
-          .take(9)
-          .map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return {
-              'userId': doc.id,
-              'nameFirst': data['nameFirst'],
-              'birthDate': _convertDateToString(data['birthDate']),
-              'photos': data['photos'],
-              'location': _convertGeoPointToMap(data['location']),
-              'gender': data['gender'],
-              'age': data['age'],
-            };
-          })
-          .toList();
-      
-      return users;
-    } catch (e) {
+    // Get currentSessionList
+    final currentSessionIds = await inputState.getInput('currentSessionList');
+    if (currentSessionIds == null || currentSessionIds.isEmpty) {
       return [];
     }
+    final currentSessionList = List<String>.from(currentSessionIds);
+    
+    if (currentSessionList.isNotEmpty) {
+      // Get existing ignore list
+      final existingIgnoreIds = await inputState.getInput('ignoreList') ?? [];
+      final ignoreList = List<String>.from(existingIgnoreIds);
+      
+      // Add non-pending to ignore list
+      ignoreList.addAll(currentSessionList);
+      
+      // Save updated ignore list
+      await inputState.saveNeedLocally({
+        'ignoreList': ignoreList,
+      });
+
+      // Instead of saving anything, just clear the currentSessionList 
+      await inputState.saveNeedLocally({
+        'currentSessionList': [],  // Empty list
+      });
+      
+      if (kDebugMode) {
+        print('📋 Moved ${currentSessionList.length} users to ignore list');
+      }
+    }
+    
+    return currentSessionList;
+  }
+
+  // Step 2: Build Filter Inputs - Placeholder
+  Map<String, dynamic> _buildFilterInputs(Map<String, dynamic> userInputs) {
+    // Placeholder function - returns empty map for now
+    // TODO: Implement filter building logic
+    return {};
+  }
+
+  // Step 3: Query With Retry Logic
+  Future<List<Map<String, dynamic>>> _queryWithRetryLogic(
+    Map<String, dynamic> filterInputs,
+    Set<String> excludedIds,
+  ) async {
+    final List<Map<String, dynamic>> collectedUsers = [];
+    const int targetCount = 7;
+    const int maxAttempts = 4;
+    
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      if (collectedUsers.length >= targetCount) break;
+      
+      try {
+        final randomOffset = attempt * 10;
+        final snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .limit(7 + randomOffset)
+            .get();
+        
+        final queryResults = snapshot.docs
+            .where((doc) => !excludedIds.contains(doc.id))
+            .where((doc) => doc.id != _currentUserId)
+            .map((doc) {
+              final data = doc.data();
+              final cleanedData = _convertTimestampsToStrings(data);
+              return {
+                'userId': doc.id,
+                ...cleanedData,
+              };
+            })
+            .toList();
+        
+        // Filter out already collected users
+        final existingIds = collectedUsers.map((u) => u['userId'] as String).toSet();
+        var newUniqueUsers = queryResults
+            .where((user) => !existingIds.contains(user['userId']))
+            .toList();
+        
+        // STEP 1: Filter out users with pending cases
+        if (newUniqueUsers.isNotEmpty) {
+          final userIds = newUniqueUsers.map((u) => u['userId'] as String).toList();
+          
+          // Query cases where status = pending AND userId is in our list
+          final casesSnapshot = await FirebaseFirestore.instance
+              .collection('cases')
+              .where('status', isEqualTo: 'pending')
+              .where('userId', whereIn: userIds)  // whereIn has limit of 10 items
+              .get();
+          
+          final usersWithPendingCases = casesSnapshot.docs
+              .map((doc) => doc.data()['userId'] as String)
+              .toSet();
+          
+          // Filter them out
+          newUniqueUsers = newUniqueUsers
+              .where((user) => !usersWithPendingCases.contains(user['userId']))
+              .toList();
+          
+          if (kDebugMode && usersWithPendingCases.isNotEmpty) {
+            print('Filtered out ${usersWithPendingCases.length} users with pending cases');
+          }
+        }
+        
+        // STEP 2: Filter out users in active matches
+        if (newUniqueUsers.isNotEmpty) {
+          final userIds = newUniqueUsers.map((u) => u['userId'] as String).toList();
+          final usersInActiveMatches = <String>{};
+          
+          // Query for active matches where either user is in our list
+          final matchesAsRequester = await FirebaseFirestore.instance
+              .collection('matches')
+              .where('status', isEqualTo: 'active')
+              .where('requesterUserId', whereIn: userIds)
+              .get();
+          
+          final matchesAsRequested = await FirebaseFirestore.instance
+              .collection('matches')
+              .where('status', isEqualTo: 'active')
+              .where('requestedUserId', whereIn: userIds)
+              .get();
+          
+          // Add users found in active matches
+          for (var doc in matchesAsRequester.docs) {
+            final data = doc.data();
+            usersInActiveMatches.add(data['requesterUserId'] as String);
+          }
+          
+          for (var doc in matchesAsRequested.docs) {
+            final data = doc.data();
+            usersInActiveMatches.add(data['requestedUserId'] as String);
+          }
+          
+          // Filter them out
+          newUniqueUsers = newUniqueUsers
+              .where((user) => !usersInActiveMatches.contains(user['userId']))
+              .toList();
+          
+          if (kDebugMode && usersInActiveMatches.isNotEmpty) {
+            print('Filtered out ${usersInActiveMatches.length} users in active matches');
+          }
+        }
+        
+        // Add the fully filtered users to collected
+        collectedUsers.addAll(newUniqueUsers);
+        
+        if (kDebugMode) {
+          print('🔍 Attempt ${attempt + 1}: Found ${newUniqueUsers.length} new users after all filters');
+        }
+        
+      } catch (e) {
+        if (kDebugMode) {
+          print('Query error in attempt ${attempt + 1}: $e');
+        }
+      }
+      
+      if (collectedUsers.length >= targetCount) {
+        break;
+      }
+    }
+    
+    return collectedUsers.take(targetCount).toList();
+  }
+
+  // Step 4: Update Local User Storage
+  Future<void> _updateLocalUserStorage(
+    List<Map<String, dynamic>> newUsers,
+    List<String> removedUserIds,
+    BuildContext context,
+  ) async {
+    if (_currentUserId == null) return;
+    
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Get existing users
+    final existingUsersList = prefs.getStringList('users_$_currentUserId') ?? [];
+    final existingUsers = existingUsersList
+        .map((json) => Map<String, dynamic>.from(jsonDecode(json)))
+        .toList();
+
+    // Get pending match user IDs (both sent and received)
+    final matchProvider = Provider.of<MatchSyncProvider>(context, listen: false);
+    final pendingUserIds = <String>{};
+    
+    // Add users from sent requests (where current user is requester)
+    for (var match in matchProvider.sentRequests) {
+      if (match['status'] == 'pending') {
+        pendingUserIds.add(match['requestedUserId'] as String);
+      }
+    }
+    
+    // Add users from received requests (where current user is requested)
+    for (var match in matchProvider.receivedRequests) {
+      if (match['status'] == 'pending') {
+        pendingUserIds.add(match['requesterUserId'] as String);
+      }
+    }
+    
+    // Keep only pending match users from existing users
+    final pendingUsers = existingUsers
+        .where((user) => pendingUserIds.contains(user['userId']))
+        .toList();
+    
+    // Start with pending users and add new users
+    final updatedUsers = [...pendingUsers, ...newUsers];
+    
+    // Save back
+    final usersJson = updatedUsers.map((user) => jsonEncode(user)).toList();
+    await prefs.setStringList('users_$_currentUserId', usersJson);
+    
+    if (kDebugMode) {
+      print('💾 Updated user storage: ${pendingUsers.length} pending + ${newUsers.length} new = ${updatedUsers.length} total');
+    }
+  }
+
+  // Step 5: Update Current Session List
+  Future<void> _updateCurrentSessionList(
+    InputState inputState,
+    List<Map<String, dynamic>> newUsers,
+  ) async {
+    final newUserIds = newUsers.map((user) => user['userId'] as String).toList();
+  
+    // Save ONLY the new user IDs
+    await inputState.saveNeedLocally({
+      'currentSessionList': newUserIds,
+    });
+    
+    // Sync everything to Firebase
+    await inputState.syncInputs(fromId: _currentUserId, toId: _currentUserId);
+    
+    if (kDebugMode) {
+      print('📝 Updated session list: ${newUserIds.length} users');
+    }
+  }
+
+  /* = = = = = = = = = 
+  Fetch First Batch of Users During Registration
+  = = = = = = = = = */
+  
+  Future<void> fetchInitialUsers(InputState inputState) async {
+    try {
+      final currentSessionId = inputState.userId;
+      
+      if (currentSessionId.isEmpty) {
+        print('User Provider: No session ID for fetching initial users');
+        return;
+      }
+      
+      // Step 2: Get user inputs and build filters
+      final userInputs = await inputState.getAllInputs();
+      final filterInputs = _buildFilterInputs(userInputs);
+      
+      // Step 4: Query for users with retry logic (no ignoreList for initial fetch)
+      final collectedUsers = await _fetchInitialUsersWithFilters(filterInputs);
+      
+      if (collectedUsers.isEmpty) {
+        print('User Provider: No users found during initial fetch');
+        return;
+      }
+      
+      // Step 5: Store users in local storage
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = collectedUsers.map((user) => jsonEncode(user)).toList();
+      await prefs.setStringList('users_$currentSessionId', usersJson);
+      
+      // Step 6: Update currentSessionList with user IDs
+      final userIds = collectedUsers.map((user) => user['userId'] as String).toList();
+      await inputState.saveNeedLocally({
+        'currentSessionList': userIds,
+      });
+      
+      // Sync to Firebase
+      await inputState.syncInputs(fromId: currentSessionId, toId: currentSessionId);
+      
+      print('User Provider: Fetched ${collectedUsers.length} initial users');
+      print('User Provider: Saved to users_$currentSessionId');
+      
+    } catch (e) {
+      print('User Provider Error: Failed to fetch initial users - $e');
+    }
+  }
+
+  // Helper function specifically for initial fetch
+  Future<List<Map<String, dynamic>>> _fetchInitialUsersWithFilters(
+    Map<String, dynamic> filterInputs,
+  ) async {
+    final List<Map<String, dynamic>> collectedUsers = [];
+    const int targetCount = 7;
+    const int maxAttempts = 4;
+    
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      if (collectedUsers.length >= targetCount) break;
+      
+      try {
+        final randomOffset = attempt * 10;
+        final snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .limit(7 + randomOffset)
+            .get();
+        
+        var potentialUsers = snapshot.docs
+            .skip(randomOffset) // Skip already seen users
+            .take(10)
+            .map((doc) {
+              final data = doc.data();
+              final cleanedData = _convertTimestampsToStrings(data);
+              return {
+                'userId': doc.id,
+                ...cleanedData,
+              };
+            })
+            .toList();
+        
+        // Filter out already collected users
+        final existingIds = collectedUsers.map((u) => u['userId'] as String).toSet();
+        potentialUsers = potentialUsers
+            .where((user) => !existingIds.contains(user['userId']))
+            .toList();
+        
+        // STEP 1: Filter out users with pending cases
+        if (potentialUsers.isNotEmpty) {
+          final userIds = potentialUsers.map((u) => u['userId'] as String).toList();
+          
+          // Handle whereIn limit of 10 items
+          final userIdsToCheck = userIds.take(10).toList();
+          
+          final casesSnapshot = await FirebaseFirestore.instance
+              .collection('cases')
+              .where('status', isEqualTo: 'pending')
+              .where('userId', whereIn: userIdsToCheck)
+              .get();
+          
+          final usersWithPendingCases = casesSnapshot.docs
+              .map((doc) => doc.data()['userId'] as String)
+              .toSet();
+          
+          potentialUsers = potentialUsers
+              .where((user) => !usersWithPendingCases.contains(user['userId']))
+              .toList();
+          
+          if (kDebugMode && usersWithPendingCases.isNotEmpty) {
+            print('Initial fetch: Filtered out ${usersWithPendingCases.length} users with pending cases');
+          }
+        }
+        
+        // STEP 2: Filter out users in active matches
+        if (potentialUsers.isNotEmpty) {
+          final userIds = potentialUsers.map((u) => u['userId'] as String).toList();
+          final usersInActiveMatches = <String>{};
+          
+          // Query for active matches where either user is in our list
+          final matchesAsRequester = await FirebaseFirestore.instance
+              .collection('matches')
+              .where('status', isEqualTo: 'active')
+              .where('requesterUserId', whereIn: userIds)
+              .get();
+          
+          final matchesAsRequested = await FirebaseFirestore.instance
+              .collection('matches')
+              .where('status', isEqualTo: 'active')
+              .where('requestedUserId', whereIn: userIds)
+              .get();
+          
+          // Add users found in active matches
+          for (var doc in matchesAsRequester.docs) {
+            final data = doc.data();
+            usersInActiveMatches.add(data['requesterUserId'] as String);
+          }
+          
+          for (var doc in matchesAsRequested.docs) {
+            final data = doc.data();
+            usersInActiveMatches.add(data['requestedUserId'] as String);
+          }
+          
+          // Filter them out
+          potentialUsers = potentialUsers
+              .where((user) => !usersInActiveMatches.contains(user['userId']))
+              .toList();
+          
+          if (kDebugMode && usersInActiveMatches.isNotEmpty) {
+            print('Initial fetch: Filtered out ${usersInActiveMatches.length} users in active matches');
+          }
+        }
+        
+        collectedUsers.addAll(potentialUsers);
+        
+        if (kDebugMode) {
+          print('🔍 Initial fetch attempt ${attempt + 1}: Found ${potentialUsers.length} valid users');
+        }
+        
+      } catch (e) {
+        if (kDebugMode) {
+          print('Initial fetch error in attempt ${attempt + 1}: $e');
+        }
+      }
+      
+      if (collectedUsers.length >= targetCount) {
+        break;
+      }
+    }
+    
+    return collectedUsers.take(targetCount).toList();
   }
 
   /* = = = = = = = = = 
@@ -374,6 +696,34 @@ class UserSyncProvider extends ChangeNotifier {
       print('Error converting GeoPoint: $geoValue, error: $e');
       return null;
     }
+  }
+
+  Map<String, dynamic> _convertTimestampsToStrings(Map<String, dynamic> data) {
+    final Map<String, dynamic> result = {};
+    
+    data.forEach((key, value) {
+      if (value is Timestamp) {
+        result[key] = value.toDate().toIso8601String();
+      } else if (value is GeoPoint) {
+        result[key] = {
+          'latitude': value.latitude,
+          'longitude': value.longitude,
+        };
+      } else if (value is Map) {
+        result[key] = _convertTimestampsToStrings(value as Map<String, dynamic>);
+      } else if (value is List) {
+        result[key] = value.map((item) {
+          if (item is Map) {
+            return _convertTimestampsToStrings(item as Map<String, dynamic>);
+          }
+          return item;
+        }).toList();
+      } else {
+        result[key] = value;
+      }
+    });
+    
+    return result;
   }
 
 }

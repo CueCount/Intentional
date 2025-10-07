@@ -5,9 +5,7 @@ import '../pages/Matches/matches.dart';
 import '../pages/Matches/match.dart';
 import '../pages/Needs/qual.dart';
 import '../pages/Needs/age.dart';
-import '../pages/Needs/basic_info.dart';
 import '../pages/Needs/photos.dart';
-import '../pages/Needs/photoCrop.dart';
 import '../pages/Needs/chemistry.dart';
 import '../pages/Needs/physical.dart';
 import '../pages/Needs/relationship.dart';
@@ -22,7 +20,6 @@ import '../pages/Profile/requestsReceived.dart';
 import '../pages/Profile/requestsSent.dart';
 import '../pages/Guides/guideRequestSent.dart';
 import '../pages/Guides/guideAvailableMatches.dart';
-import 'package:image_picker/image_picker.dart';
 
 
 
@@ -39,7 +36,6 @@ class AppRoutes {
   static const String register = '/register';
   static const String basicInfo = '/basic_info';
   static const String photos = '/photos';
-  static const String photoCrop = '/photoCrop';
   static const String prompts = '/prompts';
   static const String relationship = '/relationship';
   static const String physical = '/physical';
@@ -73,10 +69,6 @@ class AppRoutes {
   }
 
   static Widget _loggedInRoutes(String? routeName, [dynamic arguments]) {
-    if (routeName == register) {
-      return const BasicProfilePage();
-    }
-
     switch (routeName) {
       case qual:
         return const QualifierRelDate();
@@ -92,8 +84,6 @@ class AppRoutes {
         return const Interests();
       case goals:
         return const Goals();
-      case basicInfo:    
-        return const BasicProfilePage();
       case chat:
         return const MatchChat();
       case matches:
@@ -106,8 +96,7 @@ class AppRoutes {
         return const RequestSent();
       case photos:
         return const PhotoUploadPage();
-      case photoCrop:
-        return PhotoCropPage(imageFile: arguments['imageFile'],);
+
       case subscription:
         return const SubscriptionPage();
       case editNeeds:
@@ -141,8 +130,7 @@ class AppRoutes {
         return const GuideAvailableMatches();
       case photos:
         return const PhotoUploadPage();
-      case photoCrop:
-        return PhotoCropPage(imageFile: arguments['imageFile'],);
+
       case matches:
         return const Matches();
       case match:

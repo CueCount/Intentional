@@ -1,10 +1,6 @@
-// global_error_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/matchState.dart';
-import '../providers/inputState.dart';
-import '../functions/uiService.dart';
-import '../styles.dart';
 
 class GlobalErrorScreen extends StatelessWidget {
   final FlutterErrorDetails details;

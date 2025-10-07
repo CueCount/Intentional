@@ -5,10 +5,8 @@ import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/inputCheckbox.dart';
 import '../../providers/inputState.dart';
 import '../../styles.dart';
-import '../../functions/onboardingService.dart';
 import '../../widgets/navigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../functions/uiService.dart';
 
 class Interests extends StatefulWidget {
   const Interests({super.key});
@@ -103,27 +101,28 @@ class _interests extends State<Interests> {
                   Wrap(
                     spacing: 10.0, // horizontal spacing between items
                     runSpacing: 10.0, // vertical spacing between rows
+                    alignment: WrapAlignment.start,
                     children: inputState.logisticNeeds.isNotEmpty
-                        ? inputState.logisticNeeds[0].possibleValues.map<Widget>((attribute) {
-                            return SizedBox(
-                              width: (MediaQuery.of(context).size.width - 42) / 2, // 2 columns with padding and spacing
-                              child: CustomCheckbox(
-                                attribute: CheckboxAttribute(
-                                  title: attribute,
-                                  description: '',
-                                  isSelected: selectedValues[attribute] ?? false,
-                                ),
-                                isHorizontal: true, 
-                                onChanged: (isSelected) {
-                                  setState(() {
-                                    selectedValues[attribute] = isSelected;
-                                  });
-                                },
-                                isSelected: selectedValues[attribute] ?? false,
-                              ),
-                            );
-                          }).toList()
-                        : [],
+                    ? inputState.logisticNeeds[0].possibleValues.map<Widget>((attribute) {
+                        return SizedBox(
+                          width: (MediaQuery.of(context).size.width - 42) / 2, // 2 columns with padding and spacing
+                          child: CustomCheckbox(
+                            attribute: CheckboxAttribute(
+                              title: attribute,
+                              description: '',
+                              isSelected: selectedValues[attribute] ?? false,
+                            ),
+                            isHorizontal: true, 
+                            onChanged: (isSelected) {
+                              setState(() {
+                                selectedValues[attribute] = isSelected;
+                              });
+                            },
+                            isSelected: selectedValues[attribute] ?? false,
+                          ),
+                        );
+                      }).toList()
+                    : [],
                   ),
                 ],
               ),

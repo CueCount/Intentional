@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
@@ -119,13 +121,6 @@ class InputState extends ChangeNotifier {
     deniedList.clear();
   }
   
-  Map<String, dynamic> getCachedInputs() {
-    return {
-      ..._cachedInputs,
-      'photoInputs': photoInputs ?? [],
-    };
-  }
-
   Future<Map<String, dynamic>> getAllInputs() async {
     try {
       if (_currentSessionId.isEmpty) {
@@ -148,100 +143,178 @@ class InputState extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> syncInputs() async {
+
+
+  Future<Map<String, dynamic>> syncInputs({String? fromId, String? toId}) async {
     try {
-      if (_currentSessionId.isEmpty) {
-        print('InputState: No session ID for getting inputs');
+      final sourceId = fromId ?? _currentSessionId;
+      final targetId = toId ?? _currentSessionId;
+      
+      if (sourceId.isEmpty) {
+        print('InputState: No session ID for syncing');
         return {};
       }
       
       final prefs = await SharedPreferences.getInstance();
       
-      // Step 1: Get inputs from SharedPreferences
+      // Step 1: Always read from SharedPreferences using sourceId
       Map<String, dynamic> localInputs = {};
-      final inputsJson = prefs.getString('inputs_$_currentSessionId');
+      final inputsJson = prefs.getString('inputs_$sourceId');
       if (inputsJson != null) {
         localInputs = jsonDecode(inputsJson);
       }
+      print('🔍 Local inputs from $sourceId: ${localInputs.keys.toList()}');
       
-      // Step 2: Get inputs from Firebase
+      // Step 2: Get inputs from Firebase (if not a transfer, get from target)
       Map<String, dynamic> firebaseInputs = {};
-      try {
-        final doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(_currentSessionId)
-            .get();
-        
-        if (doc.exists && doc.data() != null) {
-          firebaseInputs = doc.data()!;
+      if (fromId == null) {  // Only fetch from Firebase if not transferring
+        try {
+          final doc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(targetId)
+              .get();
+          
+          if (doc.exists && doc.data() != null) {
+            firebaseInputs = doc.data()!;
+          }
+        } catch (e) {
+          print('InputState: Error getting Firebase inputs - $e');
         }
-      } catch (e) {
-        print('InputState: Error getting Firebase inputs - $e');
       }
       
-      // Step 3: Merge inputs intelligently
-      // Firebase values take precedence unless they're empty/null
-      Map<String, dynamic> mergedInputs = _mergeInputs(localInputs, firebaseInputs);
+      // Step 3: Merge inputs inline (simplified logic)
+      Map<String, dynamic> mergedInputs = Map<String, dynamic>.from(localInputs);
       
-      // Step 4: Write merged result back to Firebase
+      // Only merge with Firebase data if we have any
+      firebaseInputs.forEach((key, value) {
+        // Skip empty Firebase values
+        if (value == null || 
+            (value is String && value.trim().isEmpty) ||
+            (value is List && value.isEmpty) ||
+            (value is Map && value.isEmpty)) {
+          return;
+        }
+        
+        // Use Firebase value if local is empty or missing
+        final localValue = mergedInputs[key];
+        if (localValue == null ||
+            (localValue is String && localValue.trim().isEmpty) ||
+            (localValue is List && localValue.isEmpty) ||
+            (localValue is Map && localValue.isEmpty)) {
+          mergedInputs[key] = value;
+        }
+      });
+      
+      // Step 4: Handle photo uploads if transferring or if photos are local
+      if (mergedInputs['photos'] != null && mergedInputs['photos'] is List) {
+        final photos = mergedInputs['photos'] as List;
+        bool needsUpload = photos.any((photo) => 
+          photo is String && (photo.startsWith('data:') || !photo.startsWith('http'))
+        );
+        
+        if (needsUpload) {
+          mergedInputs['photos'] = await _uploadPhotosToStorage(photos, targetId);
+        }
+      }
+      
+      // Step 5: Write to Firebase with target ID
       try {
         await FirebaseFirestore.instance
-            .collection('users')
-            .doc(_currentSessionId)
-            .set({
+        .collection('users')
+        .doc(targetId)
+        .set({
           ...mergedInputs,
+          'userId': targetId,
           'lastUpdated': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
       } catch (e) {
-        print('InputState: Error updating Firebase inputs - $e');
+        print('InputState: Error updating Firebase - $e');
       }
       
-      // Step 5: Write merged result back to SharedPreferences
-      // Filter out Firebase-specific fields that can't be JSON encoded
+      // Step 6: Save to SharedPreferences with target ID
       try {
         Map<String, dynamic> serializableInputs = Map<String, dynamic>.from(mergedInputs);
         serializableInputs.removeWhere((key, value) => 
           key == 'lastUpdated' || 
           value is Timestamp ||
-          key.startsWith('_') // Remove any other Firebase metadata fields
+          key.startsWith('_')
         );
         
-        await prefs.setString('inputs_$_currentSessionId', jsonEncode(serializableInputs));
+        await prefs.setString('inputs_$targetId', jsonEncode(serializableInputs));
       } catch (e) {
         print('InputState: Error updating local inputs - $e');
+      }
+      
+      // Step 7: Clean up source if this was a transfer
+      if (fromId != null && fromId != targetId) {
+        await prefs.remove('inputs_$fromId');
+        print('InputState: Cleaned up source data for $fromId');
       }
       
       return mergedInputs;
       
     } catch (e) {
-      print('InputState Error: Failed to get all inputs - $e');
+      print('InputState Error: Failed to sync inputs - $e');
       return {};
     }
   }
 
-  Map<String, dynamic> _mergeInputs(Map<String, dynamic> local, Map<String, dynamic> firebase) {
-    Map<String, dynamic> merged = Map<String, dynamic>.from(local);
+  Future<List<String>> _uploadPhotosToStorage(List<dynamic> localPhotos, String userId) async {
+    final List<String> uploadedUrls = [];
     
-    // For each firebase input, only use it if local doesn't have a non-empty value
-    firebase.forEach((key, value) {
-      if (!merged.containsKey(key) || _isEmptyValue(merged[key])) {
-        // Only use firebase value if it's not empty
-        if (!_isEmptyValue(value)) {
-          merged[key] = value;
+    for (int i = 0; i < localPhotos.length; i++) {
+      try {
+        final photo = localPhotos[i];
+        
+        // Skip if already a Firebase URL
+        if (photo is String && photo.startsWith('https://firebasestorage.googleapis.com')) {
+          uploadedUrls.add(photo);
+          continue;
         }
+        
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('users')
+            .child(userId)
+            .child('photos')
+            .child('photo_$i.jpg');
+        
+        if (kIsWeb && photo is String && photo.startsWith('data:')) {
+          // Web: Convert base64 to bytes and upload
+          final base64String = photo.split(',')[1];
+          final bytes = base64Decode(base64String);
+          
+          final uploadTask = await storageRef.putData(
+            bytes,
+            SettableMetadata(contentType: 'image/jpeg'),
+          );
+          
+          final downloadUrl = await uploadTask.ref.getDownloadURL();
+          uploadedUrls.add(downloadUrl);
+          
+        } else if (!kIsWeb && photo is String) {
+          // Mobile: Upload file from path
+          final file = File(photo);
+          if (await file.exists()) {
+            final uploadTask = await storageRef.putFile(
+              file,
+              SettableMetadata(contentType: 'image/jpeg'),
+            );
+            
+            final downloadUrl = await uploadTask.ref.getDownloadURL();
+            uploadedUrls.add(downloadUrl);
+          }
+        }
+      } catch (e) {
+        print('Error uploading photo $i: $e');
+        // Continue with other photos even if one fails
       }
-    });
+    }
     
-    return merged;
+    return uploadedUrls;
   }
 
-  bool _isEmptyValue(dynamic value) {
-    if (value == null) return true;
-    if (value is String) return value.trim().isEmpty;
-    if (value is List) return value.isEmpty;
-    if (value is Map) return value.isEmpty;
-    return false;
-  }
+
 
   Future<dynamic> getInput(String inputKey) async {
     try {
@@ -365,6 +438,7 @@ class InputState extends ChangeNotifier {
       notifyListeners();
       
       print('InputState: Fetched ${inputKeys.join(", ")} from Firebase');
+      print('InputState: Here is what currentSessionIds looks like $currentSessionList');
       
     } catch (e) {
       print('InputState Error: Failed to fetch inputs - $e');
@@ -475,12 +549,18 @@ class InputState extends ChangeNotifier {
     Input(
       title: "nameFirst",
       possibleValues: [],
-      type: "text",),
-    
+      type: "text",
+    ),
     Input(
       title: "birthDate",
       possibleValues: [],
-      type: "calendar",),
+      type: "calendar",
+    ),
+    Input(
+      title: "ageRange",
+      possibleValues: [18, 90],  // Min and max age
+      type: "rangeSlider",
+    ),
   ];
 
   List<Input> qual = [
@@ -490,18 +570,21 @@ class InputState extends ChangeNotifier {
         "Man",
         "Woman",
       ],
-      type: "checkbox"),
+      type: "checkbox"
+    ),
     Input(
       title: "Seeking",
       possibleValues: [
         "Man",
         "Woman",
       ],
-      type: "checkbox"),
+      type: "checkbox"
+    ),
     Input(
       title: "Location",
       possibleValues: [],
-      type: "geopoint",)
+      type: "geopoint",
+    )
   ];
 
   List<Input> emotionalNeeds = [
@@ -576,6 +659,39 @@ class InputState extends ChangeNotifier {
         "Maximize Financial Security",
         "Build a Business, An Empire",
         "Pursue Our Craziest Dreams"
+      ],
+      type: "checkbox"
+    ),
+  ];
+
+  List<Input> personalityQ1 = [
+    Input(
+      title: "When youre recharging after a long week, which you do prefer?",
+      possibleValues: [
+        "Going out, meeting people",
+        "Quiet time alone / with partner"
+      ],
+      type: "checkbox"
+    ),
+  ];
+
+  List<Input> personalityQ2 = [
+    Input(
+      title: "When solving problems, which do you trust more?",
+      possibleValues: [
+        "Facts, proven methods",
+        "Intuition, future possibilities"
+      ],
+      type: "checkbox"
+    ),
+  ];
+
+  List<Input> personalityQ3 = [
+    Input(
+      title: "You appreciate partners have which qualities?",
+      possibleValues: [
+        "Reliable, punctual, and decisive",
+        "Go with the flow and adapt easily"
       ],
       type: "checkbox"
     ),

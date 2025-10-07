@@ -4,11 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/photogrid.dart';
+import '../../functions/photoService.dart';
 import '/router/router.dart';
 import '../../providers/inputState.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
-import '../../functions/uiService.dart';
 
 class PhotoUploadPage extends StatefulWidget {
   const PhotoUploadPage({Key? key}) : super(key: key);
@@ -65,6 +65,7 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
                   photoInputs: photos,
                   isLoading: _isLoading,
                   context: context,
+                  maxPhotos: 4,
                   onReorder: (oldIndex, newIndex) async {
                     setState(() {
                       if (oldIndex < photos.length && newIndex <= photos.length) {
@@ -76,13 +77,17 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
                     await inputState.savePhotosLocally();
                   },
                   onRemovePhoto: (index) async {
-                    setState(() {
-                      photos.removeAt(index);
-                      inputState.photoInputs = [...photos];
-                    });
-                    await inputState.savePhotosLocally();
+                    await PhotoService.removePhoto(context, index);
+                    setState(() {});
                   },
-                  onAddPhoto: () => UserActions().sendPhotoToCrop(context),
+                  onAddPhoto: () async {
+                    await PhotoService.pickAndEditPhoto(context);
+                    setState(() {});
+                  },
+                  onEditPhoto: (index) async {
+                    await PhotoService.editExistingPhoto(context, index);
+                    setState(() {});
+                  },
                 ),
               ),
             ),
