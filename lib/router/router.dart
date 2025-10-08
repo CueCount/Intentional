@@ -20,7 +20,7 @@ import '../pages/Profile/requestsReceived.dart';
 import '../pages/Profile/requestsSent.dart';
 import '../pages/Guides/guideRequestSent.dart';
 import '../pages/Guides/guideAvailableMatches.dart';
-
+import '../pages/Needs/inputPage.dart';
 
 
 class AppRoutes {
@@ -50,6 +50,7 @@ class AppRoutes {
   static const String requestsSent= '/requestsSent';
   static const String requestsReceived= '/requestsReceived';
   static const String guideAvailableMatches= '/guideAvailableMatches';
+  static const String input='/input';
 
   static Route<dynamic> generateRoute(RouteSettings settings, bool isLoggedIn) {
     final arguments = settings.arguments;
@@ -84,6 +85,11 @@ class AppRoutes {
         return const Interests();
       case goals:
         return const Goals();
+      case input:
+        return PersonalityQ1(
+          inputName: arguments['inputName'] ?? '',
+          nextRoute: arguments['nextRoute'] ?? AppRoutes.matches,
+        );
       case chat:
         return const MatchChat();
       case matches:
@@ -96,7 +102,6 @@ class AppRoutes {
         return const RequestSent();
       case photos:
         return const PhotoUploadPage();
-
       case subscription:
         return const SubscriptionPage();
       case editNeeds:
@@ -130,7 +135,6 @@ class AppRoutes {
         return const GuideAvailableMatches();
       case photos:
         return const PhotoUploadPage();
-
       case matches:
         return const Matches();
       case match:

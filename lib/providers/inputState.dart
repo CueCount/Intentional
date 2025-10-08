@@ -167,7 +167,7 @@ class InputState extends ChangeNotifier {
       
       // Step 2: Get inputs from Firebase (if not a transfer, get from target)
       Map<String, dynamic> firebaseInputs = {};
-      if (fromId == null) {  // Only fetch from Firebase if not transferring
+      //if (fromId == null) {  // Only fetch from Firebase if not transferring
         try {
           final doc = await FirebaseFirestore.instance
               .collection('users')
@@ -180,30 +180,35 @@ class InputState extends ChangeNotifier {
         } catch (e) {
           print('InputState: Error getting Firebase inputs - $e');
         }
-      }
+      //}
+
+      print('🔍 Firebase inputs retrieved: ${firebaseInputs.keys.toList()}');
+      print('📊 Firebase inputs count: ${firebaseInputs.length}');
       
-      // Step 3: Merge inputs inline (simplified logic)
+      // Step 3: Merge inputs - local takes priority, but get everything from Firebase
       Map<String, dynamic> mergedInputs = Map<String, dynamic>.from(localInputs);
-      
-      // Only merge with Firebase data if we have any
+
+      // Add all Firebase data, but only for keys that either:
+      // 1. Don't exist locally at all, OR
+      // 2. Have empty local values
       firebaseInputs.forEach((key, value) {
-        // Skip empty Firebase values
-        if (value == null || 
-            (value is String && value.trim().isEmpty) ||
-            (value is List && value.isEmpty) ||
-            (value is Map && value.isEmpty)) {
-          return;
-        }
-        
-        // Use Firebase value if local is empty or missing
-        final localValue = mergedInputs[key];
-        if (localValue == null ||
-            (localValue is String && localValue.trim().isEmpty) ||
-            (localValue is List && localValue.isEmpty) ||
-            (localValue is Map && localValue.isEmpty)) {
+        if (!mergedInputs.containsKey(key)) {
+          // Key doesn't exist locally - add it from Firebase
           mergedInputs[key] = value;
+        } else {
+          // Key exists locally - only replace if local is empty
+          final localValue = mergedInputs[key];
+          if (localValue == null ||
+              (localValue is String && localValue.trim().isEmpty) ||
+              (localValue is List && localValue.isEmpty) ||
+              (localValue is Map && localValue.isEmpty)) {
+            mergedInputs[key] = value;
+          }
         }
       });
+
+      print('🔄 Merged inputs keys: ${mergedInputs.keys.toList()}');
+      print('📊 Merged inputs count: ${mergedInputs.length}');
       
       // Step 4: Handle photo uploads if transferring or if photos are local
       if (mergedInputs['photos'] != null && mergedInputs['photos'] is List) {

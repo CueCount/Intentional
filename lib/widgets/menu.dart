@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/router/router.dart';
 import '../styles.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AppMenuOverlay extends StatelessWidget {
   const AppMenuOverlay({super.key});
@@ -100,6 +101,22 @@ class AppMenuOverlay extends StatelessWidget {
                         () {
                           Navigator.of(context).pop();
                           Navigator.pushNamed(context, AppRoutes.settings);
+                        },
+                      ),
+                      const Spacer(),
+                      _buildMenuItem(
+                        context,
+                        'Debug Prefs',
+                        () async {
+                          Navigator.of(context).pop();
+                          final prefs = await SharedPreferences.getInstance();
+                          final keys = prefs.getKeys();
+                          print('\n========== SHARED PREFERENCES ==========');
+                          for (String key in keys) {
+                            final value = prefs.get(key);
+                            print('$key: $value');
+                          }
+                          print('========== END ==========\n');
                         },
                       ),
                       const Spacer(),
