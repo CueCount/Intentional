@@ -7,6 +7,8 @@ import 'dart:convert';
 import 'dart:async';
 import 'inputState.dart';
 import 'matchState.dart';
+import '../functions/compatibilityCalcService.dart';
+import '../functions/compatibilityConfigService.dart';
 
 class UserSyncProvider extends ChangeNotifier {
   // Private variables
@@ -65,7 +67,7 @@ class UserSyncProvider extends ChangeNotifier {
               print('User Provider: User $userId missing, fetching from Firebase');
             }
             
-            userData = await getUserByID(userId);
+            userData = await getUserByID(userId, inputState);
             
             if (userData != null) {
               await _storeUserInCache(userData, _currentUserId!);
@@ -163,7 +165,7 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> getUserByID(String userId) async {
+  Future<Map<String, dynamic>?> getUserByID(String userId, InputState inputState) async {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -172,14 +174,51 @@ class UserSyncProvider extends ChangeNotifier {
 
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
-        return {
-          'userId': doc.id,
-          'nameFirst': data['nameFirst'],
-          'birthDate': _convertDateToString(data['birthDate']),
-          'photos': data['photos'],
-          'location': _convertGeoPointToMap(data['location']),
-          // Add any other fields you need
+        
+        // Convert timestamps and build user data
+        final userData = _convertTimestampsToStrings(data);
+        userData['userId'] = doc.id;
+        
+        // Calculate compatibility for this single user
+        final currentUserData = await inputState.getAllInputs();
+        final result = MatchCalculationService().calculateMatch(
+          currentUser: currentUserData,
+          potentialMatch: userData,
+        );
+        
+        // Add compatibility to user data
+        userData['compatibility'] = {
+          'percentage': result.percentage,
+          'matchQuality': result.matchQuality,
+          'topReasons': result.topReasons,
+          'personality': {
+            'score': result.breakdown['personality']?.score ?? 0,
+            'percentage': result.breakdown['personality']?.percentage ?? 0,
+            'matches': result.breakdown['personality']?.matches ?? [],
+            'reason': result.breakdown['personality']?.reason ?? '',
+          },
+          'chemistry': {
+            'score': result.breakdown['chemistry']?.score ?? 0,
+            'percentage': result.breakdown['chemistry']?.percentage ?? 0,
+            'matches': result.breakdown['chemistry']?.matches ?? [],
+            'reason': result.breakdown['chemistry']?.reason ?? '',
+          },
+          'interests': {
+            'score': result.breakdown['interests']?.score ?? 0,
+            'percentage': result.breakdown['interests']?.percentage ?? 0,
+            'matches': result.breakdown['interests']?.matches ?? [],
+            'reason': result.breakdown['interests']?.reason ?? '',
+          },
+          'goals': {
+            'score': result.breakdown['goals']?.score ?? 0,
+            'percentage': result.breakdown['goals']?.percentage ?? 0,
+            'matches': result.breakdown['goals']?.matches ?? [],
+            'reason': result.breakdown['goals']?.reason ?? '',
+          },
+          'calculatedAt': DateTime.now().toIso8601String(),
         };
+        
+        return userData;
       }
       
       return null;
@@ -216,16 +255,12 @@ class UserSyncProvider extends ChangeNotifier {
       // Step 1: Clean up currentSessionList
       final usersToRemove = await _filterAndMoveNonPendingUsers(inputState, matchProvider);
       
-      // Step 2: Get user inputs and build filters
-      final userInputs = await inputState.getAllInputs();
-      final filterInputs = _buildFilterInputs(userInputs);
-      
       // Step 3: Get ignore list
       final ignoreIds = await inputState.getInput('ignoreList') ?? [];
       final ignoreIdsList = List<String>.from(ignoreIds);
       
       // Step 4: Query for new users with retry logic
-      final newUsers = await _queryWithRetryLogic(filterInputs, ignoreIdsList.toSet());
+      final newUsers = await _queryWithRetryLogic(inputState, ignoreIdsList.toSet());
       
       // Step 5: Update local storage
       await _updateLocalUserStorage(newUsers, usersToRemove, context);
@@ -280,16 +315,9 @@ class UserSyncProvider extends ChangeNotifier {
     return currentSessionList;
   }
 
-  // Step 2: Build Filter Inputs - Placeholder
-  Map<String, dynamic> _buildFilterInputs(Map<String, dynamic> userInputs) {
-    // Placeholder function - returns empty map for now
-    // TODO: Implement filter building logic
-    return {};
-  }
-
   // Step 3: Query With Retry Logic
   Future<List<Map<String, dynamic>>> _queryWithRetryLogic(
-    Map<String, dynamic> filterInputs,
+    InputState inputState,
     Set<String> excludedIds,
   ) async {
     final List<Map<String, dynamic>> collectedUsers = [];
@@ -319,11 +347,9 @@ class UserSyncProvider extends ChangeNotifier {
             })
             .toList();
         
-        // Filter out already collected users
+        // STEP 0: Filter out already collected users
         final existingIds = collectedUsers.map((u) => u['userId'] as String).toSet();
-        var newUniqueUsers = queryResults
-            .where((user) => !existingIds.contains(user['userId']))
-            .toList();
+        var newUniqueUsers = queryResults.where((user) => !existingIds.contains(user['userId'])).toList();
         
         // STEP 1: Filter out users with pending cases
         if (newUniqueUsers.isNotEmpty) {
@@ -388,14 +414,87 @@ class UserSyncProvider extends ChangeNotifier {
             print('Filtered out ${usersInActiveMatches.length} users in active matches');
           }
         }
-        
+
+        // STEP 3: Filter out users below compatibility threshold
+        if (newUniqueUsers.isNotEmpty) {
+          // Get current user's actual data for matching
+          final currentUserData = await inputState.getAllInputs();
+
+          // Add debug logging here
+          if (kDebugMode) {
+            print('\n=== MATCH CALCULATION DEBUG ===');
+            print('Current user data keys: ${currentUserData.keys.toList()}');
+            // Sample first potential match structure
+            if (newUniqueUsers.isNotEmpty) {
+              print('Potential match keys: ${newUniqueUsers[0].keys.toList()}');
+            }
+          }
+          
+          // Filter users based on compatibility
+          final usersWithCompatibility = <Map<String, dynamic>>[];
+          
+          for (var user in newUniqueUsers) {
+            final result = MatchCalculationService().calculateMatch(
+              currentUser: currentUserData,
+              potentialMatch: user,
+            );
+
+            // Check against minimum threshold
+            if (result.percentage >= MatchingConfig.scoringThresholds['minimum_match_percentage']!) {
+              // Add compatibility data to the user object
+              user['compatibility'] = {
+                'percentage': result.percentage,
+                'matchQuality': result.matchQuality,
+                'topReasons': result.topReasons,
+                'personality': {
+                  'score': result.breakdown['personality']?.score ?? 0,
+                  'percentage': result.breakdown['personality']?.percentage ?? 0,
+                  'matches': result.breakdown['personality']?.matches ?? [],
+                  'reason': result.breakdown['personality']?.reason ?? '',
+                },
+                'chemistry': {
+                  'score': result.breakdown['chemistry']?.score ?? 0,
+                  'percentage': result.breakdown['chemistry']?.percentage ?? 0,
+                  'matches': result.breakdown['chemistry']?.matches ?? [],
+                  'reason': result.breakdown['chemistry']?.reason ?? '',
+                },
+                'interests': {
+                  'score': result.breakdown['interests']?.score ?? 0,
+                  'percentage': result.breakdown['interests']?.percentage ?? 0,
+                  'matches': result.breakdown['interests']?.matches ?? [],
+                  'reason': result.breakdown['interests']?.reason ?? '',
+                },
+                'goals': {
+                  'score': result.breakdown['goals']?.score ?? 0,
+                  'percentage': result.breakdown['goals']?.percentage ?? 0,
+                  'matches': result.breakdown['goals']?.matches ?? [],
+                  'reason': result.breakdown['goals']?.reason ?? '',
+                },
+                'calculatedAt': DateTime.now().toIso8601String(),
+              };
+              usersWithCompatibility.add(user);
+              print('${user['userId']} passed the compatibility filter with ${result.percentage}% compatibility');
+            } else {
+              if (kDebugMode) {
+                print('Filtered out ${user['userId']} - compatibility ${result.percentage}% below threshold');
+              }
+            }
+          }
+          
+          // Replace newUniqueUsers with only those above threshold
+          newUniqueUsers = usersWithCompatibility;
+          
+          if (kDebugMode) {
+            print('Compatibility filter: ${usersWithCompatibility.length} of ${newUniqueUsers.length} users passed');
+          }
+        }
+
         // Add the fully filtered users to collected
         collectedUsers.addAll(newUniqueUsers);
         
         if (kDebugMode) {
           print('🔍 Attempt ${attempt + 1}: Found ${newUniqueUsers.length} new users after all filters');
         }
-        
       } catch (e) {
         if (kDebugMode) {
           print('Query error in attempt ${attempt + 1}: $e');
@@ -494,12 +593,8 @@ class UserSyncProvider extends ChangeNotifier {
         return;
       }
       
-      // Step 2: Get user inputs and build filters
-      final userInputs = await inputState.getAllInputs();
-      final filterInputs = _buildFilterInputs(userInputs);
-      
       // Step 4: Query for users with retry logic (no ignoreList for initial fetch)
-      final collectedUsers = await _fetchInitialUsersWithFilters(filterInputs);
+      final collectedUsers = await _fetchInitialUsersWithFilters();
       
       if (collectedUsers.isEmpty) {
         print('User Provider: No users found during initial fetch');
@@ -530,7 +625,6 @@ class UserSyncProvider extends ChangeNotifier {
 
   // Helper function specifically for initial fetch
   Future<List<Map<String, dynamic>>> _fetchInitialUsersWithFilters(
-    Map<String, dynamic> filterInputs,
   ) async {
     final List<Map<String, dynamic>> collectedUsers = [];
     const int targetCount = 7;

@@ -1,55 +1,48 @@
-import 'dart:math' as math;
+import 'compatibilityConfigService.dart'; 
 
 class MatchCalculationService {
-
   // Singleton pattern
   static final MatchCalculationService _instance = MatchCalculationService._internal();
   factory MatchCalculationService() => _instance;
   MatchCalculationService._internal();
   
-  // Calculate match between two users using cached config
+  // Calculate match between two users (NO CONFIG PARAMETER NEEDED!)
   MatchResult calculateMatch({
     required Map<String, dynamic> currentUser,
     required Map<String, dynamic> potentialMatch,
-    required Map<String, dynamic> config,
   }) {
-    
     Map<String, CategoryScore> categoryScores = {};
     
     // 1. Calculate Chemistry Score
     categoryScores['chemistry'] = _calculateChemistryScore(
-      currentUser['chemistry'] ?? [],
-      potentialMatch['chemistry'] ?? [],
-      config,
+      currentUser['ChemistryNeed'] ?? [],
+      potentialMatch['ChemistryNeed'] ?? [],
     );
     
     // 2. Calculate Personality Score
     categoryScores['personality'] = _calculatePersonalityScore(
-      currentUser['personality'] ?? [],
-      potentialMatch['personality'] ?? [],
-      config,
+      currentUser['EmotionalNeed'] ?? [],
+      potentialMatch['EmotionalNeed'] ?? [],
     );
     
     // 3. Calculate Interests Score
     categoryScores['interests'] = _calculateInterestsScore(
-      currentUser['interests'] ?? [],
-      potentialMatch['interests'] ?? [],
-      config,
+      currentUser['LogisticNeed'] ?? [],
+      potentialMatch['LogisticNeed'] ?? [],
     );
     
     // 4. Calculate Goals Score
     categoryScores['goals'] = _calculateGoalsScore(
-      currentUser['goals'] ?? [],
-      potentialMatch['goals'] ?? [],
-      config,
+      currentUser['LifeGoalNeed'] ?? [],
+      potentialMatch['LifeGoalNeed'] ?? [],
     );
     
-    // 5. Calculate Overall Percentage
+    // 5. Calculate Overall Percentage using MatchingConfig directly
     double overallScore = 0.0;
-    final weights = config['category_weights'] ?? {};
     
     for (var entry in categoryScores.entries) {
-      final weight = (weights[entry.key] ?? 0.25).toDouble();
+      // Get weight directly from MatchingConfig
+      final weight = MatchingConfig.categoryWeights[entry.key] ?? 0.25;
       overallScore += entry.value.score * weight;
     }
     
@@ -58,8 +51,8 @@ class MatchCalculationService {
     // 6. Generate Top Reasons
     List<String> topReasons = _generateTopReasons(categoryScores);
     
-    // 7. Determine Match Quality
-    String matchQuality = _getMatchQuality(overallPercentage, config);
+    // 7. Determine Match Quality using MatchingConfig helper
+    String matchQuality = MatchingConfig.getMatchQuality(overallPercentage);
     
     return MatchResult(
       userId: potentialMatch['userId'] ?? potentialMatch['uid'] ?? '',
@@ -74,17 +67,16 @@ class MatchCalculationService {
   List<MatchResult> calculateMultipleMatches({
     required Map<String, dynamic> currentUser,
     required List<Map<String, dynamic>> potentialMatches,
-    required Map<String, dynamic> config,
   }) {
     List<MatchResult> results = [];
     
-    final minPercentage = (config['scoring_thresholds']?['minimum_match_percentage'] ?? 40).toDouble();
+    // Get minimum percentage from MatchingConfig
+    final minPercentage = MatchingConfig.scoringThresholds['minimum_match_percentage'] ?? 40;
     
     for (var match in potentialMatches) {
       final result = calculateMatch(
         currentUser: currentUser,
         potentialMatch: match,
-        config: config,
       );
       
       // Only include if above minimum threshold
@@ -99,11 +91,10 @@ class MatchCalculationService {
     return results;
   }
   
-  // CHEMISTRY CALCULATION
+  // CHEMISTRY CALCULATION - Now uses MatchingConfig helper
   CategoryScore _calculateChemistryScore(
     List<dynamic> userChemistry,
     List<dynamic> matchChemistry,
-    Map<String, dynamic> config,
   ) {
     if (userChemistry.isEmpty || matchChemistry.isEmpty) {
       return CategoryScore(
@@ -115,17 +106,15 @@ class MatchCalculationService {
       );
     }
     
-    final matrix = config['categories']?['chemistry']?['compatibility_matrix'] ?? {};
     double bestScore = 0.0;
     String bestUserTrait = '';
     String bestMatchTrait = '';
     
-    // Find best compatibility score
+    // Find best compatibility score using MatchingConfig helper
     for (String userTrait in userChemistry) {
       for (String matchTrait in matchChemistry) {
-        // Check both directions in matrix
-        double score = (matrix[userTrait]?[matchTrait] ?? 
-                       matrix[matchTrait]?[userTrait] ?? 0.0).toDouble();
+        // Use the helper function from MatchingConfig
+        double score = MatchingConfig.getChemistryScore(userTrait, matchTrait);
         
         if (score > bestScore) {
           bestScore = score;
@@ -156,11 +145,10 @@ class MatchCalculationService {
     );
   }
   
-  // PERSONALITY CALCULATION
+  // PERSONALITY CALCULATION - Now uses MatchingConfig helper
   CategoryScore _calculatePersonalityScore(
     List<dynamic> userPersonality,
     List<dynamic> matchPersonality,
-    Map<String, dynamic> config,
   ) {
     if (userPersonality.isEmpty || matchPersonality.isEmpty) {
       return CategoryScore(
@@ -172,16 +160,15 @@ class MatchCalculationService {
       );
     }
     
-    final matrix = config['categories']?['personality']?['compatibility_matrix'] ?? {};
     double totalScore = 0.0;
     int combinations = 0;
     List<String> goodMatches = [];
     
-    // Average compatibility across all combinations
+    // Average compatibility across all combinations using MatchingConfig helper
     for (String userTrait in userPersonality) {
       for (String matchTrait in matchPersonality) {
-        double score = (matrix[userTrait]?[matchTrait] ?? 
-                       matrix[matchTrait]?[userTrait] ?? 0.0).toDouble();
+        // Use the helper function from MatchingConfig
+        double score = MatchingConfig.getPersonalityScore(userTrait, matchTrait);
         totalScore += score;
         combinations++;
         
@@ -214,11 +201,10 @@ class MatchCalculationService {
     );
   }
   
-  // INTERESTS CALCULATION (Simple Overlap)
+  // INTERESTS CALCULATION - Now uses MatchingConfig helper
   CategoryScore _calculateInterestsScore(
     List<dynamic> userInterests,
     List<dynamic> matchInterests,
-    Map<String, dynamic> config,
   ) {
     if (userInterests.isEmpty || matchInterests.isEmpty) {
       return CategoryScore(
@@ -237,23 +223,8 @@ class MatchCalculationService {
     
     int matchCount = overlap.length;
     
-    // Get score from tiers
-    final tiers = config['categories']?['interests']?['scoring_tiers'] ?? {};
-    double score = 0.0;
-    
-    if (matchCount == 0) {
-      score = (tiers['0_matches'] ?? 0.0).toDouble();
-    } else if (matchCount == 1) {
-      score = (tiers['1_match'] ?? 0.3).toDouble();
-    } else if (matchCount == 2) {
-      score = (tiers['2_matches'] ?? 0.5).toDouble();
-    } else if (matchCount == 3) {
-      score = (tiers['3_matches'] ?? 0.7).toDouble();
-    } else if (matchCount == 4) {
-      score = (tiers['4_matches'] ?? 0.85).toDouble();
-    } else {
-      score = (tiers['5_plus_matches'] ?? 1.0).toDouble();
-    }
+    // Get score using MatchingConfig helper
+    double score = MatchingConfig.getInterestScore(matchCount);
     
     // Generate reason
     String reason = '';
@@ -276,11 +247,10 @@ class MatchCalculationService {
     );
   }
   
-  // GOALS CALCULATION with Group Bonus
+  // GOALS CALCULATION - Now uses MatchingConfig helpers
   CategoryScore _calculateGoalsScore(
     List<dynamic> userGoals,
     List<dynamic> matchGoals,
-    Map<String, dynamic> config,
   ) {
     if (userGoals.isEmpty || matchGoals.isEmpty) {
       return CategoryScore(
@@ -292,51 +262,39 @@ class MatchCalculationService {
       );
     }
     
+    // Convert to string lists
+    List<String> userGoalsList = userGoals.map((e) => e.toString()).toList();
+    List<String> matchGoalsList = matchGoals.map((e) => e.toString()).toList();
+    
     // Find overlapping goals
-    Set<String> userSet = Set<String>.from(userGoals.map((e) => e.toString()));
-    Set<String> matchSet = Set<String>.from(matchGoals.map((e) => e.toString()));
+    Set<String> userSet = Set<String>.from(userGoalsList);
+    Set<String> matchSet = Set<String>.from(matchGoalsList);
     Set<String> overlap = userSet.intersection(matchSet);
     
     int matchCount = overlap.length;
     
-    // Check for group bonus
-    final groups = config['categories']?['goals']?['compatibility_groups'] ?? {};
-    double groupBonus = 0.0;
+    // Get base score using MatchingConfig helper
+    double baseScore = MatchingConfig.getGoalsBaseScore(matchCount);
+    
+    // Check for group bonus using MatchingConfig helper
     String groupType = '';
-    
-    // Check financial group
-    List<String> financialGoals = List<String>.from(groups['financial_focused'] ?? []);
-    bool userFinancial = userGoals.any((g) => financialGoals.contains(g.toString()));
-    bool matchFinancial = matchGoals.any((g) => financialGoals.contains(g.toString()));
-    
-    // Check freedom group
-    List<String> freedomGoals = List<String>.from(groups['freedom_focused'] ?? []);
-    bool userFreedom = userGoals.any((g) => freedomGoals.contains(g.toString()));
-    bool matchFreedom = matchGoals.any((g) => freedomGoals.contains(g.toString()));
-    
-    if (userFinancial && matchFinancial) {
-      groupBonus = (config['categories']?['goals']?['group_bonus'] ?? 0.15).toDouble();
-      groupType = ' (both success-driven)';
-    } else if (userFreedom && matchFreedom) {
-      groupBonus = (config['categories']?['goals']?['group_bonus'] ?? 0.15).toDouble();
-      groupType = ' (both freedom-seekers)';
+    if (MatchingConfig.areGoalsInSameGroup(userGoalsList, matchGoalsList)) {
+      baseScore += MatchingConfig.goalsGroupBonus;
+      
+      // Determine which group they're in
+      bool userFinancial = userGoalsList.any((g) => 
+        MatchingConfig.financialFocusedGoals.contains(g));
+      bool matchFinancial = matchGoalsList.any((g) => 
+        MatchingConfig.financialFocusedGoals.contains(g));
+      
+      if (userFinancial && matchFinancial) {
+        groupType = ' (both success-driven)';
+      } else {
+        groupType = ' (both freedom-seekers)';
+      }
     }
     
-    // Get base score from tiers
-    final tiers = config['categories']?['goals']?['scoring_tiers'] ?? {};
-    double baseScore = 0.0;
-    
-    if (matchCount == 0) {
-      baseScore = (tiers['0_matches'] ?? 0.0).toDouble();
-    } else if (matchCount == 1) {
-      baseScore = (tiers['1_match'] ?? 0.4).toDouble();
-    } else if (matchCount == 2) {
-      baseScore = (tiers['2_matches'] ?? 0.7).toDouble();
-    } else {
-      baseScore = (tiers['3_plus_matches'] ?? 1.0).toDouble();
-    }
-    
-    double finalScore = (baseScore + groupBonus).clamp(0.0, 1.0);
+    double finalScore = baseScore.clamp(0.0, 1.0);
     
     // Generate reason
     String reason = '';
@@ -389,23 +347,7 @@ class MatchCalculationService {
     
     return reasons;
   }
-  
-  // Get match quality label
-  String _getMatchQuality(double percentage, Map<String, dynamic> config) {
-    final thresholds = config['scoring_thresholds'] ?? {};
-    
-    if (percentage >= (thresholds['excellent_match'] ?? 95)) {
-      return 'Excellent Match';
-    } else if (percentage >= (thresholds['great_match'] ?? 85)) {
-      return 'Great Match';
-    } else if (percentage >= (thresholds['good_match'] ?? 70)) {
-      return 'Good Match';
-    } else if (percentage >= (thresholds['minimum_match_percentage'] ?? 40)) {
-      return 'Match';
-    } else {
-      return 'Low Match';
-    }
-  }
+
 }
 
 // Data classes
@@ -413,6 +355,7 @@ class MatchResult {
   final String userId;
   final double percentage;
   final String matchQuality;
+  
   final List<String> topReasons;
   final Map<String, CategoryScore> breakdown;
   
