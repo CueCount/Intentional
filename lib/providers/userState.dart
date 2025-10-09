@@ -67,7 +67,7 @@ class UserSyncProvider extends ChangeNotifier {
               print('User Provider: User $userId missing, fetching from Firebase');
             }
             
-            userData = await getUserByID(userId);
+            userData = await getUserByID(userId, inputState);
             
             if (userData != null) {
               await _storeUserInCache(userData, _currentUserId!);
@@ -165,7 +165,7 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> getUserByID(String userId) async {
+  Future<Map<String, dynamic>?> getUserByID(String userId, InputState inputState) async {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -174,14 +174,51 @@ class UserSyncProvider extends ChangeNotifier {
 
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
-        return {
-          'userId': doc.id,
-          'nameFirst': data['nameFirst'],
-          'birthDate': _convertDateToString(data['birthDate']),
-          'photos': data['photos'],
-          'location': _convertGeoPointToMap(data['location']),
-          // Add any other fields you need
+        
+        // Convert timestamps and build user data
+        final userData = _convertTimestampsToStrings(data);
+        userData['userId'] = doc.id;
+        
+        // Calculate compatibility for this single user
+        final currentUserData = await inputState.getAllInputs();
+        final result = MatchCalculationService().calculateMatch(
+          currentUser: currentUserData,
+          potentialMatch: userData,
+        );
+        
+        // Add compatibility to user data
+        userData['compatibility'] = {
+          'percentage': result.percentage,
+          'matchQuality': result.matchQuality,
+          'topReasons': result.topReasons,
+          'personality': {
+            'score': result.breakdown['personality']?.score ?? 0,
+            'percentage': result.breakdown['personality']?.percentage ?? 0,
+            'matches': result.breakdown['personality']?.matches ?? [],
+            'reason': result.breakdown['personality']?.reason ?? '',
+          },
+          'chemistry': {
+            'score': result.breakdown['chemistry']?.score ?? 0,
+            'percentage': result.breakdown['chemistry']?.percentage ?? 0,
+            'matches': result.breakdown['chemistry']?.matches ?? [],
+            'reason': result.breakdown['chemistry']?.reason ?? '',
+          },
+          'interests': {
+            'score': result.breakdown['interests']?.score ?? 0,
+            'percentage': result.breakdown['interests']?.percentage ?? 0,
+            'matches': result.breakdown['interests']?.matches ?? [],
+            'reason': result.breakdown['interests']?.reason ?? '',
+          },
+          'goals': {
+            'score': result.breakdown['goals']?.score ?? 0,
+            'percentage': result.breakdown['goals']?.percentage ?? 0,
+            'matches': result.breakdown['goals']?.matches ?? [],
+            'reason': result.breakdown['goals']?.reason ?? '',
+          },
+          'calculatedAt': DateTime.now().toIso8601String(),
         };
+        
+        return userData;
       }
       
       return null;
@@ -382,16 +419,26 @@ class UserSyncProvider extends ChangeNotifier {
         if (newUniqueUsers.isNotEmpty) {
           // Get current user's actual data for matching
           final currentUserData = await inputState.getAllInputs();
+
+          // Add debug logging here
+          if (kDebugMode) {
+            print('\n=== MATCH CALCULATION DEBUG ===');
+            print('Current user data keys: ${currentUserData.keys.toList()}');
+            // Sample first potential match structure
+            if (newUniqueUsers.isNotEmpty) {
+              print('Potential match keys: ${newUniqueUsers[0].keys.toList()}');
+            }
+          }
           
           // Filter users based on compatibility
           final usersWithCompatibility = <Map<String, dynamic>>[];
           
           for (var user in newUniqueUsers) {
             final result = MatchCalculationService().calculateMatch(
-              currentUser: currentUserData,  // Use actual user data, not filterInputs
+              currentUser: currentUserData,
               potentialMatch: user,
             );
-            
+
             // Check against minimum threshold
             if (result.percentage >= MatchingConfig.scoringThresholds['minimum_match_percentage']!) {
               // Add compatibility data to the user object
@@ -399,6 +446,30 @@ class UserSyncProvider extends ChangeNotifier {
                 'percentage': result.percentage,
                 'matchQuality': result.matchQuality,
                 'topReasons': result.topReasons,
+                'personality': {
+                  'score': result.breakdown['personality']?.score ?? 0,
+                  'percentage': result.breakdown['personality']?.percentage ?? 0,
+                  'matches': result.breakdown['personality']?.matches ?? [],
+                  'reason': result.breakdown['personality']?.reason ?? '',
+                },
+                'chemistry': {
+                  'score': result.breakdown['chemistry']?.score ?? 0,
+                  'percentage': result.breakdown['chemistry']?.percentage ?? 0,
+                  'matches': result.breakdown['chemistry']?.matches ?? [],
+                  'reason': result.breakdown['chemistry']?.reason ?? '',
+                },
+                'interests': {
+                  'score': result.breakdown['interests']?.score ?? 0,
+                  'percentage': result.breakdown['interests']?.percentage ?? 0,
+                  'matches': result.breakdown['interests']?.matches ?? [],
+                  'reason': result.breakdown['interests']?.reason ?? '',
+                },
+                'goals': {
+                  'score': result.breakdown['goals']?.score ?? 0,
+                  'percentage': result.breakdown['goals']?.percentage ?? 0,
+                  'matches': result.breakdown['goals']?.matches ?? [],
+                  'reason': result.breakdown['goals']?.reason ?? '',
+                },
                 'calculatedAt': DateTime.now().toIso8601String(),
               };
               usersWithCompatibility.add(user);

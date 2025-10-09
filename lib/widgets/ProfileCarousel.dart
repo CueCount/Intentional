@@ -253,16 +253,26 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Match 95%',
+                  'Match ${profile['compatibility']?['percentage']?.toInt() ?? 0}%',
                   style: AppTextStyles.headingLarge.copyWith(
                     color: ColorPalette.peach,
                   ),
                 ),
                 const SizedBox(height: 8),
-                PillText(text: 'Emotional Qualities', colorVariant: "peachLite",),
+                if (profile['compatibility']?['topReasons'] != null && 
+                    (profile['compatibility']['topReasons'] as List).isNotEmpty)
+                  PillText(
+                    text: profile['compatibility']['topReasons'][0],
+                    colorVariant: "peachLite",
+                  ),
                 const SizedBox(height: 8),
-                PillText(text: 'Bar Hopping', colorVariant: "peachLite"),
-                const SizedBox(height: 8),
+
+                if (profile['compatibility']?['topReasons'] != null && 
+                    (profile['compatibility']['topReasons'] as List).length > 1)
+                  PillText(
+                    text: profile['compatibility']['topReasons'][1],
+                    colorVariant: "peachLite",
+                  ),
                 TextButton(
                   onPressed: () {
                     final user = FirebaseAuth.instance.currentUser;

@@ -15,26 +15,26 @@ class MatchCalculationService {
     
     // 1. Calculate Chemistry Score
     categoryScores['chemistry'] = _calculateChemistryScore(
-      currentUser['chemistry'] ?? [],
-      potentialMatch['chemistry'] ?? [],
+      currentUser['ChemistryNeed'] ?? [],
+      potentialMatch['ChemistryNeed'] ?? [],
     );
     
     // 2. Calculate Personality Score
     categoryScores['personality'] = _calculatePersonalityScore(
-      currentUser['personality'] ?? [],
-      potentialMatch['personality'] ?? [],
+      currentUser['EmotionalNeed'] ?? [],
+      potentialMatch['EmotionalNeed'] ?? [],
     );
     
     // 3. Calculate Interests Score
     categoryScores['interests'] = _calculateInterestsScore(
-      currentUser['interests'] ?? [],
-      potentialMatch['interests'] ?? [],
+      currentUser['LogisticNeed'] ?? [],
+      potentialMatch['LogisticNeed'] ?? [],
     );
     
     // 4. Calculate Goals Score
     categoryScores['goals'] = _calculateGoalsScore(
-      currentUser['goals'] ?? [],
-      potentialMatch['goals'] ?? [],
+      currentUser['LifeGoalNeed'] ?? [],
+      potentialMatch['LifeGoalNeed'] ?? [],
     );
     
     // 5. Calculate Overall Percentage using MatchingConfig directly
@@ -355,6 +355,7 @@ class MatchResult {
   final String userId;
   final double percentage;
   final String matchQuality;
+  
   final List<String> topReasons;
   final Map<String, CategoryScore> breakdown;
   

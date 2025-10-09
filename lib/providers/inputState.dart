@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
+import '../functions/compatibilityCalcService.dart';
 
 class Input {
   final String title;
@@ -547,7 +548,89 @@ class InputState extends ChangeNotifier {
   }
 
   /* = = = = = = = = =
-  Input Definitions 
+  Compatibility
+  = = = = = = = = = */
+
+  Future<void> checkAndUpdateMissingCompatibility(InputState inputState) async {
+    if (_currentSessionId == null) return;
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final usersList = prefs.getStringList('users_$_currentSessionId') ?? [];
+      final currentUserData = await inputState.getAllInputs();
+      
+      bool hasUpdates = false;
+      List<String> updatedUsers = [];
+      
+      for (int i = 0; i < usersList.length; i++) {
+        final userData = jsonDecode(usersList[i]);
+        
+        // Check if compatibility is missing or incomplete (no category data)
+        if (userData['compatibility'] == null) {
+          // Calculate compatibility
+          final result = MatchCalculationService().calculateMatch(
+            currentUser: currentUserData,
+            potentialMatch: userData,
+          );
+          
+          // Update with flattened structure
+          userData['compatibility'] = {
+            'percentage': result.percentage,
+            'matchQuality': result.matchQuality,
+            'topReasons': result.topReasons,
+            
+            'emotional': {
+              'score': result.breakdown['emotional']?.score ?? 0,
+              'percentage': result.breakdown['emotional']?.percentage ?? 0,
+              'matches': result.breakdown['emotional']?.matches ?? [],
+              'reason': result.breakdown['emotional']?.reason ?? '',
+            },
+            'chemistry': {
+              'score': result.breakdown['chemistry']?.score ?? 0,
+              'percentage': result.breakdown['chemistry']?.percentage ?? 0,
+              'matches': result.breakdown['chemistry']?.matches ?? [],
+              'reason': result.breakdown['chemistry']?.reason ?? '',
+            },
+            'lifestyle': {
+              'score': result.breakdown['lifestyle']?.score ?? 0,
+              'percentage': result.breakdown['lifestyle']?.percentage ?? 0,
+              'matches': result.breakdown['lifestyle']?.matches ?? [],
+              'reason': result.breakdown['lifestyle']?.reason ?? '',
+            },
+            'lifeGoals': {
+              'score': result.breakdown['lifeGoals']?.score ?? 0,
+              'percentage': result.breakdown['lifeGoals']?.percentage ?? 0,
+              'matches': result.breakdown['lifeGoals']?.matches ?? [],
+              'reason': result.breakdown['lifeGoals']?.reason ?? '',
+            },
+            
+            'calculatedAt': DateTime.now().toIso8601String(),
+          };
+          
+          updatedUsers.add(jsonEncode(userData));
+          hasUpdates = true;
+          
+          if (kDebugMode) {
+            print('Updated compatibility for ${userData['userId']}');
+          }
+        } else {
+          updatedUsers.add(usersList[i]);
+        }
+      }
+      
+      if (hasUpdates) {
+        await prefs.setStringList('users_$_currentSessionId', updatedUsers);
+        notifyListeners();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking compatibility: $e');
+      }
+    }
+  }
+
+  /* = = = = = = = = =
+  Inputs Definition
   = = = = = = = = = */
 
   List<Input> basicInfo = [
