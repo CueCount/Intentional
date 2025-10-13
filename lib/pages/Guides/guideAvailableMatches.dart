@@ -7,7 +7,6 @@ import '../../styles.dart';
 import '../../providers/userState.dart';
 import '../../providers/inputState.dart';
 
-
 class GuideAvailableMatches extends StatefulWidget {
   const GuideAvailableMatches({super.key});
   @override

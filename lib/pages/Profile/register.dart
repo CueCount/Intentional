@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../styles.dart';
@@ -6,8 +7,6 @@ import '../../providers/authState.dart';
 import '../../providers/inputState.dart';
 import '../../widgets/navigation.dart';
 import '../../router/router.dart';
-import 'package:flutter/foundation.dart';
-
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -33,6 +32,12 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       final authProvider = Provider.of<AppAuthProvider>(context, listen: false);
       final inputProvider = Provider.of<InputState>(context, listen: false);
+
+      // Save firstName and email to InputState BEFORE calling signUp
+      await inputProvider.saveNeedLocally({
+        'nameFirst': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+      });
       
       await authProvider.signUp(
         _emailController.text.trim(),

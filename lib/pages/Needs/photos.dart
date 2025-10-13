@@ -54,13 +54,16 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
             const CustomStatusBar(),
             const SizedBox(height: 20),
             Text(
-              'Photos',
-              style: AppTextStyles.headingLarge.copyWith(color: ColorPalette.peach),
+              'Upload 4 Photos of Yourself',
+              style: AppTextStyles.headingMedium.copyWith(
+                color: ColorPalette.peach
+              ),
+              textAlign: TextAlign.left,
             ),
             const SizedBox(height: 20),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(32),
                 child: PhotoGrid(
                   photoInputs: photos,
                   isLoading: _isLoading,

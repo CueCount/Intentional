@@ -23,6 +23,10 @@ class _QualifierRelDate extends State<QualifierRelDate> {
   Map<String, dynamic> inputValues = {};
   Map<String, Map<String, bool>> groupSelectedValues = {};
   bool _isInitialized = false;
+  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _suggestions = [];
+  Map<String, dynamic>? _selectedCity;
+  bool _isLoading = false;
   
   @override
   void initState() {
@@ -71,11 +75,6 @@ class _QualifierRelDate extends State<QualifierRelDate> {
     return selections;
   }
 
-  final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> _suggestions = [];
-  Map<String, dynamic>? _selectedCity;
-  bool _isLoading = false;
-
   Future<void> searchCities(String query) async {
     if (query.length < 2) {
       setState(() => _suggestions = []);
@@ -104,7 +103,6 @@ class _QualifierRelDate extends State<QualifierRelDate> {
     }
   }
 
-  // Helper method to build checkbox grid for a specific input
   Widget _buildCheckboxGrid(Input input) {
     if (input.possibleValues.isEmpty) return const SizedBox.shrink();
     
@@ -142,6 +140,13 @@ class _QualifierRelDate extends State<QualifierRelDate> {
         },
       ),
     );
+  }
+
+  bool isFormComplete() {
+    bool genderSelected = groupSelectedValues["Gender"]?.values.any((v) => v) ?? false;
+    bool seekingSelected = groupSelectedValues["Seeking"]?.values.any((v) => v) ?? false;
+    bool locationSelected = _selectedCity != null;
+    return genderSelected && seekingSelected && locationSelected;
   }
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -315,13 +320,15 @@ class _QualifierRelDate extends State<QualifierRelDate> {
       bottomNavigationBar: () {
         final user = FirebaseAuth.instance.currentUser;
         bool isLoggedIn = user != null;
+        final inputData = getSelectedAttributes();
+        bool isComplete = isFormComplete();
 
         return CustomAppBar(
           buttonText: isLoggedIn ? 'Save' : 'Continue',
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
+          isEnabled: isComplete,
+
           onPressed: () async {
-            final inputData = getSelectedAttributes();
-            
             if (isLoggedIn) {
               await inputState.saveNeedLocally(inputData);
               if (context.mounted) {

@@ -29,7 +29,7 @@ class UserSyncProvider extends ChangeNotifier {
   Grab Docs from Shared Pref
   Query Firebase for Docs not in Shared Pref
   Return Docs
-  = = = = = = = = = */ 
+  = = = = = = = = = */
 
   Future<List<Map<String, dynamic>>> loadUsers(InputState inputState) async {
     if (kDebugMode) {
@@ -67,10 +67,10 @@ class UserSyncProvider extends ChangeNotifier {
               print('User Provider: User $userId missing, fetching from Firebase');
             }
             
-            userData = await getUserByID(userId, inputState);
+            userData = await getUserByID(userId, _currentUserId);
             
             if (userData != null) {
-              await _storeUserInCache(userData, _currentUserId!);
+              await storeUserInCache(userData, _currentUserId!);
               loadedUsers.add(userData);
               
               if (kDebugMode) {
@@ -127,7 +127,7 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _storeUserInCache(Map<String, dynamic> userData, String currentSessionId) async {
+  Future<void> storeUserInCache(Map<String, dynamic> userData, String currentSessionId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userId = userData['userId'];
@@ -165,7 +165,7 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> getUserByID(String userId, InputState inputState) async {
+  Future<Map<String, dynamic>?> getUserByID(String userId, currentSessionId) async {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -180,48 +180,52 @@ class UserSyncProvider extends ChangeNotifier {
         userData['userId'] = doc.id;
         
         // Calculate compatibility for this single user
-        final currentUserData = await inputState.getAllInputs();
-        final result = MatchCalculationService().calculateMatch(
-          currentUser: currentUserData,
-          potentialMatch: userData,
-        );
+        final prefs = await SharedPreferences.getInstance();
+        final inputsJson = prefs.getString('inputs_$currentSessionId');
         
-        // Add compatibility to user data
-        userData['compatibility'] = {
-          'percentage': result.percentage,
-          'matchQuality': result.matchQuality,
-          'topReasons': result.topReasons,
-          'personality': {
-            'score': result.breakdown['personality']?.score ?? 0,
-            'percentage': result.breakdown['personality']?.percentage ?? 0,
-            'matches': result.breakdown['personality']?.matches ?? [],
-            'reason': result.breakdown['personality']?.reason ?? '',
-          },
-          'chemistry': {
-            'score': result.breakdown['chemistry']?.score ?? 0,
-            'percentage': result.breakdown['chemistry']?.percentage ?? 0,
-            'matches': result.breakdown['chemistry']?.matches ?? [],
-            'reason': result.breakdown['chemistry']?.reason ?? '',
-          },
-          'interests': {
-            'score': result.breakdown['interests']?.score ?? 0,
-            'percentage': result.breakdown['interests']?.percentage ?? 0,
-            'matches': result.breakdown['interests']?.matches ?? [],
-            'reason': result.breakdown['interests']?.reason ?? '',
-          },
-          'goals': {
-            'score': result.breakdown['goals']?.score ?? 0,
-            'percentage': result.breakdown['goals']?.percentage ?? 0,
-            'matches': result.breakdown['goals']?.matches ?? [],
-            'reason': result.breakdown['goals']?.reason ?? '',
-          },
-          'calculatedAt': DateTime.now().toIso8601String(),
-        };
-        
-        return userData;
+        if (inputsJson != null) {
+          final currentUserData = jsonDecode(inputsJson);
+          final result = MatchCalculationService().calculateMatch(
+            currentUser: currentUserData,
+            potentialMatch: userData,
+          );
+          
+          // Add compatibility to user data
+          userData['compatibility'] = {
+            'percentage': result.percentage,
+            'matchQuality': result.matchQuality,
+            'topReasons': result.topReasons,
+            'personality': {
+              'score': result.breakdown['personality']?.score ?? 0,
+              'percentage': result.breakdown['personality']?.percentage ?? 0,
+              'matches': result.breakdown['personality']?.matches ?? [],
+              'reason': result.breakdown['personality']?.reason ?? '',
+            },
+            'chemistry': {
+              'score': result.breakdown['chemistry']?.score ?? 0,
+              'percentage': result.breakdown['chemistry']?.percentage ?? 0,
+              'matches': result.breakdown['chemistry']?.matches ?? [],
+              'reason': result.breakdown['chemistry']?.reason ?? '',
+            },
+            'interests': {
+              'score': result.breakdown['interests']?.score ?? 0,
+              'percentage': result.breakdown['interests']?.percentage ?? 0,
+              'matches': result.breakdown['interests']?.matches ?? [],
+              'reason': result.breakdown['interests']?.reason ?? '',
+            },
+            'goals': {
+              'score': result.breakdown['goals']?.score ?? 0,
+              'percentage': result.breakdown['goals']?.percentage ?? 0,
+              'matches': result.breakdown['goals']?.matches ?? [],
+              'reason': result.breakdown['goals']?.reason ?? '',
+            },
+            'calculatedAt': DateTime.now().toIso8601String(),
+          };
+          
+          return userData;
+        }
+        return null;
       }
-      
-      return null;
     } catch (e) {
       if (kDebugMode) {
         print('User Provider Error: Failed to get user $userId by ID - $e');
@@ -587,6 +591,8 @@ class UserSyncProvider extends ChangeNotifier {
   Future<void> fetchInitialUsers(InputState inputState) async {
     try {
       final currentSessionId = inputState.userId;
+      final ignoreIds = await inputState.getInput('ignoreList') ?? [];
+      final ignoreIdsList = List<String>.from(ignoreIds);
       
       if (currentSessionId.isEmpty) {
         print('User Provider: No session ID for fetching initial users');
@@ -594,7 +600,8 @@ class UserSyncProvider extends ChangeNotifier {
       }
       
       // Step 4: Query for users with retry logic (no ignoreList for initial fetch)
-      final collectedUsers = await _fetchInitialUsersWithFilters();
+      //final collectedUsers = await _fetchInitialUsersWithFilters();
+      final collectedUsers = await _queryWithRetryLogic(inputState, ignoreIdsList.toSet());
       
       if (collectedUsers.isEmpty) {
         print('User Provider: No users found during initial fetch');
@@ -747,50 +754,6 @@ class UserSyncProvider extends ChangeNotifier {
   /* = = = = = = = = = 
   MISC Helper Methods
   = = = = = = = = = */
-
-  String? _convertDateToString(dynamic dateValue) {
-    if (dateValue == null) return null;
-    
-    try {
-      if (dateValue is Timestamp) {
-        // Firebase Timestamp
-        return dateValue.toDate().toIso8601String();
-      } else if (dateValue is int) {
-        // Unix timestamp in milliseconds
-        return DateTime.fromMillisecondsSinceEpoch(dateValue).toIso8601String();
-      } else if (dateValue is String) {
-        // Already a string
-        return dateValue;
-      } else {
-        // Unknown format
-        return null;
-      }
-    } catch (e) {
-      print('Error converting date: $dateValue, error: $e');
-      return null;
-    }
-  }
-
-  Map<String, dynamic>? _convertGeoPointToMap(dynamic geoValue) {
-    if (geoValue == null) return null;
-    
-    try {
-      if (geoValue is GeoPoint) {
-        return {
-          'latitude': geoValue.latitude,
-          'longitude': geoValue.longitude,
-        };
-      } else if (geoValue is Map) {
-        // Already converted
-        return Map<String, dynamic>.from(geoValue);
-      } else {
-        return null;
-      }
-    } catch (e) {
-      print('Error converting GeoPoint: $geoValue, error: $e');
-      return null;
-    }
-  }
 
   Map<String, dynamic> _convertTimestampsToStrings(Map<String, dynamic> data) {
     final Map<String, dynamic> result = {};

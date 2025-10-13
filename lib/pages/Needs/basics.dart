@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/router/router.dart';
 import '../../widgets/bottomNavigationBar.dart';
-import '../../widgets/inputCheckbox.dart';  
+import '../../widgets/inputCheckbox.dart';
 import '../../providers/inputState.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-class Relationship extends StatefulWidget {
-  const Relationship({super.key});
+
+class Basics extends StatefulWidget {
+  const Basics({super.key});
   @override
-  State<Relationship> createState() => _relationship();
+  State<Basics> createState() => _basics();
 }
 
-class _relationship extends State<Relationship> {
+class _basics extends State<Basics> {
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -33,26 +34,26 @@ class _relationship extends State<Relationship> {
     final inputState = Provider.of<InputState>(context, listen: false);
     
     // Initialize all possible values as false first
-    for (var input in inputState.chemistryNeeds) {
+    for (var input in inputState.basics) {
       for (var value in input.possibleValues) {
         selectedValues[value] = false; 
       }
     }
     
     try {
-      // Get existing chemistry needs from provider
-      final existingChemistryNeeds = await inputState.getInput('ChemistryNeed');
+      // Get existing emotional needs from provider
+      final existingBasics = await inputState.getInput('basics');
       
-      if (existingChemistryNeeds != null && existingChemistryNeeds is List) {
+      if (existingBasics != null && existingBasics is List) {
         // Mark existing selections as true
-        for (String selectedValue in existingChemistryNeeds) {
+        for (String selectedValue in existingBasics) {
           if (selectedValues.containsKey(selectedValue)) {
             selectedValues[selectedValue] = true;
           }
         }
       }
     } catch (e) {
-      print('Relationship: Error loading existing values - $e');
+      print('basics: Error loading existing values - $e');
     }
     
     setState(() {
@@ -62,7 +63,7 @@ class _relationship extends State<Relationship> {
 
   Map<String, dynamic> getSelectedAttributes() {
     return {
-      "ChemistryNeed": selectedValues.entries
+      "Basics": selectedValues.entries
           .where((entry) => entry.value)  
           .map((entry) => entry.key)       
           .toList(),                       
@@ -79,7 +80,7 @@ class _relationship extends State<Relationship> {
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   @override
   Widget build(BuildContext context) {
-    final inputState = Provider.of<InputState>(context, listen: false);
+    final inputState = Provider.of<InputState>(context);
     Map<String, dynamic> inputData = getSelectedAttributes();
     return Scaffold(
       body: SafeArea(
@@ -87,47 +88,42 @@ class _relationship extends State<Relationship> {
           child: Column(
             children: [
               const CustomStatusBar(),
-              Container(
+              Container (
                 padding: const EdgeInsets.all(32), 
                 child: Column(
                   children: [
                     Text(
-                      'Choose 3 Relationship Expectations You Have',
+                      'Let\’s clear up the basics',
                       style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.peach,
                       ),
+                      textAlign: TextAlign.left,
                     ),
-
-                    const SizedBox(height: 30),
-                    
+                    const SizedBox(height: 20),
                     Wrap(
                       spacing: 10.0, // horizontal spacing between items
                       runSpacing: 10.0, // vertical spacing between rows
-                      alignment: WrapAlignment.start,
-                      children: inputState.chemistryNeeds.isNotEmpty 
-                        ? inputState.chemistryNeeds[0].possibleValues.map<Widget>((attribute) {
-                            int selectedCount = selectedValues.values.where((v) => v).length;
-                            return SizedBox(
-                              child: CustomCheckbox(
-                                attribute: CheckboxAttribute(
-                                  title: attribute,
-                                  description: '',  
-                                  isSelected: selectedValues[attribute] ?? false,
-                                ),
-                                isHorizontal: true,
-                                shrinkWrap: true, 
-                                maxSelections: 3, 
-                                currentSelectionCount: selectedCount,
-                                onChanged: (isSelected) {
-                                  setState(() {
-                                    selectedValues[attribute] = isSelected;
-                                  });
-                                },
+                      children: inputState.basics.isNotEmpty 
+                      ? inputState.basics[0].possibleValues.map<Widget>((attribute) {
+                          return SizedBox(
+                            width: MediaQuery.of(context).size.width - 32, // Full width minus padding
+                            child: CustomCheckbox(
+                              attribute: CheckboxAttribute(
+                                title: attribute,
+                                description: '',
                                 isSelected: selectedValues[attribute] ?? false,
                               ),
-                            );
-                          }).toList()
-                        : [],
+                              isHorizontal: true,
+                              onChanged: (isSelected) {
+                                setState(() {
+                                  selectedValues[attribute] = isSelected;
+                                });
+                              },
+                              isSelected: selectedValues[attribute] ?? false,
+                            ),
+                          );
+                        }).toList()
+                      : [],
                     ),
                   ],
                 ),
@@ -136,7 +132,7 @@ class _relationship extends State<Relationship> {
           ),
         ),
       ),
-
+      
       bottomNavigationBar: () {
         final user = FirebaseAuth.instance.currentUser;
         bool isLoggedIn = user != null;
@@ -157,12 +153,11 @@ class _relationship extends State<Relationship> {
             } else {
               await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
-                Navigator.pushNamed(context, AppRoutes.interests);
+                Navigator.pushNamed(context, AppRoutes.chemistry);
               }
             }
           },
         );
-        
       }(),
     );
   }

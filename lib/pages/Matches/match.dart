@@ -56,6 +56,7 @@ class _Match extends State<Match> {
                 padding: const EdgeInsets.all(16),
                 child: Column (
                   children: [
+                    
                     /* = = = = = = = = = 
                     First Photo
                     = = = = = = = = = = */

@@ -633,6 +633,21 @@ class InputState extends ChangeNotifier {
   Inputs Definition
   = = = = = = = = = */
 
+  List<Input> basics = [
+    Input(
+      title: "Let\’s clear up the basics",
+      possibleValues: [
+        "Short Term Exploration",
+        "Long Term, Taking My Time",
+        "Long Term and Ready",
+        "Monogamous",
+        "Polyamerous",
+        "Monogamous & Open"
+      ],
+      type: "checkbox"
+    ),
+  ];
+
   List<Input> basicInfo = [
     Input(
       title: "nameFirst",

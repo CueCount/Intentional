@@ -64,7 +64,14 @@ class MatchCTA extends StatelessWidget {
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.chat);
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.chat,
+                        arguments: {
+                          'matchId': matchId,
+                          'otherUserName': targetUserId,
+                        },
+                      );
                     },
                     style: TextButton.styleFrom(
                       backgroundColor: ColorPalette.peach.withOpacity(0.2),
@@ -81,7 +88,7 @@ class MatchCTA extends StatelessWidget {
                   TextButton(
                     onPressed: () async {
                       if (matchId != null) {
-                        final updateResult = await matchSync.updateMatchStatus(matchId, 'unmatched');
+                        final updateResult = await matchSync.unmatch(matchId);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(updateResult['message'])),
@@ -167,7 +174,7 @@ class MatchCTA extends StatelessWidget {
                         child: TextButton(
                           onPressed: () async {
                             if (matchId != null) {
-                              final result = await matchSync.updateMatchStatus(matchId, 'active');
+                              final result = await matchSync.acceptMatch(matchId, currentSessionId, targetUserId);
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text(result['message'])),
@@ -192,7 +199,7 @@ class MatchCTA extends StatelessWidget {
                         child: TextButton(
                           onPressed: () async {
                             if (matchId != null) {
-                              final result = await matchSync.updateMatchStatus(matchId, 'rejected');
+                              final result = await matchSync.rejectMatch(matchId, targetUserId);
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text(result['message'])),

@@ -1,7 +1,3 @@
-#!/usr/bin/env dart
-// bin/debug_prefs.dart
-// Run with: dart run bin/debug_prefs.dart
-
 import 'dart:io';
 import 'dart:convert';
 

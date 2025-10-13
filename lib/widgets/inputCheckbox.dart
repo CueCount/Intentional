@@ -18,7 +18,9 @@ class CustomCheckbox extends StatefulWidget {
   final bool isSelected;
   final Function(bool) onChanged;
   final bool isHorizontal;
-  final bool shrinkWrap; // New attribute to control width behavior
+  final bool shrinkWrap; 
+  final int? maxSelections; 
+  final int currentSelectionCount; 
 
   const CustomCheckbox({
     Key? key,
@@ -27,6 +29,8 @@ class CustomCheckbox extends StatefulWidget {
     required this.isSelected,
     this.isHorizontal = false, // defaults to vertical layout
     this.shrinkWrap = true, // defaults to content-hugging
+    this.maxSelections, // NEW: Optional max selections
+    this.currentSelectionCount = 0,
   }) : super(key: key);
 
   @override
@@ -36,13 +40,18 @@ class CustomCheckbox extends StatefulWidget {
 class _CustomCheckboxState extends State<CustomCheckbox> {
   @override
   Widget build(BuildContext context) {
+    bool shouldDisable = widget.maxSelections != null && 
+                        widget.currentSelectionCount >= widget.maxSelections! && 
+                        !widget.attribute.isSelected;
     Widget checkboxContent = GestureDetector(
-      onTap: () {
+      onTap: shouldDisable ? null : () {
         setState(() {
           widget.attribute.isSelected = !widget.attribute.isSelected;
         });
         widget.onChanged(widget.attribute.isSelected);
       },
+      child: Opacity(
+        opacity: shouldDisable ? 0.4 : 1.0,
       child: widget.isHorizontal
       ? Container(
           padding: AppCheckboxThemes.checkboxPadding,
@@ -85,6 +94,7 @@ class _CustomCheckboxState extends State<CustomCheckbox> {
             ],
           ),
         ),
+      ),
     );
     
     // If horizontal and shrinkWrap is true, wrap in UnconstrainedBox to prevent parent expansion

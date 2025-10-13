@@ -7,6 +7,7 @@ import '../../providers/inputState.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 class Goals extends StatefulWidget {
   const Goals({super.key});
   @override
@@ -14,6 +15,7 @@ class Goals extends StatefulWidget {
 }
 
 class _goals extends State<Goals> {
+
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -69,6 +71,11 @@ class _goals extends State<Goals> {
     };
   }
 
+  bool isFormComplete() {
+    int selectedCount = selectedValues.values.where((v) => v).length;
+    return selectedCount >= 1;
+  }
+
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   SCAFFOLD
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -76,6 +83,7 @@ class _goals extends State<Goals> {
   Widget build(BuildContext context) {
     final inputState = Provider.of<InputState>(context, listen: false);
     Map<String, dynamic> inputData = getSelectedAttributes();
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -83,30 +91,35 @@ class _goals extends State<Goals> {
             children: [
               const CustomStatusBar(),
               Container(
-                padding: const EdgeInsets.all(16), // Add some padding around the content
+                padding: const EdgeInsets.all(32), 
                 child: Column(
                   children: [
                     Text(
-                      'Goals',
-                      style: AppTextStyles.headingLarge.copyWith(
+                      'Choose 3 Personal Life Goals',
+                      style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.peach,
                       ),
                     ),
                     const SizedBox(height: 30),
                     Wrap(
-                      spacing: 10.0, // horizontal spacing between items
-                      runSpacing: 10.0, // vertical spacing between rows
+                      spacing: 10.0,
+                      runSpacing: 10.0,
                       children: inputState.lifeGoalNeeds.isNotEmpty 
                         ? inputState.lifeGoalNeeds[0].possibleValues.map<Widget>((attribute) {
+                            // Calculate current number of selected items
+                            int selectedCount = selectedValues.values.where((v) => v).length;
+                            
                             return SizedBox(
-                              width: MediaQuery.of(context).size.width - 32, // Full width minus padding
+                              width: MediaQuery.of(context).size.width - 32,
                               child: CustomCheckbox(
                                 attribute: CheckboxAttribute(
                                   title: attribute,
                                   description: '',  
                                   isSelected: selectedValues[attribute] ?? false,
                                 ),
-                                isHorizontal: true, // Horizontal layout for single column
+                                isHorizontal: true,
+                                maxSelections: 3, // Set the limit to 3
+                                currentSelectionCount: selectedCount, // Pass current count
                                 onChanged: (isSelected) {
                                   setState(() {
                                     selectedValues[attribute] = isSelected;
@@ -130,18 +143,19 @@ class _goals extends State<Goals> {
         final user = FirebaseAuth.instance.currentUser;
         bool isLoggedIn = user != null;
         final inputData = getSelectedAttributes();
+        bool isComplete = isFormComplete();
+
         return CustomAppBar(
           buttonText: isLoggedIn ? 'Save' : 'Continue',
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
+          isEnabled: isComplete,
           onPressed: () async {
             if (isLoggedIn) {
-              
               await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-
               await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.guideAvailableMatches);
@@ -150,6 +164,7 @@ class _goals extends State<Goals> {
           },
         );
       }(),
+    
     );
   }
 }

@@ -5,9 +5,9 @@ import '../pages/Matches/matches.dart';
 import '../pages/Matches/match.dart';
 import '../pages/Needs/qual.dart';
 import '../pages/Needs/age.dart';
+import '../pages/Needs/basics.dart';
 import '../pages/Needs/photos.dart';
 import '../pages/Needs/chemistry.dart';
-import '../pages/Needs/physical.dart';
 import '../pages/Needs/relationship.dart';
 import '../pages/Needs/interests.dart';
 import '../pages/Needs/goals.dart';
@@ -27,6 +27,7 @@ class AppRoutes {
   static const String home = '/';
   static const String qual = '/qual';
   static const String age = '/age';
+  static const String basics = '/basics';
   static const String match = '/match';
   static const String tone = '/tone';
   static const String chat = '/chat';
@@ -75,10 +76,10 @@ class AppRoutes {
         return const QualifierRelDate();
       case age:
         return const Age();
+      case basics:
+        return const Basics();
       case chemistry:
         return const Chemistry();
-      case physical:
-        return const Physical();
       case relationship:
         return const Relationship();
       case interests:
@@ -91,7 +92,17 @@ class AppRoutes {
           nextRoute: arguments['nextRoute'] ?? AppRoutes.matches,
         );
       case chat:
-        return const MatchChat();
+        if (arguments != null && arguments is Map<String, dynamic>) {
+          return ChatScreen(
+            matchId: arguments['matchId'] ?? '',
+            otherUserName: arguments['otherUserName'] ?? 'User',
+          );
+        }
+        return const Scaffold(
+          body: Center(
+            child: Text('Error: Chat information not provided'),
+          ),
+        );
       case matches:
         return const Matches();
       case match:
@@ -121,10 +132,10 @@ class AppRoutes {
         return const QualifierRelDate();
       case age:
         return const Age();
+      case basics:
+        return const Basics();
       case chemistry:
         return const Chemistry();
-      case physical:
-        return const Physical();
       case relationship:
         return const Relationship();
       case interests:

@@ -64,7 +64,7 @@ class PhotoService {
       if (image == null) return;
       
       // Navigate to editor page with the picked image
-      final result = await Navigator.push<InputPhoto>(
+      /*final result = await Navigator.push<InputPhoto>(
         context,
         MaterialPageRoute(
           builder: (context) => PhotoEditorPage(imageFile: image),
@@ -75,7 +75,15 @@ class PhotoService {
         final inputState = Provider.of<InputState>(context, listen: false);
         inputState.photoInputs.add(result);
         await inputState.savePhotosLocally();
-      }
+      }*/
+
+      Navigator.push<InputPhoto>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PhotoEditorPage(imageFile: image),
+        ),
+      );
+
     } catch (e) {
       print('Error picking image: $e');
       if (context.mounted) {

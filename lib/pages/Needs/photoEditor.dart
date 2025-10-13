@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../providers/inputState.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../functions/photo_service_web.dart' if (dart.library.io) '../../functions/photo_service_mobile.dart';
+import '../../router/router.dart';
 
 class PhotoEditorPage extends StatefulWidget {
   final XFile? imageFile;
@@ -82,7 +84,11 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
       );
 
       if (mounted) {
-        Navigator.pop(context, inputPhoto);
+        //Navigator.pop(context, inputPhoto);
+        final inputState = Provider.of<InputState>(context, listen: false);
+        inputState.photoInputs.add(inputPhoto);  // or update if editing
+        await inputState.savePhotosLocally();
+        Navigator.pushReplacementNamed(context, AppRoutes.photos);
       }
     } catch (e) {
       print('Error saving edited image: $e');

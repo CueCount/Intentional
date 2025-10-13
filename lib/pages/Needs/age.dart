@@ -199,7 +199,7 @@ class _Age extends State<Age> {
             } else {
               await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
-                Navigator.pushNamed(context, AppRoutes.chemistry);
+                Navigator.pushNamed(context, AppRoutes.basics);
               }
             }
           },
