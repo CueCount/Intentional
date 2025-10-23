@@ -451,6 +451,38 @@ class InputState extends ChangeNotifier {
     }
   }
 
+  Future<dynamic> getSpecificInputForUserQuery(String inputKey) async {
+    try {
+      if (_currentSessionId.isEmpty) return null;
+      
+      // First check SharedPreferences cache
+      final prefs = await SharedPreferences.getInstance();
+      final existingJson = prefs.getString('inputs_$_currentSessionId');
+      
+      if (existingJson != null) {
+        final cached = jsonDecode(existingJson);
+        if (cached[inputKey] != null) {
+          return cached[inputKey];  // Return cached value
+        }
+      }
+      
+      // If not cached, fetch from Firebase
+      final docSnap = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentSessionId)
+          .get();
+      
+      if (!docSnap.exists) return null;
+      
+      final firebaseData = docSnap.data()!;
+      return firebaseData[inputKey];  // Return the specific value
+      
+    } catch (e) {
+      print('InputState Error: Failed to get input - $e');
+      return null;
+    }
+  }
+
   /* = = = = = = = = =
   Photo Save/Load 
   = = = = = = = = = */

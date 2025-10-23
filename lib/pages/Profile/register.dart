@@ -6,7 +6,7 @@ import '../../styles.dart';
 import '../../providers/authState.dart';
 import '../../providers/inputState.dart';
 import '../../widgets/navigation.dart';
-import '../../router/router.dart';
+import '../../widgets/bottomNavigationBar.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -23,10 +23,24 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  @override
+  void initState() {
+    super.initState();
+    // Add listeners to trigger rebuilds when text changes
+    _nameController.addListener(_onFormChanged);
+    _emailController.addListener(_onFormChanged);
+    _passwordController.addListener(_onFormChanged);
+  }
+
+  void _onFormChanged() {
+    // Trigger rebuild to update button state
+    setState(() {});
+  }
+
   Future<void> _handleRegistration() async {
     setState(() {
-      _errorMessage = null;  // Clear any previous error
-      _isLoading = true;     // Start loading
+      _errorMessage = null;
+      _isLoading = true;
     });
 
     try {
@@ -45,14 +59,15 @@ class _RegisterPageState extends State<RegisterPage> {
         inputProvider,
       );
 
-      if (mounted) {
+      /*if (mounted) {
         inputProvider.clearAllData();
         Navigator.pushNamedAndRemoveUntil(
           context,
           AppRoutes.subscription,
-          (route) => false,
+          (_) => false,
         );
-      }
+      }*/
+
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         setState(() {
@@ -83,15 +98,34 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
+  bool isFormComplete() {
+    bool hasName = _nameController.text.trim().isNotEmpty;
+    bool hasEmail = _emailController.text.trim().isNotEmpty;
+    bool hasPassword = _passwordController.text.trim().isNotEmpty;
+    
+    bool isValidEmail = _emailController.text.trim().isNotEmpty && 
+        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+            .hasMatch(_emailController.text.trim());
+    
+    return hasName && hasEmail && hasPassword && isValidEmail;
+  }
+
   @override
   void dispose() {
+    // Remove listeners before disposing
+    _nameController.removeListener(_onFormChanged);
+    _emailController.removeListener(_onFormChanged);
+    _passwordController.removeListener(_onFormChanged);
+    
     _emailController.dispose();
     _passwordController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    bool isComplete = isFormComplete();
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -234,7 +268,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                     const SizedBox(height: 20),
 
-                    SizedBox(
+                    /*SizedBox(
                       width: double.infinity,
                       child: TextButton(
                         onPressed: _isLoading ? null : _handleRegistration,
@@ -270,15 +304,20 @@ class _RegisterPageState extends State<RegisterPage> {
                               ],
                             ),
                       ),
-                    ),
+                    ),*/
 
-                   
                   ],
                 ),
               ),
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: CustomAppBar(
+        buttonText: _isLoading ? 'Registering...' : 'Register',
+        buttonIcon: Icons.arrow_forward,
+        isEnabled: !_isLoading && isComplete,
+        onPressed: _handleRegistration,
       ),
     );
   }

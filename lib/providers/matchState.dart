@@ -133,25 +133,16 @@ class MatchSyncProvider extends ChangeNotifier {
         );
   }
   
-  /* = = = = = = = = = 
+  /* = = = = = = = = =
   Handle Changes
   = = = = = = = = = */
 
   Future<void> _handleMatchChanges(QuerySnapshot snapshot, String currentSessionId) async {
     try {
-      // Process each document one by one to handle async properly
       final List<Map<String, dynamic>> matches = [];
       
       for (var doc in snapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        
-        // Determine which user's profile data we need
-        final targetUserId = data['requesterUserId'] == currentSessionId 
-            ? data['requestedUserId']
-            : data['requesterUserId'];
-        
-        // Await the user data lookup
-        final userData = await _getUserDataForMatch(currentSessionId, targetUserId);
         
         final match = {
           'matchId': doc.id,
@@ -160,7 +151,6 @@ class MatchSyncProvider extends ChangeNotifier {
           'status': data['status'],
           'createdAt': data['createdAt']?.toDate()?.toIso8601String() ?? DateTime.now().toIso8601String(),
           'updatedAt': data['updatedAt']?.toDate()?.toIso8601String() ?? DateTime.now().toIso8601String(),
-          'userData': userData,
         };
         
         matches.add(match);
@@ -203,8 +193,6 @@ class MatchSyncProvider extends ChangeNotifier {
       // Save back to SharedPreferences
       await _saveToSharedPrefs('matches_$currentSessionId', allMatches);
 
-
-      
       // Update local arrays by filtering
       _updateLocalArrays(allMatches, currentSessionId);
     } catch (e) {
@@ -246,67 +234,6 @@ class MatchSyncProvider extends ChangeNotifier {
       if (kDebugMode) {
         print('❌ Error saving to SharedPreferences: $e');
       }
-    }
-  }
-  
-  // Cache full userData, but return only what's needed for UI, used in HandMatchChanges
-  Future<Map<String, dynamic>> _getUserDataForMatch(String currentSessionId, String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final usersJson = prefs.getStringList('users_$currentSessionId') ?? [];
-      
-      // First check cache
-      for (String userJson in usersJson) {
-        final user = jsonDecode(userJson);
-        if (user['userId'] == userId) {
-          // Found in cache - return only display fields
-          return {
-            'userId': userId,
-            'nameFirst': user['nameFirst'],
-            'birthDate': user['birthDate'],
-            'photos': user['photos'],
-          };
-        }
-      }
-
-      // Not in cache - fetch from UserSyncProvider
-      final userData = await UserSyncProvider().getUserByID(userId, currentSessionId);
-      
-      if (userData != null && userData.isNotEmpty) {
-        // Cache the ENTIRE userData using UserSyncProvider's method
-        await UserSyncProvider().storeUserInCache(userData, userId);
-        
-        // Also add to local session cache for faster access
-        usersJson.add(jsonEncode(userData));
-        await prefs.setStringList('users_$currentSessionId', usersJson);
-        
-        if (kDebugMode) {
-          print('✅ User $userId fetched and fully cached');
-        }
-        
-        // Return ONLY the fields needed for request card display
-        return {
-          'userId': userId,
-          'nameFirst': userData['nameFirst'],
-          'birthDate': userData['birthDate'], 
-          'photos': userData['photos'],
-        };
-      }
-      
-      // Fallback if user not found
-      return {
-        'userId': userId,
-        'nameFirst': 'Not Found',
-        'birthDate': null,
-        'photos': null,
-      };
-    } catch (e) {
-      return {
-        'userId': userId,
-        'nameFirst': 'Unknown',
-        'birthDate': null,
-        'photos': null,
-      };
     }
   }
   
@@ -409,7 +336,23 @@ class MatchSyncProvider extends ChangeNotifier {
     }
   }
 
-  // used in all above match activities functions
+  Future<Map<String, dynamic>> ignore(String matchId) async {
+    try {
+      await updateMatchStatus(matchId, 'ignored');
+      
+      return {
+        'success': true,
+        'message': 'Ignore Status Set successfully',
+      };
+    } catch (e) {
+      print('Error unmatching: $e');
+      return {
+        'success': false,
+        'message': 'Failed to Ignore Status Set',
+      };
+    }
+  }
+
   Future<Map<String, dynamic>> updateMatchStatus(String matchId, String newStatus) async {
     try {
       // Update Firebase

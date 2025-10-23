@@ -20,8 +20,7 @@ class _Match extends State<Match> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final Map<String, dynamic>? profileData = 
-      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      final Map<String, dynamic>? profileData = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
 
       if (profileData == null) {
         print("❌ Error: Profile data is null!");

@@ -37,12 +37,60 @@ class UserSyncProvider extends ChangeNotifier {
     }
     try {
       final sessionUserIds = await inputState.getInput('currentSessionList');
-      
-      if (sessionUserIds.isEmpty) {
+    
+      // If no session list or it's empty, try loading from SharedPreferences
+      if (sessionUserIds == null || (sessionUserIds is List && sessionUserIds.isEmpty)) {
         if (kDebugMode) {
-          print('User Provider: No session user IDs found');
+          print('User Provider: No session list found, attempting to load from SharedPreferences');
         }
-        return [];
+        
+        final prefs = await SharedPreferences.getInstance();
+        List<String> usersList = prefs.getStringList('users_$_currentUserId') ?? [];
+        
+        // If no users found, this might be a new registration - retry a few times
+        if (usersList.isEmpty && _currentUserId != null) {
+          if (kDebugMode) {
+            print('User Provider: No users found, might be mid-transfer. Retrying...');
+          }
+          
+          // Try up to 5 times with 500ms delays
+          for (int i = 0; i < 5; i++) {
+            await Future.delayed(const Duration(milliseconds: 500));
+            usersList = prefs.getStringList('users_$_currentUserId') ?? [];
+            
+            if (usersList.isNotEmpty) {
+              if (kDebugMode) {
+                print('User Provider: Found ${usersList.length} users on attempt ${i + 1}');
+              }
+              break;
+            }
+          }
+        }
+        
+        if (usersList.isEmpty) {
+          if (kDebugMode) {
+            print('User Provider: Still no users after retries');
+          }
+          return [];
+        }
+        
+        // Parse and return all users
+        final allUsers = usersList.map((userJson) {
+          try {
+            return Map<String, dynamic>.from(jsonDecode(userJson));
+          } catch (e) {
+            if (kDebugMode) {
+              print('Error parsing user JSON: $e');
+            }
+            return null;
+          }
+        }).where((user) => user != null).cast<Map<String, dynamic>>().toList();
+        
+        if (kDebugMode) {
+          print('User Provider: Returning ${allUsers.length} users');
+        }
+        
+        return allUsers;
       }
 
       if (kDebugMode) {
@@ -55,7 +103,7 @@ class UserSyncProvider extends ChangeNotifier {
       for (String userId in sessionUserIds) {
         try {
           // Try to get user data from SharedPreferences cache
-          Map<String, dynamic>? userData = await _getUserFromCache(userId, _currentUserId!);
+          Map<String, dynamic>? userData = await getUserFromCache(userId, _currentUserId!);
           
           if (userData != null) {
             loadedUsers.add(userData);
@@ -91,6 +139,23 @@ class UserSyncProvider extends ChangeNotifier {
         }
       }
 
+      if (loadedUsers.isNotEmpty) {
+        await inputState.checkAndUpdateMissingCompatibility(inputState);
+        
+        // Re-load users after compatibility update
+        final prefs = await SharedPreferences.getInstance();
+        final updatedUsersList = prefs.getStringList('users_$_currentUserId') ?? [];
+        final updatedUsers = updatedUsersList.map((userJson) {
+          return Map<String, dynamic>.from(jsonDecode(userJson));
+        }).toList();
+        
+        if (kDebugMode) {
+          print('User Provider: Returning ${updatedUsers.length} users with compatibility');
+        }
+        
+        return updatedUsers;
+      }
+
       return loadedUsers;
 
     } catch (e) {
@@ -101,7 +166,7 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> _getUserFromCache(String userId, String currentSessionId) async {
+  Future<Map<String, dynamic>?> getUserFromCache(String userId, String currentSessionId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       
@@ -246,7 +311,7 @@ class UserSyncProvider extends ChangeNotifier {
   Grab all Inputs and Lists from current ID in Input Provider
   Sync them to Firebase User Doc
   Trigger Route to Matches Page (which itself will grab new Docs)
-  = = = = = = = = = */ 
+  = = = = = = = = = */
 
   Future<void> refreshDiscoverableUsers(BuildContext context) async {
     if (kDebugMode) {print("🔄 Refresh Triggered");}
@@ -271,6 +336,10 @@ class UserSyncProvider extends ChangeNotifier {
       
       // Step 6: Update currentSessionList
       await _updateCurrentSessionList(inputState, newUsers);
+
+      // Save the timestamp at the beginning of refresh
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_refresh', DateTime.now().toIso8601String());
       
       // Navigate to matches page
       Navigator.pushNamed(context, '/matches');
@@ -327,6 +396,7 @@ class UserSyncProvider extends ChangeNotifier {
     final List<Map<String, dynamic>> collectedUsers = [];
     const int targetCount = 7;
     const int maxAttempts = 4;
+    final seeking = await inputState.getSpecificInputForUserQuery('Seeking');
     
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
       if (collectedUsers.length >= targetCount) break;
@@ -335,6 +405,7 @@ class UserSyncProvider extends ChangeNotifier {
         final randomOffset = attempt * 10;
         final snapshot = await FirebaseFirestore.instance
             .collection('users')
+            .where('Gender', isEqualTo: seeking)
             .limit(7 + randomOffset)
             .get();
         
@@ -628,127 +699,6 @@ class UserSyncProvider extends ChangeNotifier {
     } catch (e) {
       print('User Provider Error: Failed to fetch initial users - $e');
     }
-  }
-
-  // Helper function specifically for initial fetch
-  Future<List<Map<String, dynamic>>> _fetchInitialUsersWithFilters(
-  ) async {
-    final List<Map<String, dynamic>> collectedUsers = [];
-    const int targetCount = 7;
-    const int maxAttempts = 4;
-    
-    for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      if (collectedUsers.length >= targetCount) break;
-      
-      try {
-        final randomOffset = attempt * 10;
-        final snapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .limit(7 + randomOffset)
-            .get();
-        
-        var potentialUsers = snapshot.docs
-            .skip(randomOffset) // Skip already seen users
-            .take(10)
-            .map((doc) {
-              final data = doc.data();
-              final cleanedData = _convertTimestampsToStrings(data);
-              return {
-                'userId': doc.id,
-                ...cleanedData,
-              };
-            })
-            .toList();
-        
-        // Filter out already collected users
-        final existingIds = collectedUsers.map((u) => u['userId'] as String).toSet();
-        potentialUsers = potentialUsers
-            .where((user) => !existingIds.contains(user['userId']))
-            .toList();
-        
-        // STEP 1: Filter out users with pending cases
-        if (potentialUsers.isNotEmpty) {
-          final userIds = potentialUsers.map((u) => u['userId'] as String).toList();
-          
-          // Handle whereIn limit of 10 items
-          final userIdsToCheck = userIds.take(10).toList();
-          
-          final casesSnapshot = await FirebaseFirestore.instance
-              .collection('cases')
-              .where('status', isEqualTo: 'pending')
-              .where('userId', whereIn: userIdsToCheck)
-              .get();
-          
-          final usersWithPendingCases = casesSnapshot.docs
-              .map((doc) => doc.data()['userId'] as String)
-              .toSet();
-          
-          potentialUsers = potentialUsers
-              .where((user) => !usersWithPendingCases.contains(user['userId']))
-              .toList();
-          
-          if (kDebugMode && usersWithPendingCases.isNotEmpty) {
-            print('Initial fetch: Filtered out ${usersWithPendingCases.length} users with pending cases');
-          }
-        }
-        
-        // STEP 2: Filter out users in active matches
-        if (potentialUsers.isNotEmpty) {
-          final userIds = potentialUsers.map((u) => u['userId'] as String).toList();
-          final usersInActiveMatches = <String>{};
-          
-          // Query for active matches where either user is in our list
-          final matchesAsRequester = await FirebaseFirestore.instance
-              .collection('matches')
-              .where('status', isEqualTo: 'active')
-              .where('requesterUserId', whereIn: userIds)
-              .get();
-          
-          final matchesAsRequested = await FirebaseFirestore.instance
-              .collection('matches')
-              .where('status', isEqualTo: 'active')
-              .where('requestedUserId', whereIn: userIds)
-              .get();
-          
-          // Add users found in active matches
-          for (var doc in matchesAsRequester.docs) {
-            final data = doc.data();
-            usersInActiveMatches.add(data['requesterUserId'] as String);
-          }
-          
-          for (var doc in matchesAsRequested.docs) {
-            final data = doc.data();
-            usersInActiveMatches.add(data['requestedUserId'] as String);
-          }
-          
-          // Filter them out
-          potentialUsers = potentialUsers
-              .where((user) => !usersInActiveMatches.contains(user['userId']))
-              .toList();
-          
-          if (kDebugMode && usersInActiveMatches.isNotEmpty) {
-            print('Initial fetch: Filtered out ${usersInActiveMatches.length} users in active matches');
-          }
-        }
-        
-        collectedUsers.addAll(potentialUsers);
-        
-        if (kDebugMode) {
-          print('🔍 Initial fetch attempt ${attempt + 1}: Found ${potentialUsers.length} valid users');
-        }
-        
-      } catch (e) {
-        if (kDebugMode) {
-          print('Initial fetch error in attempt ${attempt + 1}: $e');
-        }
-      }
-      
-      if (collectedUsers.length >= targetCount) {
-        break;
-      }
-    }
-    
-    return collectedUsers.take(targetCount).toList();
   }
 
   /* = = = = = = = = = 

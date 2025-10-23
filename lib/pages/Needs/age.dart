@@ -74,6 +74,11 @@ class _Age extends State<Age> {
     };
   }
 
+  bool isFormComplete() {
+    bool ageSelected = _selectedDate!=null;
+    return ageSelected;
+  }
+
   @override
   Widget build(BuildContext context) {
     Map<String, dynamic> inputData = getInputData();
@@ -182,15 +187,17 @@ class _Age extends State<Age> {
       ),
       
       bottomNavigationBar: () {
+        final inputState = Provider.of<InputState>(context, listen: false);
         final user = FirebaseAuth.instance.currentUser;
         bool isLoggedIn = user != null;
+        bool isComplete = isFormComplete();
         
         return CustomAppBar(
           buttonText: isLoggedIn ? 'Save' : 'Continue',
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
-          onPressed: () async {
-            final inputState = Provider.of<InputState>(context, listen: false);
+          isEnabled: isComplete,
 
+          onPressed: () async {
             if (isLoggedIn) {
               await inputState.saveNeedLocally(inputData);
               if (context.mounted) {

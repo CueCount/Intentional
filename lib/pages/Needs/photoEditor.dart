@@ -13,11 +13,13 @@ import '../../router/router.dart';
 class PhotoEditorPage extends StatefulWidget {
   final XFile? imageFile;
   final InputPhoto? existingPhoto;
+  final int? existingPhotoIndex;
 
   const PhotoEditorPage({
     Key? key,
     this.imageFile,
     this.existingPhoto,
+    this.existingPhotoIndex,
   }) : super(key: key);
 
   @override
@@ -86,8 +88,18 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
       if (mounted) {
         //Navigator.pop(context, inputPhoto);
         final inputState = Provider.of<InputState>(context, listen: false);
-        inputState.photoInputs.add(inputPhoto);  // or update if editing
+        if (widget.existingPhotoIndex != null) {
+          // Editing existing photo - replace at index
+          inputState.photoInputs[widget.existingPhotoIndex!] = inputPhoto;
+        } else {
+          // Adding new photo
+          inputState.photoInputs.add(inputPhoto);
+        }
         await inputState.savePhotosLocally();
+
+        // IMPORTANT: Notify listeners to update UI
+        inputState.notifyListeners();
+
         Navigator.pushReplacementNamed(context, AppRoutes.photos);
       }
     } catch (e) {

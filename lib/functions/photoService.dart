@@ -106,7 +106,7 @@ class PhotoService {
       final photo = inputState.photoInputs[index];
       
       // Navigate to editor with existing photo
-      final result = await Navigator.push<InputPhoto>(
+      /*final result = await Navigator.push<InputPhoto>(
         context,
         MaterialPageRoute(
           builder: (context) => PhotoEditorPage(
@@ -118,7 +118,17 @@ class PhotoService {
       if (result != null && context.mounted) {
         inputState.photoInputs[index] = result;
         await inputState.savePhotosLocally();
-      }
+      }*/
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PhotoEditorPage(
+            existingPhoto: photo,
+            existingPhotoIndex: index, // Pass the index
+          ),
+        ),
+      );
     } catch (e) {
       print('Error editing photo: $e');
       if (context.mounted) {
@@ -140,6 +150,9 @@ class PhotoService {
       
       inputState.photoInputs.removeAt(index);
       await inputState.savePhotosLocally();
+      
+      // IMPORTANT: Notify listeners to update UI
+      inputState.notifyListeners();
     } catch (e) {
       print('Error removing photo: $e');
       if (context.mounted) {

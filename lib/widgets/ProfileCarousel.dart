@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../functions/miscService.dart';
 import '../../widgets/pill.dart'; 
 import '../styles.dart';
+import '../widgets/errorDialog.dart';
 
 class ProfileCarousel extends StatefulWidget {
   final List<Map<String, dynamic>> userData;
@@ -43,14 +44,14 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     int inputIndex = 0;
     
     for (int i = 0; i < profiles.length; i++) {
-      // Add input card at position 4 (index 3)
-      if (i == 3 && inputIndex < inputs.length) {
+      // Add input card at position 3 (index 2)
+      if (i == 2 && inputIndex < inputs.length) {
         carouselItems.add(_buildInputCard(inputs[inputIndex], context));
         inputIndex++;
       }
       
-      // Add input card at position 8 (index 7)
-      if (i == 7 && inputIndex < inputs.length) {
+      // Add input card at position 5 (index 4)
+      if (i == 4 && inputIndex < inputs.length) {
         carouselItems.add(_buildInputCard(inputs[inputIndex], context));
         inputIndex++;
       }
@@ -67,6 +68,9 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
       }
     }
 
+    carouselItems.add(_buildRefreshCard(context));
+    carouselItems.add(_buildFeedbackCard(context));
+
     return CarouselSlider(
       options: CarouselOptions(
         height: 700,
@@ -78,7 +82,6 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     );
   }
   
-  // Build input card widget
   Widget _buildInputCard(Map<String, dynamic> input, BuildContext context) {
     return Align(
       alignment: Alignment.center,
@@ -165,7 +168,6 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     );
   }
   
-  // Build profile card widget (existing code moved to separate method)
   Widget _buildProfileCard(Map<String, dynamic> profile, BuildContext context) {
     String? imageUrl;
 
@@ -252,12 +254,31 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Match ${profile['compatibility']?['percentage']?.toInt() ?? 0}%',
+                profile['compatibility']?['percentage'] != null
+                ? Text(
+                  'Match ${profile['compatibility']?['percentage']?.toInt()}%',
                   style: AppTextStyles.headingLarge.copyWith(
                     color: ColorPalette.peach,
+                  ),)
+                : TextButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => RefreshDataWidget(
+                          errorContext: 'Missing compatibility data',
+                          onComplete: () => setState(() {}),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'Refresh Data',
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
                   ),
-                ),
                 const SizedBox(height: 8),
                 if (profile['compatibility']?['topReasons'] != null && 
                     (profile['compatibility']['topReasons'] as List).isNotEmpty)
@@ -296,4 +317,168 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
       ),
     );
   }
+
+  Widget _buildRefreshCard(BuildContext context) {
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: ColorPalette.peachLite,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(30),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.refresh,
+                size: 48,
+                color: ColorPalette.peach,
+              ),
+              const SizedBox(height: 40),
+              Text(
+                'Next Prospect',
+                style: AppTextStyles.headingLarge.copyWith(
+                  color: ColorPalette.peach,
+                  fontSize: 28,
+                ),
+              ),
+              Text(
+                'Refresh in 17 Hours',
+                style: AppTextStyles.headingLarge.copyWith(
+                  color: ColorPalette.peach,
+                  fontSize: 28,
+                ),
+              ),
+              const SizedBox(height: 30),
+              Text(
+                'We limit the number of profiles\nseen at once for everyone.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: ColorPalette.peach.withOpacity(0.8),
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'If you want to explore different\nprofiles revise some of your\nNeeds and they will be applied\non the next Refresh :)',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: ColorPalette.peach.withOpacity(0.8),
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeedbackCard(BuildContext context) {
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(30),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: ColorPalette.peach,
+                    width: 2,
+                  ),
+                ),
+                child: Icon(
+                  Icons.settings,
+                  size: 32,
+                  color: ColorPalette.peach,
+                ),
+              ),
+              const SizedBox(height: 40),
+              Text(
+                'We Love Hearing',
+                style: AppTextStyles.headingLarge.copyWith(
+                  color: ColorPalette.peach,
+                  fontSize: 32,
+                ),
+              ),
+              Text(
+                'From You!',
+                style: AppTextStyles.headingLarge.copyWith(
+                  color: ColorPalette.peach,
+                  fontSize: 32,
+                ),
+              ),
+              const SizedBox(height: 30),
+              Text(
+                'Tell us what is working\nand what can be improved\nabout this experience.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: ColorPalette.peach.withOpacity(0.8),
+                  fontSize: 16,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Our mission is to\ntransform dating into an intentional\nexperience for everyone.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: ColorPalette.peach.withOpacity(0.8),
+                  fontSize: 16,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 40),
+              TextButton(
+                onPressed: () {
+                  // TODO: Navigate to feedback form or open feedback dialog
+                  // Navigator.pushNamed(context, AppRoutes.feedback);
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Leave Feedback',
+                      style: AppTextStyles.headingMedium.copyWith(
+                        color: ColorPalette.peach,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_forward,
+                      color: ColorPalette.peach,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 }

@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../providers/matchState.dart';
 import '../styles.dart';
 import '../router/router.dart';
 
 class RequestCard extends StatelessWidget {
   final Map<String, dynamic> request;
+  final Map<String, dynamic> userData;
   final VoidCallback? onProfileTap;
 
-  const RequestCard({
+  RequestCard({
     super.key,
     required this.request,
+    required this.userData,
     this.onProfileTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final userData = request['userData'] as Map<String, dynamic>;
-    //final matchData = request['matchData'] as Map<String, dynamic>;
+
     String? imageUrl;
     if (userData['photos'] != null) {
       if (userData['photos'] is List && (userData['photos'] as List).isNotEmpty) {
@@ -78,7 +81,7 @@ class RequestCard extends StatelessWidget {
                 children: [
                   // Name and Age
                   Text(
-                    '${userData['nameFirst'] ?? 'Unknown'} ${_calculateAge(userData['birthDate'])}',
+                    '${userData['nameFirst'] ?? 'Unknown'}',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: ColorPalette.peach,
                     ),
@@ -86,7 +89,7 @@ class RequestCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   // Match Percentage (placeholder)
                   Text(
-                    '95% Match',
+                    'Match ${userData['compatibility']?['percentage']?.toInt() ?? 0}%',
                     style: AppTextStyles.headingMedium.copyWith(
                       color: ColorPalette.peach,
                       fontSize: 24,
@@ -95,7 +98,7 @@ class RequestCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   // Time Left (calculated from createdAt)
                   Text(
-                    _getTimeLeft(request['createdAt']),
+                    _getTimeLeft(request['createdAt'], context),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: ColorPalette.peach,
                     ),
@@ -106,7 +109,13 @@ class RequestCard extends StatelessWidget {
             
             // Profile Icon
             GestureDetector(
-              onTap: onProfileTap ?? () => _openUserProfile(context, userData['userId']),
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.match,
+                  arguments: userData, // userData already has everything including userId
+                );
+              },
               child: const Icon(
                 Icons.open_in_full,
                 color: ColorPalette.peach,
@@ -119,28 +128,8 @@ class RequestCard extends StatelessWidget {
     );
   }
 
-  int _calculateAge(dynamic birthDate) {
-    if (birthDate == null) return 0;
-    
-    DateTime birth;
-    if (birthDate is Timestamp) {
-      birth = birthDate.toDate();
-    } else if (birthDate is String) {
-      birth = DateTime.parse(birthDate);
-    } else {
-      return 0;
-    }
-    
-    DateTime now = DateTime.now();
-    int age = now.year - birth.year;
-    if (now.month < birth.month || (now.month == birth.month && now.day < birth.day)) {
-      age--;
-    }
-    return age;
-  }
-
-  String _getTimeLeft(dynamic createdAt) {
-    if (createdAt == null) return '1.5 Days Left';
+  String _getTimeLeft(dynamic createdAt, BuildContext context) {
+    if (createdAt == null) return 'null';
     
     DateTime created;
     if (createdAt is Timestamp) {
@@ -148,16 +137,22 @@ class RequestCard extends StatelessWidget {
     } else if (createdAt is String) {
       created = DateTime.parse(createdAt);
     } else {
-      return '1.5 Days Left';
+      return 'null';
     }
     
-    // Calculate days since creation (assuming 3 day expiry)
+    // Calculate days since creation (assuming 1 day expiry)
     DateTime now = DateTime.now();
     Duration difference = now.difference(created);
     int daysElapsed = difference.inDays;
-    double daysLeft = 3.0 - daysElapsed;
+    double daysLeft = 1.0 - daysElapsed;
     
     if (daysLeft <= 0) {
+      final matchProvider = Provider.of<MatchSyncProvider>(context, listen: false);
+      final matchId = request['id'] ?? request['matchId'];
+      
+      if (matchId != null) {
+        matchProvider.ignore(matchId);
+      }
       return 'Expired';
     } else if (daysLeft < 1) {
       int hoursLeft = (daysLeft * 24).round();
@@ -165,22 +160,6 @@ class RequestCard extends StatelessWidget {
     } else {
       return '${daysLeft.toStringAsFixed(1)} Days Left';
     }
-  }
-
-  void _openUserProfile(BuildContext context, String userId) {
-    final userData = request['userData'] as Map<String, dynamic>;
-    
-    // Add the userId to the userData before passing it
-    final profileData = {
-      ...userData,
-      'userId': userId, // Add the missing userId field
-    };
-    
-    Navigator.pushNamed(
-      context,
-      AppRoutes.match,
-      arguments: profileData,
-    );
   }
 
 }
