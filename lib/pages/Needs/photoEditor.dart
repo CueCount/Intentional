@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,15 +8,18 @@ import 'package:path_provider/path_provider.dart';
 import '../../providers/inputState.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../functions/photo_service_web.dart' if (dart.library.io) '../../functions/photo_service_mobile.dart';
+import '../../router/router.dart';
 
 class PhotoEditorPage extends StatefulWidget {
   final XFile? imageFile;
   final InputPhoto? existingPhoto;
+  final int? existingPhotoIndex;
 
   const PhotoEditorPage({
     Key? key,
     this.imageFile,
     this.existingPhoto,
+    this.existingPhotoIndex,
   }) : super(key: key);
 
   @override
@@ -82,7 +86,21 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
       );
 
       if (mounted) {
-        Navigator.pop(context, inputPhoto);
+        //Navigator.pop(context, inputPhoto);
+        final inputState = Provider.of<InputState>(context, listen: false);
+        if (widget.existingPhotoIndex != null) {
+          // Editing existing photo - replace at index
+          inputState.photoInputs[widget.existingPhotoIndex!] = inputPhoto;
+        } else {
+          // Adding new photo
+          inputState.photoInputs.add(inputPhoto);
+        }
+        await inputState.savePhotosLocally();
+
+        // IMPORTANT: Notify listeners to update UI
+        inputState.notifyListeners();
+
+        Navigator.pushReplacementNamed(context, AppRoutes.photos);
       }
     } catch (e) {
       print('Error saving edited image: $e');

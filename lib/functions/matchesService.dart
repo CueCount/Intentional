@@ -57,14 +57,6 @@ class MatchesService {
         };
       }
 
-      bool matchDocumentSavedLocal = await MatchesHelper.saveMatchDocumentToSharedPrefs(matchId, sessionUserId, requestedUserId);
-      if (!matchDocumentSavedLocal) {
-        return {
-          'success': false,
-          'message': 'Failed to save match document to local'
-        };
-      }
-
       return {
         'success': true,
         'message': 'Match request sent successfully!',

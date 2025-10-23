@@ -17,6 +17,7 @@ class RequestReceived extends StatefulWidget {
 
 class _RequestReceivedState extends State<RequestReceived> {
   bool _initialized = false;
+  Map<String, Map<String, dynamic>> _userDataCache = {};
 
   @override
   void didChangeDependencies() {
@@ -25,18 +26,47 @@ class _RequestReceivedState extends State<RequestReceived> {
       _ensureListenersActive();
       _initialized = true;
     }
+    _loadUserData(); // Load user data whenever dependencies change
   }
 
   Future<void> _ensureListenersActive() async {
     final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
-    final userSync = Provider.of<UserSyncProvider>(context, listen: false);
     final inputState = Provider.of<InputState>(context, listen: false);
 
     if (!matchSync.isListening) {
       final userId = inputState.userId;
-
       if (userId != null && userId.isNotEmpty) {
-        await matchSync.startListening(userId); // Then matches
+        await matchSync.startListening(userId);
+      }
+    }
+  }
+
+  Future<void> _loadUserData() async {
+    final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
+    final userProvider = Provider.of<UserSyncProvider>(context, listen: false);
+    final inputState = Provider.of<InputState>(context, listen: false);
+    
+    final receivedRequests = matchSync.receivedRequests;
+    
+    for (var request in receivedRequests) {
+      final requesterUserId = request['requesterUserId']; // Get requester, not requested
+      if (!_userDataCache.containsKey(requesterUserId)) {
+        // Try to get from cache first
+        final userData = await userProvider.getUserFromCache(requesterUserId, inputState.userId);
+        
+        if (userData != null) {
+          setState(() {
+            _userDataCache[requesterUserId] = userData;
+          });
+        } else {
+          // Fetch from Firebase if not in cache
+          final firebaseData = await userProvider.getUserByID(requesterUserId, inputState.userId);
+          if (firebaseData != null) {
+            setState(() {
+              _userDataCache[requesterUserId] = firebaseData;
+            });
+          }
+        }
       }
     }
   }
@@ -118,9 +148,16 @@ class _RequestReceivedState extends State<RequestReceived> {
                                 itemCount: receivedRequests.length,
                                 itemBuilder: (context, index) {
                                   final request = receivedRequests[index];
+                                  final requesterUserId = request['requesterUserId'];
+                                  final userData = _userDataCache[requesterUserId];
+                                  
+                                  if (userData == null) {
+                                    return const SizedBox.shrink(); // Skip if no user data yet
+                                  }
                                   
                                   return RequestCard(
                                     request: request,
+                                    userData: userData, // Pass userData separately
                                   );
                                 },
                               ),
@@ -137,5 +174,4 @@ class _RequestReceivedState extends State<RequestReceived> {
       ),
     );
   }
-
 }

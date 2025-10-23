@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../functions/chatService.dart'; 
 
 class AppAuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final StreamChatService _chatService = StreamChatService();
 
   StreamSubscription<User?>? _sub;
   User? _user;
@@ -102,6 +104,29 @@ class AppAuthProvider extends ChangeNotifier {
         }*/
         _isLoading = false;
         if (!_isInitialized) _isInitialized = true;
+
+        // Connect to Stream Chat for authenticated users
+        try {
+          if (!_chatService.isUserConnected()) {
+            final prefs = await SharedPreferences.getInstance();
+            final inputsJson = prefs.getString('inputs_${u.uid}');
+            String userName = 'User';
+            
+            if (inputsJson != null) {
+              final inputs = Map<String, dynamic>.from(jsonDecode(inputsJson));
+              userName = inputs['nameFirst'] ?? 'User';
+            }
+            
+            await _chatService.connectUser(
+              userId: u.uid,
+              userName: userName,
+            );
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('AuthProvider: Could not connect to Stream Chat - $e');
+          }
+        }
         
         // Notify if user changed
         if (previousUserId != newUserId) {
@@ -130,7 +155,36 @@ class AppAuthProvider extends ChangeNotifier {
     notifyListeners();
     
     try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: email, 
+        password: password
+      );
+
+      if (credential.user != null) {
+        // Get user data for Stream Chat
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final inputsJson = prefs.getString('inputs_${credential.user!.uid}');
+          String userName = 'User';
+          
+          if (inputsJson != null) {
+            final inputs = Map<String, dynamic>.from(jsonDecode(inputsJson));
+            userName = inputs['nameFirst'] ?? 'User';
+          }
+          
+          // Connect to Stream Chat
+          if (!_chatService.isUserConnected()) {
+            await _chatService.connectUser(
+              userId: credential.user!.uid,
+              userName: userName,
+            );
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('AuthProvider: Failed to connect to Stream Chat - $e');
+          }
+        }
+      }
 
     } catch (e) {
       _isLoading = false;
@@ -142,6 +196,17 @@ class AppAuthProvider extends ChangeNotifier {
   Future<void> signOut() async {
     _isLoading = true;
     notifyListeners();
+    
+    // Disconnect from Stream Chat first
+    try {
+      if (_chatService.isUserConnected()) {
+        await _chatService.disconnectUser();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('AuthProvider: Failed to disconnect from Stream Chat - $e');
+      }
+    }
     
     await _auth.signOut();
     
@@ -199,6 +264,21 @@ class AppAuthProvider extends ChangeNotifier {
       
       // Update InputProvider to use the new authenticated session
       inputProvider.setCurrentSessionId(authenticatedUserId);
+
+      // Connect to Stream Chat with the new user
+      try {
+        final userName = tempData['nameFirst'] ?? 'User';
+        if (!_chatService.isUserConnected()) {
+          await _chatService.connectUser(
+            userId: authenticatedUserId,
+            userName: userName,
+          );
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('AuthProvider: Failed to connect to Stream Chat - $e');
+        }
+      }
       
       _isLoading = false;
       notifyListeners();
@@ -241,6 +321,16 @@ class AppAuthProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    // Disconnect from Stream Chat when disposing
+    try {
+      if (_chatService.isUserConnected()) {
+        _chatService.disconnectUser();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('AuthProvider: Failed to disconnect from Stream Chat - $e');
+      }
+    }
     _sub?.cancel();
     super.dispose();
   }

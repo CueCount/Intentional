@@ -68,6 +68,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       ),
       
       bottomNavigationBar: CustomAppBar(
+        buttonText: 'Continue',
         onPressed: () async {
           if (context.mounted) {
             // Update this route to wherever you want to navigate next

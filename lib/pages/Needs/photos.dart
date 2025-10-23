@@ -18,7 +18,7 @@ class PhotoUploadPage extends StatefulWidget {
 
 class _PhotoUploadPageState extends State<PhotoUploadPage> {
   bool _isLoading = false;
-
+  
   @override
   void initState() {
     super.initState();
@@ -43,81 +43,95 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
 
   @override
   Widget build(BuildContext context) {
-    final inputState = Provider.of<InputState>(context);
-    final photos = inputState.photoInputs;
+    return Consumer<InputState>(
+      builder: (context, inputState, child) {
+        final inputState = Provider.of<InputState>(context, listen: false);
+        final photos = inputState.photoInputs;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CustomStatusBar(),
-            const SizedBox(height: 20),
-            Text(
-              'Photos',
-              style: AppTextStyles.headingLarge.copyWith(color: ColorPalette.peach),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                child: PhotoGrid(
-                  photoInputs: photos,
-                  isLoading: _isLoading,
-                  context: context,
-                  maxPhotos: 4,
-                  onReorder: (oldIndex, newIndex) async {
-                    setState(() {
-                      if (oldIndex < photos.length && newIndex <= photos.length) {
-                        final item = photos.removeAt(oldIndex);
-                        photos.insert(newIndex > oldIndex ? newIndex - 1 : newIndex, item);
-                        inputState.photoInputs = [...photos];
-                      }
-                    });
-                    await inputState.savePhotosLocally();
-                  },
-                  onRemovePhoto: (index) async {
-                    await PhotoService.removePhoto(context, index);
-                    setState(() {});
-                  },
-                  onAddPhoto: () async {
-                    await PhotoService.pickAndEditPhoto(context);
-                    setState(() {});
-                  },
-                  onEditPhoto: (index) async {
-                    await PhotoService.editExistingPhoto(context, index);
-                    setState(() {});
-                  },
+        bool isFormComplete() {
+          return photos.length >= 1;
+        }
+
+        return Scaffold(
+          body: SafeArea(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CustomStatusBar(),
+                const SizedBox(height: 20),
+                Text(
+                  'Upload 4 Photos of Yourself',
+                  style: AppTextStyles.headingMedium.copyWith(
+                    color: ColorPalette.peach
+                  ),
+                  textAlign: TextAlign.left,
                 ),
-              ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(32),
+                    child: PhotoGrid(
+                      photoInputs: photos,
+                      isLoading: _isLoading,
+                      context: context,
+                      maxPhotos: 4,
+                      onReorder: (oldIndex, newIndex) async {
+                        setState(() {
+                          if (oldIndex < photos.length && newIndex <= photos.length) {
+                            final item = photos.removeAt(oldIndex);
+                            photos.insert(newIndex > oldIndex ? newIndex - 1 : newIndex, item);
+                            inputState.photoInputs = [...photos];
+                          }
+                        });
+                        await inputState.savePhotosLocally();
+                      },
+                      onRemovePhoto: (index) async {
+                        await PhotoService.removePhoto(context, index);
+                        setState(() {});
+                      },
+                      onAddPhoto: () async {
+                        await PhotoService.pickAndEditPhoto(context);
+                        setState(() {});
+                      },
+                      onEditPhoto: (index) async {
+                        await PhotoService.editExistingPhoto(context, index);
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
 
-      bottomNavigationBar: Builder(
-        builder: (context) {
-          final isLoggedIn = FirebaseAuth.instance.currentUser != null;
+          bottomNavigationBar: Builder(
+            builder: (context) {
+              final isLoggedIn = FirebaseAuth.instance.currentUser != null;
+              bool isComplete = isFormComplete();
 
-          return CustomAppBar(
-            buttonText: isLoggedIn ? 'Save' : 'Continue',
-            buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
-            onPressed: () async {
-              await inputState.savePhotosLocally();
+              return CustomAppBar(
+                buttonText: isLoggedIn ? 'Save' : 'Continue',
+                buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
+                isEnabled: isComplete,
 
-              if (isLoggedIn) {
-                if (context.mounted) {
-                  Navigator.pushNamed(context, AppRoutes.settings);
-                }
-              } else {
-                if (context.mounted) {
-                  Navigator.pushNamed(context, AppRoutes.register);
-                }
-              }
+                onPressed: () async {
+                  await inputState.savePhotosLocally();
+
+                  if (isLoggedIn) {
+                    if (context.mounted) {
+                      Navigator.pushNamed(context, AppRoutes.settings);
+                    }
+                  } else {
+                    if (context.mounted) {
+                      Navigator.pushNamed(context, AppRoutes.register);
+                    }
+                  }
+                },
+              );
             },
-          );
-        },
-      ),
+          ),
+        );
+     }
     );
   }
 }

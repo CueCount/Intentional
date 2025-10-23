@@ -29,7 +29,7 @@ class UserSyncProvider extends ChangeNotifier {
   Grab Docs from Shared Pref
   Query Firebase for Docs not in Shared Pref
   Return Docs
-  = = = = = = = = = */ 
+  = = = = = = = = = */
 
   Future<List<Map<String, dynamic>>> loadUsers(InputState inputState) async {
     if (kDebugMode) {
@@ -37,12 +37,60 @@ class UserSyncProvider extends ChangeNotifier {
     }
     try {
       final sessionUserIds = await inputState.getInput('currentSessionList');
-      
-      if (sessionUserIds.isEmpty) {
+    
+      // If no session list or it's empty, try loading from SharedPreferences
+      if (sessionUserIds == null || (sessionUserIds is List && sessionUserIds.isEmpty)) {
         if (kDebugMode) {
-          print('User Provider: No session user IDs found');
+          print('User Provider: No session list found, attempting to load from SharedPreferences');
         }
-        return [];
+        
+        final prefs = await SharedPreferences.getInstance();
+        List<String> usersList = prefs.getStringList('users_$_currentUserId') ?? [];
+        
+        // If no users found, this might be a new registration - retry a few times
+        if (usersList.isEmpty && _currentUserId != null) {
+          if (kDebugMode) {
+            print('User Provider: No users found, might be mid-transfer. Retrying...');
+          }
+          
+          // Try up to 5 times with 500ms delays
+          for (int i = 0; i < 5; i++) {
+            await Future.delayed(const Duration(milliseconds: 500));
+            usersList = prefs.getStringList('users_$_currentUserId') ?? [];
+            
+            if (usersList.isNotEmpty) {
+              if (kDebugMode) {
+                print('User Provider: Found ${usersList.length} users on attempt ${i + 1}');
+              }
+              break;
+            }
+          }
+        }
+        
+        if (usersList.isEmpty) {
+          if (kDebugMode) {
+            print('User Provider: Still no users after retries');
+          }
+          return [];
+        }
+        
+        // Parse and return all users
+        final allUsers = usersList.map((userJson) {
+          try {
+            return Map<String, dynamic>.from(jsonDecode(userJson));
+          } catch (e) {
+            if (kDebugMode) {
+              print('Error parsing user JSON: $e');
+            }
+            return null;
+          }
+        }).where((user) => user != null).cast<Map<String, dynamic>>().toList();
+        
+        if (kDebugMode) {
+          print('User Provider: Returning ${allUsers.length} users');
+        }
+        
+        return allUsers;
       }
 
       if (kDebugMode) {
@@ -55,7 +103,7 @@ class UserSyncProvider extends ChangeNotifier {
       for (String userId in sessionUserIds) {
         try {
           // Try to get user data from SharedPreferences cache
-          Map<String, dynamic>? userData = await _getUserFromCache(userId, _currentUserId!);
+          Map<String, dynamic>? userData = await getUserFromCache(userId, _currentUserId!);
           
           if (userData != null) {
             loadedUsers.add(userData);
@@ -67,10 +115,10 @@ class UserSyncProvider extends ChangeNotifier {
               print('User Provider: User $userId missing, fetching from Firebase');
             }
             
-            userData = await getUserByID(userId, inputState);
+            userData = await getUserByID(userId, _currentUserId);
             
             if (userData != null) {
-              await _storeUserInCache(userData, _currentUserId!);
+              await storeUserInCache(userData, _currentUserId!);
               loadedUsers.add(userData);
               
               if (kDebugMode) {
@@ -91,6 +139,23 @@ class UserSyncProvider extends ChangeNotifier {
         }
       }
 
+      if (loadedUsers.isNotEmpty) {
+        await inputState.checkAndUpdateMissingCompatibility(inputState);
+        
+        // Re-load users after compatibility update
+        final prefs = await SharedPreferences.getInstance();
+        final updatedUsersList = prefs.getStringList('users_$_currentUserId') ?? [];
+        final updatedUsers = updatedUsersList.map((userJson) {
+          return Map<String, dynamic>.from(jsonDecode(userJson));
+        }).toList();
+        
+        if (kDebugMode) {
+          print('User Provider: Returning ${updatedUsers.length} users with compatibility');
+        }
+        
+        return updatedUsers;
+      }
+
       return loadedUsers;
 
     } catch (e) {
@@ -101,7 +166,7 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> _getUserFromCache(String userId, String currentSessionId) async {
+  Future<Map<String, dynamic>?> getUserFromCache(String userId, String currentSessionId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       
@@ -127,7 +192,7 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _storeUserInCache(Map<String, dynamic> userData, String currentSessionId) async {
+  Future<void> storeUserInCache(Map<String, dynamic> userData, String currentSessionId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userId = userData['userId'];
@@ -165,7 +230,7 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> getUserByID(String userId, InputState inputState) async {
+  Future<Map<String, dynamic>?> getUserByID(String userId, currentSessionId) async {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -180,48 +245,52 @@ class UserSyncProvider extends ChangeNotifier {
         userData['userId'] = doc.id;
         
         // Calculate compatibility for this single user
-        final currentUserData = await inputState.getAllInputs();
-        final result = MatchCalculationService().calculateMatch(
-          currentUser: currentUserData,
-          potentialMatch: userData,
-        );
+        final prefs = await SharedPreferences.getInstance();
+        final inputsJson = prefs.getString('inputs_$currentSessionId');
         
-        // Add compatibility to user data
-        userData['compatibility'] = {
-          'percentage': result.percentage,
-          'matchQuality': result.matchQuality,
-          'topReasons': result.topReasons,
-          'personality': {
-            'score': result.breakdown['personality']?.score ?? 0,
-            'percentage': result.breakdown['personality']?.percentage ?? 0,
-            'matches': result.breakdown['personality']?.matches ?? [],
-            'reason': result.breakdown['personality']?.reason ?? '',
-          },
-          'chemistry': {
-            'score': result.breakdown['chemistry']?.score ?? 0,
-            'percentage': result.breakdown['chemistry']?.percentage ?? 0,
-            'matches': result.breakdown['chemistry']?.matches ?? [],
-            'reason': result.breakdown['chemistry']?.reason ?? '',
-          },
-          'interests': {
-            'score': result.breakdown['interests']?.score ?? 0,
-            'percentage': result.breakdown['interests']?.percentage ?? 0,
-            'matches': result.breakdown['interests']?.matches ?? [],
-            'reason': result.breakdown['interests']?.reason ?? '',
-          },
-          'goals': {
-            'score': result.breakdown['goals']?.score ?? 0,
-            'percentage': result.breakdown['goals']?.percentage ?? 0,
-            'matches': result.breakdown['goals']?.matches ?? [],
-            'reason': result.breakdown['goals']?.reason ?? '',
-          },
-          'calculatedAt': DateTime.now().toIso8601String(),
-        };
-        
-        return userData;
+        if (inputsJson != null) {
+          final currentUserData = jsonDecode(inputsJson);
+          final result = MatchCalculationService().calculateMatch(
+            currentUser: currentUserData,
+            potentialMatch: userData,
+          );
+          
+          // Add compatibility to user data
+          userData['compatibility'] = {
+            'percentage': result.percentage,
+            'matchQuality': result.matchQuality,
+            'topReasons': result.topReasons,
+            'personality': {
+              'score': result.breakdown['personality']?.score ?? 0,
+              'percentage': result.breakdown['personality']?.percentage ?? 0,
+              'matches': result.breakdown['personality']?.matches ?? [],
+              'reason': result.breakdown['personality']?.reason ?? '',
+            },
+            'chemistry': {
+              'score': result.breakdown['chemistry']?.score ?? 0,
+              'percentage': result.breakdown['chemistry']?.percentage ?? 0,
+              'matches': result.breakdown['chemistry']?.matches ?? [],
+              'reason': result.breakdown['chemistry']?.reason ?? '',
+            },
+            'interests': {
+              'score': result.breakdown['interests']?.score ?? 0,
+              'percentage': result.breakdown['interests']?.percentage ?? 0,
+              'matches': result.breakdown['interests']?.matches ?? [],
+              'reason': result.breakdown['interests']?.reason ?? '',
+            },
+            'goals': {
+              'score': result.breakdown['goals']?.score ?? 0,
+              'percentage': result.breakdown['goals']?.percentage ?? 0,
+              'matches': result.breakdown['goals']?.matches ?? [],
+              'reason': result.breakdown['goals']?.reason ?? '',
+            },
+            'calculatedAt': DateTime.now().toIso8601String(),
+          };
+          
+          return userData;
+        }
+        return null;
       }
-      
-      return null;
     } catch (e) {
       if (kDebugMode) {
         print('User Provider Error: Failed to get user $userId by ID - $e');
@@ -242,7 +311,7 @@ class UserSyncProvider extends ChangeNotifier {
   Grab all Inputs and Lists from current ID in Input Provider
   Sync them to Firebase User Doc
   Trigger Route to Matches Page (which itself will grab new Docs)
-  = = = = = = = = = */ 
+  = = = = = = = = = */
 
   Future<void> refreshDiscoverableUsers(BuildContext context) async {
     if (kDebugMode) {print("🔄 Refresh Triggered");}
@@ -267,6 +336,10 @@ class UserSyncProvider extends ChangeNotifier {
       
       // Step 6: Update currentSessionList
       await _updateCurrentSessionList(inputState, newUsers);
+
+      // Save the timestamp at the beginning of refresh
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_refresh', DateTime.now().toIso8601String());
       
       // Navigate to matches page
       Navigator.pushNamed(context, '/matches');
@@ -323,6 +396,7 @@ class UserSyncProvider extends ChangeNotifier {
     final List<Map<String, dynamic>> collectedUsers = [];
     const int targetCount = 7;
     const int maxAttempts = 4;
+    final seeking = await inputState.getSpecificInputForUserQuery('Seeking');
     
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
       if (collectedUsers.length >= targetCount) break;
@@ -331,6 +405,7 @@ class UserSyncProvider extends ChangeNotifier {
         final randomOffset = attempt * 10;
         final snapshot = await FirebaseFirestore.instance
             .collection('users')
+            .where('Gender', isEqualTo: seeking)
             .limit(7 + randomOffset)
             .get();
         
@@ -587,6 +662,8 @@ class UserSyncProvider extends ChangeNotifier {
   Future<void> fetchInitialUsers(InputState inputState) async {
     try {
       final currentSessionId = inputState.userId;
+      final ignoreIds = await inputState.getInput('ignoreList') ?? [];
+      final ignoreIdsList = List<String>.from(ignoreIds);
       
       if (currentSessionId.isEmpty) {
         print('User Provider: No session ID for fetching initial users');
@@ -594,7 +671,8 @@ class UserSyncProvider extends ChangeNotifier {
       }
       
       // Step 4: Query for users with retry logic (no ignoreList for initial fetch)
-      final collectedUsers = await _fetchInitialUsersWithFilters();
+      //final collectedUsers = await _fetchInitialUsersWithFilters();
+      final collectedUsers = await _queryWithRetryLogic(inputState, ignoreIdsList.toSet());
       
       if (collectedUsers.isEmpty) {
         print('User Provider: No users found during initial fetch');
@@ -623,174 +701,9 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  // Helper function specifically for initial fetch
-  Future<List<Map<String, dynamic>>> _fetchInitialUsersWithFilters(
-  ) async {
-    final List<Map<String, dynamic>> collectedUsers = [];
-    const int targetCount = 7;
-    const int maxAttempts = 4;
-    
-    for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      if (collectedUsers.length >= targetCount) break;
-      
-      try {
-        final randomOffset = attempt * 10;
-        final snapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .limit(7 + randomOffset)
-            .get();
-        
-        var potentialUsers = snapshot.docs
-            .skip(randomOffset) // Skip already seen users
-            .take(10)
-            .map((doc) {
-              final data = doc.data();
-              final cleanedData = _convertTimestampsToStrings(data);
-              return {
-                'userId': doc.id,
-                ...cleanedData,
-              };
-            })
-            .toList();
-        
-        // Filter out already collected users
-        final existingIds = collectedUsers.map((u) => u['userId'] as String).toSet();
-        potentialUsers = potentialUsers
-            .where((user) => !existingIds.contains(user['userId']))
-            .toList();
-        
-        // STEP 1: Filter out users with pending cases
-        if (potentialUsers.isNotEmpty) {
-          final userIds = potentialUsers.map((u) => u['userId'] as String).toList();
-          
-          // Handle whereIn limit of 10 items
-          final userIdsToCheck = userIds.take(10).toList();
-          
-          final casesSnapshot = await FirebaseFirestore.instance
-              .collection('cases')
-              .where('status', isEqualTo: 'pending')
-              .where('userId', whereIn: userIdsToCheck)
-              .get();
-          
-          final usersWithPendingCases = casesSnapshot.docs
-              .map((doc) => doc.data()['userId'] as String)
-              .toSet();
-          
-          potentialUsers = potentialUsers
-              .where((user) => !usersWithPendingCases.contains(user['userId']))
-              .toList();
-          
-          if (kDebugMode && usersWithPendingCases.isNotEmpty) {
-            print('Initial fetch: Filtered out ${usersWithPendingCases.length} users with pending cases');
-          }
-        }
-        
-        // STEP 2: Filter out users in active matches
-        if (potentialUsers.isNotEmpty) {
-          final userIds = potentialUsers.map((u) => u['userId'] as String).toList();
-          final usersInActiveMatches = <String>{};
-          
-          // Query for active matches where either user is in our list
-          final matchesAsRequester = await FirebaseFirestore.instance
-              .collection('matches')
-              .where('status', isEqualTo: 'active')
-              .where('requesterUserId', whereIn: userIds)
-              .get();
-          
-          final matchesAsRequested = await FirebaseFirestore.instance
-              .collection('matches')
-              .where('status', isEqualTo: 'active')
-              .where('requestedUserId', whereIn: userIds)
-              .get();
-          
-          // Add users found in active matches
-          for (var doc in matchesAsRequester.docs) {
-            final data = doc.data();
-            usersInActiveMatches.add(data['requesterUserId'] as String);
-          }
-          
-          for (var doc in matchesAsRequested.docs) {
-            final data = doc.data();
-            usersInActiveMatches.add(data['requestedUserId'] as String);
-          }
-          
-          // Filter them out
-          potentialUsers = potentialUsers
-              .where((user) => !usersInActiveMatches.contains(user['userId']))
-              .toList();
-          
-          if (kDebugMode && usersInActiveMatches.isNotEmpty) {
-            print('Initial fetch: Filtered out ${usersInActiveMatches.length} users in active matches');
-          }
-        }
-        
-        collectedUsers.addAll(potentialUsers);
-        
-        if (kDebugMode) {
-          print('🔍 Initial fetch attempt ${attempt + 1}: Found ${potentialUsers.length} valid users');
-        }
-        
-      } catch (e) {
-        if (kDebugMode) {
-          print('Initial fetch error in attempt ${attempt + 1}: $e');
-        }
-      }
-      
-      if (collectedUsers.length >= targetCount) {
-        break;
-      }
-    }
-    
-    return collectedUsers.take(targetCount).toList();
-  }
-
   /* = = = = = = = = = 
   MISC Helper Methods
   = = = = = = = = = */
-
-  String? _convertDateToString(dynamic dateValue) {
-    if (dateValue == null) return null;
-    
-    try {
-      if (dateValue is Timestamp) {
-        // Firebase Timestamp
-        return dateValue.toDate().toIso8601String();
-      } else if (dateValue is int) {
-        // Unix timestamp in milliseconds
-        return DateTime.fromMillisecondsSinceEpoch(dateValue).toIso8601String();
-      } else if (dateValue is String) {
-        // Already a string
-        return dateValue;
-      } else {
-        // Unknown format
-        return null;
-      }
-    } catch (e) {
-      print('Error converting date: $dateValue, error: $e');
-      return null;
-    }
-  }
-
-  Map<String, dynamic>? _convertGeoPointToMap(dynamic geoValue) {
-    if (geoValue == null) return null;
-    
-    try {
-      if (geoValue is GeoPoint) {
-        return {
-          'latitude': geoValue.latitude,
-          'longitude': geoValue.longitude,
-        };
-      } else if (geoValue is Map) {
-        // Already converted
-        return Map<String, dynamic>.from(geoValue);
-      } else {
-        return null;
-      }
-    } catch (e) {
-      print('Error converting GeoPoint: $geoValue, error: $e');
-      return null;
-    }
-  }
 
   Map<String, dynamic> _convertTimestampsToStrings(Map<String, dynamic> data) {
     final Map<String, dynamic> result = {};

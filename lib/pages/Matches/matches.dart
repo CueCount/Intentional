@@ -20,19 +20,30 @@ class _Matches extends State<Matches> {
   List<Map<String, dynamic>> _userData = [];
   List<Map<String, dynamic>> _inputData = [];
   bool _isLoading = true;
-  bool _hasLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUsers();
+    });
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_hasLoaded) {
+    Provider.of<MatchSyncProvider>(context);
+    if (!_isLoading && _userData.isNotEmpty) {
       _loadUsers();
-      _hasLoaded = true;
     }
   }
 
   void _loadUsers() async {
     try {
+      setState(() {
+        _isLoading = true;
+      });
+
       final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
       final userSync = Provider.of<UserSyncProvider>(context, listen: false);
       final inputState = Provider.of<InputState>(context, listen: false);

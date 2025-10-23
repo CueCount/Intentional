@@ -74,6 +74,11 @@ class _interests extends State<Interests> {
     };
   }
 
+  bool isFormComplete() {
+    int selectedCount = selectedValues.values.where((v) => v).length;
+    return selectedCount >= 1;
+  }
+
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   SCAFFOLD
   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -88,24 +93,26 @@ class _interests extends State<Interests> {
           children: [
             const CustomStatusBar(),
             Container(
-              padding: const EdgeInsets.all(16), // Add some padding around the content
+              padding: const EdgeInsets.all(32),
               child: Column(
                 children: [
                   Text(
-                    'Interests',
-                    style: AppTextStyles.headingLarge.copyWith(
+                    'Choose 1-10 Interests You Want to Share',
+                    style: AppTextStyles.headingMedium.copyWith(
                       color: ColorPalette.peach,
                     ),
                   ),
                   const SizedBox(height: 20),
                   Wrap(
-                    spacing: 10.0, // horizontal spacing between items
-                    runSpacing: 10.0, // vertical spacing between rows
+                    spacing: 10.0,
+                    runSpacing: 10.0,
                     alignment: WrapAlignment.start,
                     children: inputState.logisticNeeds.isNotEmpty
                     ? inputState.logisticNeeds[0].possibleValues.map<Widget>((attribute) {
+                        int selectedCount = selectedValues.values.where((v) => v).length;
+
                         return SizedBox(
-                          width: (MediaQuery.of(context).size.width - 42) / 2, // 2 columns with padding and spacing
+                          width: (MediaQuery.of(context).size.width - 42) / 2, 
                           child: CustomCheckbox(
                             attribute: CheckboxAttribute(
                               title: attribute,
@@ -113,6 +120,8 @@ class _interests extends State<Interests> {
                               isSelected: selectedValues[attribute] ?? false,
                             ),
                             isHorizontal: true, 
+                            maxSelections: 10, 
+                            currentSelectionCount: selectedCount,
                             onChanged: (isSelected) {
                               setState(() {
                                 selectedValues[attribute] = isSelected;
@@ -136,18 +145,20 @@ class _interests extends State<Interests> {
         final user = FirebaseAuth.instance.currentUser;
         bool isLoggedIn = user != null;
         final inputData = getSelectedAttributes();
+        bool isComplete = isFormComplete();
+
         return CustomAppBar(
           buttonText: isLoggedIn ? 'Save' : 'Continue',
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
+          isEnabled: isComplete, 
+
           onPressed: () async {
             if (isLoggedIn) {
-              
               await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-
               await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.goals);

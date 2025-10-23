@@ -70,6 +70,11 @@ class _chemistry extends State<Chemistry> {
     };
   }
 
+  bool isFormComplete() {
+    int selectedCount = selectedValues.values.where((v) => v).length;
+    return selectedCount >= 1;
+  }
+
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   SCAFFOLD
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -84,14 +89,15 @@ class _chemistry extends State<Chemistry> {
             children: [
               const CustomStatusBar(),
               Container (
-                padding: const EdgeInsets.all(16), // Add some padding around the content
+                padding: const EdgeInsets.all(32), 
                 child: Column(
                   children: [
                     Text(
-                      'Chemistry',
-                      style: AppTextStyles.headingLarge.copyWith(
+                      'Choose 3 Personality Traits You Value',
+                      style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.peach,
                       ),
+                      textAlign: TextAlign.left,
                     ),
                     const SizedBox(height: 20),
                     Wrap(
@@ -99,6 +105,7 @@ class _chemistry extends State<Chemistry> {
                       runSpacing: 10.0, // vertical spacing between rows
                       children: inputState.emotionalNeeds.isNotEmpty 
                       ? inputState.emotionalNeeds[0].possibleValues.map<Widget>((attribute) {
+                        int selectedCount = selectedValues.values.where((v) => v).length;
                           return SizedBox(
                             width: MediaQuery.of(context).size.width - 32, // Full width minus padding
                             child: CustomCheckbox(
@@ -108,6 +115,8 @@ class _chemistry extends State<Chemistry> {
                                 isSelected: selectedValues[attribute] ?? false,
                               ),
                               isHorizontal: true,
+                              maxSelections: 3, // Set the limit to 3
+                              currentSelectionCount: selectedCount,
                               onChanged: (isSelected) {
                                 setState(() {
                                   selectedValues[attribute] = isSelected;
@@ -130,22 +139,24 @@ class _chemistry extends State<Chemistry> {
       bottomNavigationBar: () {
         final user = FirebaseAuth.instance.currentUser;
         bool isLoggedIn = user != null;
+        final inputData = getSelectedAttributes();
+        bool isComplete = isFormComplete();
+        
         return CustomAppBar(
           buttonText: isLoggedIn ? 'Save' : 'Continue',
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
-          onPressed: () async {
-            final inputData = getSelectedAttributes();
-            if (isLoggedIn) {
+          isEnabled: isComplete,  
 
+          onPressed: () async {
+            if (isLoggedIn) {
               await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-
               await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
-                Navigator.pushNamed(context, AppRoutes.physical);
+                Navigator.pushNamed(context, AppRoutes.relationship);
               }
             }
           },

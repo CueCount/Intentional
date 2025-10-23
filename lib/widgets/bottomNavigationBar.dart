@@ -5,12 +5,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onPressed;
   final String buttonText;
   final IconData buttonIcon;
+  final bool isEnabled;
 
   const CustomAppBar({
     Key? key, 
     required this.onPressed,
     this.buttonText = 'Continue',
     this.buttonIcon = Icons.arrow_forward,
+    this.isEnabled = true,
   }) : super(key: key);
 
   @override
@@ -31,18 +33,20 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 onPressed: () => Navigator.pop(context),
               ),
               TextButton(
-                onPressed: onPressed,
+                //onPressed: onPressed,
+                onPressed: isEnabled ? onPressed : null,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       buttonText,
                       style: AppTextStyles.headingMedium.copyWith(
-                        color: ColorPalette.peach,
+                        //color: ColorPalette.peach,
+                        color: isEnabled ? ColorPalette.peach : Colors.grey.shade500,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(buttonIcon, color: ColorPalette.peach, size: 24),
+                    Icon(buttonIcon, color: isEnabled ? ColorPalette.peach : Colors.grey.shade500, size: 24),
                   ],
                 ),
               ),

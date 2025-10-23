@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/inputState.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/link.dart';
+import '../../widgets/errorDialog.dart';
 import '/router/router.dart';
 import '../../providers/authState.dart';
 import '../../styles.dart';
@@ -38,14 +39,6 @@ class _SettingsState extends State<Settings> {
                     Column(
                       children: [
                         LinkWidget(
-                          title: 'Safety Tools',
-                          description: 'Block, report, and safety features',
-                          onTap: () {
-                            // Navigate to safety tools page
-                            Navigator.pushNamed(context, AppRoutes.home);
-                          },
-                        ),
-                        LinkWidget(
                           title: 'Your Account',
                           description: 'Account settings and preferences',
                           onTap: () {
@@ -62,20 +55,25 @@ class _SettingsState extends State<Settings> {
                           },
                         ),
                         LinkWidget(
-                          title: 'View Your Profile',
-                          description: 'See how others view your profile',
-                          onTap: () {
-                            final inputState = Provider.of<InputState>(context, listen: false);
-                            // Navigate to view profile page
-                            Navigator.pushNamed(context, AppRoutes.userprofile, arguments: {'userId': inputState.userId});
-                          },
-                        ),
-                        LinkWidget(
                           title: 'Your Subscription',
                           description: 'Manage your subscription and billing',
                           onTap: () {
                             // Navigate to subscription page
                             Navigator.pushNamed(context, AppRoutes.subscription);
+                          },
+                        ),
+                        LinkWidget(
+                          title: 'Reset Local Data',
+                          description: 'Manage your subscription and billing',
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) => RefreshDataWidget(
+                                errorContext: 'Missing data detected',
+                                onComplete: () => setState(() {}),
+                              ),
+                            );
                           },
                         ),
                         LinkWidget(

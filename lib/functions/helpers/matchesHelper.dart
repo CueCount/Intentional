@@ -56,9 +56,9 @@ class MatchesHelper {
   static Future<bool> saveMatchDocumentToFirebase(String matchId, String sessionUserId, String requestedUserId) async {
     try {
       await FirebaseFirestore.instance
-          .collection('matches')
-          .doc(matchId)
-          .set({
+      .collection('matches')
+      .doc(matchId)
+      .set({
         'matchId': matchId,
         'requesterUserId': sessionUserId,
         'requestedUserId': requestedUserId,
@@ -75,6 +75,7 @@ class MatchesHelper {
     }
   }
 
+  // not in use anymore, should delete if not needed soon
   static Future<bool> saveMatchDocumentToSharedPrefs(String matchId, String sessionUserId, String requestedUserId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
