@@ -74,8 +74,10 @@ class MatchCTA extends StatelessWidget {
                       );
                     },
                     style: TextButton.styleFrom(
-                      backgroundColor: ColorPalette.peach.withOpacity(0.2),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      overlayColor: Colors.transparent,
                     ),
                     child: Text(
                       'Go to Chat',
@@ -84,7 +86,7 @@ class MatchCTA extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   TextButton(
                     onPressed: () async {
                       if (matchId != null) {
@@ -97,12 +99,14 @@ class MatchCTA extends StatelessWidget {
                       }
                     },
                     style: TextButton.styleFrom(
-                      backgroundColor: Colors.red.withOpacity(0.1),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      overlayColor: Colors.transparent,
                     ),
                     child: Text(
                       'Unmatch',
-                      style: AppTextStyles.bodyMedium.copyWith(
+                      style: AppTextStyles.headingMedium.copyWith(
                         color: Colors.red,
                       ),
                     ),
@@ -229,11 +233,6 @@ class MatchCTA extends StatelessWidget {
             return Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -251,14 +250,14 @@ class MatchCTA extends StatelessWidget {
                       color: ColorPalette.peach,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Text(
                     'Hopefully she gets to you before someone else does ;) ',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: ColorPalette.peach,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   // Check if user has exceeded limit
                   if (matchSync.hasExceededOutgoingLimit())
                     Text(
@@ -291,8 +290,13 @@ class MatchCTA extends StatelessWidget {
                           }
                         }
                       },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        overlayColor: Colors.transparent,
+                      ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             'Send Match Request',

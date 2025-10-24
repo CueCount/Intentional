@@ -113,7 +113,7 @@ class RequestCard extends StatelessWidget {
                 Navigator.pushNamed(
                   context,
                   AppRoutes.match,
-                  arguments: userData, // userData already has everything including userId
+                  arguments: userData,
                 );
               },
               child: const Icon(
