@@ -86,7 +86,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     return Align(
       alignment: Alignment.center,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10),
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 30),
         decoration: BoxDecoration(
           color: ColorPalette.lite,
           borderRadius: BorderRadius.circular(20),
@@ -94,17 +94,17 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
         child: Padding(
           padding: const EdgeInsets.all(30),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.max, // Changed from min to max
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, // Added this
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'More answers = better matches',
-                style: AppTextStyles.bodyMedium.copyWith(
+                'Get better matches',
+                style: AppTextStyles.bodySmall.copyWith(
                   color: ColorPalette.peach,
                   fontSize: 16,
                 ),
               ),
-              const SizedBox(height: 40),
               Text(
                 input['title'] ?? 'Question',
                 style: AppTextStyles.headingLarge.copyWith(
@@ -112,50 +112,43 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                   fontSize: 32,
                 ),
               ),
-              const SizedBox(height: 20),
               Text(
-                '...',
+                ' ',
                 style: TextStyle(
                   color: ColorPalette.peach,
                   fontSize: 24,
                 ),
               ),
-              const Spacer(),
               SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
+                child: TextButton(
                   onPressed: () {
-                    // Navigate to the personality question page with the input data
                     Navigator.pushNamed(
                       context,
-                      AppRoutes.input, // This should be the dynamic personality page
+                      AppRoutes.input, 
                       arguments: {
                         'inputName': input['inputName'],
                         'nextRoute': input['nextRoute'],
                       },
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ColorPalette.peach,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    overlayColor: Colors.transparent,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Row(                    
                     children: [
                       Text(
                         'Respond',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: ColorPalette.white,
-                          fontSize: 18,
+                        style: AppTextStyles.headingMedium.copyWith(
+                          color: ColorPalette.peach,
                         ),
                       ),
                       const SizedBox(width: 8),
                       const Icon(
                         Icons.arrow_forward,
-                        color: ColorPalette.white,
+                        color: ColorPalette.peach,
                       ),
                     ],
                   ),
@@ -191,20 +184,42 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
             child: Stack(
               children: [
                 imageUrl != null
-                ? Image.network(
-                    imageUrl,
-                    width: double.infinity,
-                    height: 320,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      print("Image error: $error");
-                      return Container(
+                ? Stack(
+                    children: [
+                      Image.network(
+                        imageUrl,
                         width: double.infinity,
                         height: 320,
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-                      );
-                    },
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          print("Image error: $error");
+                          return Container(
+                            width: double.infinity,
+                            height: 320,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                          );
+                        },
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          height: 100,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withOpacity(0.0),  // Transparent at top
+                                Colors.black.withOpacity(0.5),  // 50% opacity at bottom
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   )
                 : Container(
                     width: double.infinity,
@@ -218,7 +233,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                     bottom: 20,
                     left: 20,
                     child: Text(
-                      "${profile['firstName'] ?? 'Unknown'}, ${MiscService().calculateAge(profile['birthDate'])}",
+                      "${profile['nameFirst'] ?? 'Unknown'}, ${MiscService().calculateAge(profile['birthDate'])}",
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: ColorPalette.white,
                       ),
@@ -256,10 +271,11 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
               children: [
                 profile['compatibility']?['percentage'] != null
                 ? Text(
-                  'Match ${profile['compatibility']?['percentage']?.toInt()}%',
-                  style: AppTextStyles.headingLarge.copyWith(
-                    color: ColorPalette.peach,
-                  ),)
+                    'Match ${profile['compatibility']?['percentage']?.toInt()}%',
+                    style: AppTextStyles.headingLarge.copyWith(
+                      color: ColorPalette.peach,
+                    ),
+                  )
                 : TextButton(
                     onPressed: () {
                       showDialog(
@@ -279,13 +295,16 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                       ),
                     ),
                   ),
+
                 const SizedBox(height: 8),
+
                 if (profile['compatibility']?['topReasons'] != null && 
                     (profile['compatibility']['topReasons'] as List).isNotEmpty)
                   PillText(
                     text: profile['compatibility']['topReasons'][0],
                     colorVariant: "peachLite",
                   ),
+
                 const SizedBox(height: 8),
 
                 if (profile['compatibility']?['topReasons'] != null && 
@@ -294,6 +313,9 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                     text: profile['compatibility']['topReasons'][1],
                     colorVariant: "peachLite",
                   ),
+
+                const SizedBox(height: 16),
+
                 TextButton(
                   onPressed: () {
                     final user = FirebaseAuth.instance.currentUser;
@@ -307,8 +329,30 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                       );
                     }
                   },
-                  style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 20)),
-                  child: const Text('View Profile'),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    overlayColor: Colors.transparent,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      const SizedBox(width: 3),
+                      Text(
+                        'Explore',
+                        style: AppTextStyles.headingMedium.copyWith(
+                          color: ColorPalette.peach,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.open_in_full,
+                        color: ColorPalette.peach,
+                        size: 24, // Adjust size to match your text style
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -322,7 +366,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     return Align(
       alignment: Alignment.center,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10),
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 30),
         decoration: BoxDecoration(
           color: ColorPalette.peachLite,
           borderRadius: BorderRadius.circular(20),
@@ -331,43 +375,27 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
           padding: const EdgeInsets.all(30),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Icon(
                 Icons.refresh,
                 size: 48,
                 color: ColorPalette.peach,
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 16),
               Text(
-                'Next Prospect',
-                style: AppTextStyles.headingLarge.copyWith(
+                'Next Prospect Refresh in 17 Hours',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.headingMedium.copyWith(
                   color: ColorPalette.peach,
-                  fontSize: 28,
                 ),
               ),
+              const SizedBox(height: 8),
               Text(
-                'Refresh in 17 Hours',
-                style: AppTextStyles.headingLarge.copyWith(
-                  color: ColorPalette.peach,
-                  fontSize: 28,
-                ),
-              ),
-              const SizedBox(height: 30),
-              Text(
-                'We limit the number of profiles\nseen at once for everyone.',
+                'We limit the number of profiles seen at once for everyone. If you want to explore different profiles revise some of your Needs and they will be applied on the next Refresh :)',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: ColorPalette.peach.withOpacity(0.8),
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'If you want to explore different\nprofiles revise some of your\nNeeds and they will be applied\non the next Refresh :)',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: ColorPalette.peach.withOpacity(0.8),
-                  fontSize: 16,
                 ),
               ),
             ],
@@ -381,57 +409,39 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     return Align(
       alignment: Alignment.center,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10),
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 30),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(
+            color: ColorPalette.peachLite,
+            width: 2,
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(30),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: ColorPalette.peach,
-                    width: 2,
-                  ),
-                ),
-                child: Icon(
-                  Icons.settings,
-                  size: 32,
-                  color: ColorPalette.peach,
-                ),
+              const Spacer(),
+              Icon(
+                Icons.settings,
+                size: 32,
+                color: ColorPalette.peach,
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 16),
               Text(
-                'We Love Hearing',
-                style: AppTextStyles.headingLarge.copyWith(
+                'We Love Hearing From You!',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.headingMedium.copyWith(
                   color: ColorPalette.peach,
                   fontSize: 32,
                 ),
               ),
+              const SizedBox(height: 8),
               Text(
-                'From You!',
-                style: AppTextStyles.headingLarge.copyWith(
-                  color: ColorPalette.peach,
-                  fontSize: 32,
-                ),
-              ),
-              const SizedBox(height: 30),
-              Text(
-                'Tell us what is working\nand what can be improved\nabout this experience.',
+                'Tell us what is working and what can be improved about this experience.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: ColorPalette.peach.withOpacity(0.8),
@@ -439,9 +449,9 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
               Text(
-                'Our mission is to\ntransform dating into an intentional\nexperience for everyone.',
+                'Our mission is to transform dating into an intentional experience for everyone.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: ColorPalette.peach.withOpacity(0.8),
@@ -449,12 +459,18 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 40),
+              const Spacer(),
               TextButton(
                 onPressed: () {
                   // TODO: Navigate to feedback form or open feedback dialog
                   // Navigator.pushNamed(context, AppRoutes.feedback);
                 },
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  overlayColor: Colors.transparent,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

@@ -54,6 +54,7 @@ class _Match extends State<Match> {
               Container(
                 padding: const EdgeInsets.all(16),
                 child: Column (
+
                   children: [
                     
                     /* = = = = = = = = = 
@@ -84,7 +85,6 @@ class _Match extends State<Match> {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                      margin: const EdgeInsets.only(bottom: 20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -96,7 +96,7 @@ class _Match extends State<Match> {
                             ),
                           ),
                           Text(
-                            "${profile?['firstName'] ?? 'Unknown'}, ${MiscService().calculateAge(profile?['birthDate'])}, ${profile?['school']}, ${profile?['career']}",
+                            "${profile?['nameFirst'] ?? 'Unknown'}, ${MiscService().calculateAge(profile?['birthDate'])}, ${profile?['school']}, ${profile?['career']}",
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: ColorPalette.peach,
                             ),
@@ -170,7 +170,7 @@ class _Match extends State<Match> {
                               children: [
                                 PillText(
                                   text: profile!['compatibility']['chemistry']['reason'],
-                                  colorVariant: "peachLite"
+                                  colorVariant: "peachMedium"
                                 ),
                                 const SizedBox(height: 8),
                               ],
@@ -183,7 +183,7 @@ class _Match extends State<Match> {
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: PillText(
                                   text: match, 
-                                  colorVariant: "peachLite"
+                                  colorVariant: "peachMedium"
                                 ),
                               ),
                             ).toList()),
@@ -216,13 +216,13 @@ class _Match extends State<Match> {
 
                     /* = = = = = = = = = 
                     Personality Match
-                    = = = = = = = = = = */
+                    = = = = = = = = = = */       
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
                       margin: const EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
-                        color: ColorPalette.peach,
+                        color: ColorPalette.violet,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
@@ -246,7 +246,7 @@ class _Match extends State<Match> {
                               children: [
                                 PillText(
                                   text: profile!['compatibility']['personality']['reason'],
-                                  colorVariant: "peachLite"
+                                  colorVariant: "violetMedium"
                                 ),
                                 const SizedBox(height: 8),
                               ],
@@ -258,7 +258,7 @@ class _Match extends State<Match> {
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: PillText(
                                   text: match, 
-                                  colorVariant: "peachLite"
+                                  colorVariant: "violetMedium"
                                 ),
                               ),
                             ).toList()),
@@ -297,7 +297,7 @@ class _Match extends State<Match> {
                       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
                       margin: const EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
-                        color: ColorPalette.violet,
+                        color: ColorPalette.green,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
@@ -321,7 +321,7 @@ class _Match extends State<Match> {
                               children: [
                                 PillText(
                                   text: profile!['compatibility']['interests']['reason'],
-                                  colorVariant: "peachLite"
+                                  colorVariant: "greenMedium"
                                 ),
                                 const SizedBox(height: 8),
                               ],
@@ -333,7 +333,7 @@ class _Match extends State<Match> {
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: PillText(
                                   text: match, 
-                                  colorVariant: "peachLite"
+                                  colorVariant: "greenMedium"
                                 ),
                               ),
                             ).toList()),
@@ -372,7 +372,7 @@ class _Match extends State<Match> {
                       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
                       margin: const EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
-                        color: ColorPalette.green,
+                        color: ColorPalette.pink,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
@@ -396,7 +396,7 @@ class _Match extends State<Match> {
                               children: [
                                 PillText(
                                   text: profile!['compatibility']['goals']['reason'],
-                                  colorVariant: "peachLite"
+                                  colorVariant: "pinkMedium"
                                 ),
                                 const SizedBox(height: 8),
                               ],
@@ -408,7 +408,7 @@ class _Match extends State<Match> {
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: PillText(
                                   text: match, 
-                                  colorVariant: "peachLite"
+                                  colorVariant: "pinkMedium"
                                 ),
                               ),
                             ).toList()),
@@ -426,8 +426,8 @@ class _Match extends State<Match> {
                     /* = = = = = = = = = 
                     Flag User Button
                     = = = = = = = = = = */ 
-                    IconButton(
-                      icon: const Icon(Icons.flag, color: Colors.red),
+                    const SizedBox(height: 30),
+                    TextButton(
                       onPressed: () {
                         showDialog(
                           context: context,
@@ -437,7 +437,27 @@ class _Match extends State<Match> {
                           ),
                         );
                       },
-                    )
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        overlayColor: Colors.transparent,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Flag Profile',
+                            style: AppTextStyles.headingSmall.copyWith(
+                              color: ColorPalette.grey,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.flag, color: Colors.grey),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                  
                   ],
                 ),

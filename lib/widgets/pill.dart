@@ -19,14 +19,26 @@ class PillText extends StatelessWidget {
         return ColorPalette.peach;
       case "peachLite":
         return ColorPalette.peachLite;
+      case "peachMedium":
+        return ColorPalette.peachMedium;
       case "green":
         return ColorPalette.green;
       case "greenLite":
         return ColorPalette.greenLite;
+      case "greenMedium":
+        return ColorPalette.greenMedium;
       case "violet":
         return ColorPalette.violet;
       case "violetLite":
         return ColorPalette.violetLite;
+      case "violetMedium":
+        return ColorPalette.violetMedium;
+      case "pink":
+        return ColorPalette.pink;
+      case "pinkLite":
+        return ColorPalette.pinkLite;
+      case "pinkMedium":
+        return ColorPalette.pinkMedium;
       default:
         return ColorPalette.peach;
     }

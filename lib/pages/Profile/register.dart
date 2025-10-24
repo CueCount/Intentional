@@ -47,7 +47,7 @@ class _RegisterPageState extends State<RegisterPage> {
       final authProvider = Provider.of<AppAuthProvider>(context, listen: false);
       final inputProvider = Provider.of<InputState>(context, listen: false);
 
-      // Save firstName and email to InputState BEFORE calling signUp
+      // Save nameFirst and email to InputState BEFORE calling signUp
       await inputProvider.saveNeedLocally({
         'nameFirst': _nameController.text.trim(),
         'email': _emailController.text.trim(),
