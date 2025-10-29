@@ -29,14 +29,19 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
         inputState.photoInputs.clear();
         for (String path in photoPaths) {
           if (path.startsWith('data:')) {
+            // Base64 data URI from local storage
             final base64String = path.split(',')[1];
             final bytes = base64Decode(base64String);
             inputState.photoInputs.add(InputPhoto(croppedBytes: bytes));
+          } else if (path.startsWith('http://') || path.startsWith('https://')) {
+            // Firebase Storage URL or other network URL
+            inputState.photoInputs.add(InputPhoto(networkUrl: path));
           } else {
+            // Local file path (mobile)
             inputState.photoInputs.add(InputPhoto(localPath: path));
           }
         }
-        setState(() {}); 
+        setState(() {});
       }
     });
   }

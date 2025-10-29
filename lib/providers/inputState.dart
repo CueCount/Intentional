@@ -38,7 +38,8 @@ class Input {
 class InputPhoto {
   final Uint8List? croppedBytes;
   final String? localPath;
-  InputPhoto({this.croppedBytes, this.localPath});
+  final String? networkUrl;  // For Firebase Storage URLs
+  InputPhoto({this.croppedBytes, this.localPath, this.networkUrl});
   Map<String, dynamic> toJson() => {};
 }
 
@@ -497,12 +498,16 @@ class InputState extends ChangeNotifier {
       List<String> photoPaths = [];
       
       for (var photo in photoInputs) {
+        // Network URL (Firebase Storage or other) - preserve as-is
+        if (photo.networkUrl != null) {
+          photoPaths.add(photo.networkUrl!);
+        }
         // For web, store the bytes as a data URI
-        if (kIsWeb && photo.croppedBytes != null) {
+        else if (kIsWeb && photo.croppedBytes != null) {
           // Create a data URI from the bytes (more portable than blob URLs)
           String base64 = base64Encode(photo.croppedBytes!);
           photoPaths.add('data:image/jpeg;base64,$base64');
-        } 
+        }
         // For mobile, store the local file path
         else if (!kIsWeb && photo.localPath != null) {
           photoPaths.add(photo.localPath!);
@@ -560,7 +565,10 @@ class InputState extends ChangeNotifier {
       photoInputs.clear();
       
       for (String path in photos) {
-        if (kIsWeb && path.startsWith('data:')) {
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+          // Firebase Storage URL or other network URL
+          photoInputs.add(InputPhoto(networkUrl: path));
+        } else if (kIsWeb && path.startsWith('data:')) {
           // Extract base64 from data URI and convert back to bytes
           final base64String = path.split(',')[1];
           final bytes = base64Decode(base64String);

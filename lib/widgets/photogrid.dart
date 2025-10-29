@@ -115,7 +115,10 @@ class PhotoGrid extends StatelessWidget {
     final photo = photoInputs[index];
     ImageProvider? imageProvider;
 
-    if (kIsWeb && photo.croppedBytes != null) {
+    if (photo.networkUrl != null) {
+      // Firebase Storage URL or other network URL (works on both web and mobile)
+      imageProvider = NetworkImage(photo.networkUrl!);
+    } else if (kIsWeb && photo.croppedBytes != null) {
       imageProvider = MemoryImage(photo.croppedBytes!);
     } else if (!kIsWeb && photo.localPath != null && File(photo.localPath!).existsSync()) {
       imageProvider = FileImage(File(photo.localPath!));
