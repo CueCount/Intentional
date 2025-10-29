@@ -91,6 +91,7 @@ class _chemistry extends State<Chemistry> {
               Container (
                 padding: const EdgeInsets.all(32), 
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Choose 3 Personality Traits You Value',

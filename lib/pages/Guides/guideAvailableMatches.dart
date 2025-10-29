@@ -64,19 +64,6 @@ class _GuideAvailableMatches extends State<GuideAvailableMatches> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    Text(
-                      'Look at All These Potential Matches!',
-                      style: AppTextStyles.headingLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Lorium ipsum x1000',
-                      style: AppTextStyles.headingSmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 40),
-                    
                     Container(
                       width: 300,
                       child: Wrap(
@@ -89,7 +76,18 @@ class _GuideAvailableMatches extends State<GuideAvailableMatches> {
                         ),
                       ),
                     ),
-                    
+                    const SizedBox(height: 20),
+                    Text(
+                      'Potential Matches are In!',
+                      style: AppTextStyles.headingLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Access match requests once you verify your identity.',
+                      style: AppTextStyles.headingSmall,
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 40),
                     TextButton.icon(
                       onPressed: () {

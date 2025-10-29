@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intentional_demo_01/styles.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../router/router.dart';
 import '../providers/userState.dart';
+import '../providers/matchState.dart';
 import 'menu.dart';
 
 class CustomStatusBar extends StatefulWidget {
@@ -102,10 +105,9 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
 
   @override
   Widget build(BuildContext context) {
-    final userSync = Provider.of<UserSyncProvider>(context);
-    final bool isAuthenticated = userSync.currentUserId != null; 
-    if (!isAuthenticated) {
-      return const Padding(padding: EdgeInsets.all(10)); 
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Padding(padding: EdgeInsets.all(24)); 
     }
 
     return Padding(
@@ -113,6 +115,9 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          /* = = = = = = = = = = 
+          Menu Button
+          = = = = = = = = = = */
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.black),
             onPressed: () { 
@@ -121,35 +126,58 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
           ), 
 
           /* = = = = = = = = = = 
-          Refresh Button
+          Refresh/Chat Button
           = = = = = = = = = = */
-          Row(
-            children: [
-              if (_countdownText.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Text(
-                    _countdownText,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: Provider.of<MatchSyncProvider>(context, listen: false).getActiveMatchUser(),
+            builder: (context, snapshot) {
+              // While loading, show nothing or a loading indicator
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(width: 48); 
+              }
+              
+              // If there's an active match, show chat button
+              if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                return IconButton(
+                  icon: const Icon(
+                    Icons.chat_bubble_outline, color: ColorPalette.peach
                   ),
-                ),
-              IconButton(
-                icon: Icon(
-                  Icons.refresh,
-                  color: _canRefresh ? ColorPalette.peach : Colors.grey[400],
-                ),
-                onPressed: _canRefresh 
-                ? () async {
-                    final userSync = Provider.of<UserSyncProvider>(context, listen: false);
-                    await userSync.refreshDiscoverableUsers(context);
-                    _checkRefreshStatus();
-                  } 
-                : null, // null disables the button
-              ),
-            ],
+                  onPressed: () {
+                     Navigator.pushNamed(context, AppRoutes.chat, arguments: snapshot.data);
+                  },
+                );
+              }
+              
+              // Otherwise, show refresh button
+              return Row(
+                children: [
+                  if (_countdownText.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Text(
+                        _countdownText,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.refresh,
+                        color: _canRefresh ? ColorPalette.peach : Colors.grey[400],
+                      ),
+                      onPressed: _canRefresh 
+                      ? () async {
+                          final userSync = Provider.of<UserSyncProvider>(context, listen: false);
+                          await userSync.refreshDiscoverableUsers(context);
+                          _checkRefreshStatus();
+                        } 
+                      : null,
+                    ),
+                ],
+              );
+            },
           ),
         ],
       ),

@@ -95,6 +95,7 @@ class _interests extends State<Interests> {
             Container(
               padding: const EdgeInsets.all(32),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Choose 1-10 Interests You Want to Share',
@@ -112,7 +113,7 @@ class _interests extends State<Interests> {
                         int selectedCount = selectedValues.values.where((v) => v).length;
 
                         return SizedBox(
-                          width: (MediaQuery.of(context).size.width - 42) / 2, 
+                          //width: (MediaQuery.of(context).size.width - 42) / 2, 
                           child: CustomCheckbox(
                             attribute: CheckboxAttribute(
                               title: attribute,

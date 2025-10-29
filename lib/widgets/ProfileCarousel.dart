@@ -6,6 +6,7 @@ import '../functions/miscService.dart';
 import '../../widgets/pill.dart'; 
 import '../styles.dart';
 import '../widgets/errorDialog.dart';
+import '../widgets/feedback.dart';
 
 class ProfileCarousel extends StatefulWidget {
   final List<Map<String, dynamic>> userData;
@@ -86,7 +87,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     return Align(
       alignment: Alignment.center,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 30),
+        margin: const EdgeInsets.symmetric(vertical: 30),
         decoration: BoxDecoration(
           color: ColorPalette.lite,
           borderRadius: BorderRadius.circular(20),
@@ -179,54 +180,61 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Stack(
+          Stack(
+            
               children: [
                 imageUrl != null
-                ? Stack(
-                    children: [
-                      Image.network(
-                        imageUrl,
-                        width: double.infinity,
-                        height: 320,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          print("Image error: $error");
-                          return Container(
+                ? ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: AspectRatio(
+                      aspectRatio: 1 / 1.15,  // width / height ratio (0.8)
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            imageUrl,
                             width: double.infinity,
-                            height: 320,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-                          );
-                        },
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          height: 100,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.black.withOpacity(0.0),  // Transparent at top
-                                Colors.black.withOpacity(0.5),  // 50% opacity at bottom
-                              ],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              print("Image error: $error");
+                              return Container(
+                                width: double.infinity,
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                              );
+                            },
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              height: 100,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.black.withOpacity(0.0),  // Transparent at top
+                                    Colors.black.withOpacity(0.5),  // 50% opacity at bottom
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  )
-                : Container(
-                    width: double.infinity,
-                    height: 320,
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.no_photography, size: 50, color: Colors.grey),
-                  ),
+                    ),)
+                  : ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: AspectRatio(
+                      aspectRatio: 1 / 1.25,  // Same ratio for the error state
+                      child: Container(
+                        width: double.infinity,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                      ),
+                    ),),
 
                   // Name & Age Display
                   Positioned(
@@ -261,7 +269,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                   ),
               ],
             ),
-          ),
+          
                               
           Container(
             padding: const EdgeInsets.all(20),
@@ -366,7 +374,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     return Align(
       alignment: Alignment.center,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 30),
+        margin: const EdgeInsets.symmetric(vertical: 30),
         decoration: BoxDecoration(
           color: ColorPalette.peachLite,
           borderRadius: BorderRadius.circular(20),
@@ -409,7 +417,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     return Align(
       alignment: Alignment.center,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 30),
+        margin: const EdgeInsets.symmetric(vertical: 30),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -462,8 +470,10 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
               const Spacer(),
               TextButton(
                 onPressed: () {
-                  // TODO: Navigate to feedback form or open feedback dialog
-                  // Navigator.pushNamed(context, AppRoutes.feedback);
+                  showDialog(
+                    context: context,
+                    builder: (context) => const FeedbackDialog(),
+                  );
                 },
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,

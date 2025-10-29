@@ -20,6 +20,12 @@ class _GuideRequestSent extends State<GuideRequestSent> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
+              Icon(
+                Icons.message,
+                size: 80,
+                color: Colors.white,
+              ),
+              const SizedBox(height: 20),
               Text(
                 'Your Match Request Has Been Sent',
                 style: AppTextStyles.headingLarge,
@@ -30,15 +36,6 @@ class _GuideRequestSent extends State<GuideRequestSent> {
                 'You will be automatically matched with her if she is the first request to be responded to.',
                 style: AppTextStyles.headingSmall,
                 textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              Container(
-                width: 180,
-                height: 180,
-                decoration: const BoxDecoration(
-                  color: Colors.grey,
-                  shape: BoxShape.circle,
-                ),
               ),
               const SizedBox(height: 20),
               TextButton.icon(
