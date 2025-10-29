@@ -9,7 +9,7 @@ class PhotoGrid extends StatelessWidget {
   final Function(int oldIndex, int newIndex) onReorder;
   final Function(int index) onRemovePhoto;
   final VoidCallback onAddPhoto;
-  final Function(int index)? onEditPhoto; // New optional parameter for editing
+  final Function(int index)? onEditPhoto;
   final BuildContext context;
   final bool isLoading;
   final int maxPhotos;
@@ -20,7 +20,7 @@ class PhotoGrid extends StatelessWidget {
     required this.onReorder,
     required this.onRemovePhoto,
     required this.onAddPhoto,
-    this.onEditPhoto, // Optional edit handler
+    this.onEditPhoto,
     required this.context, 
     this.isLoading = false,
     this.maxPhotos = 4,
@@ -115,7 +115,9 @@ class PhotoGrid extends StatelessWidget {
     final photo = photoInputs[index];
     ImageProvider? imageProvider;
 
-    if (kIsWeb && photo.croppedBytes != null) {
+    if (photo.networkUrl != null) {
+      imageProvider = NetworkImage(photo.networkUrl!);
+    } else if (kIsWeb && photo.croppedBytes != null) {
       imageProvider = MemoryImage(photo.croppedBytes!);
     } else if (!kIsWeb && photo.localPath != null && File(photo.localPath!).existsSync()) {
       imageProvider = FileImage(File(photo.localPath!));

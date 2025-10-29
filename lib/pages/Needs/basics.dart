@@ -154,7 +154,7 @@ class _basics extends State<Basics> {
             } else {
               await inputState.saveNeedLocally(inputData);
               if (context.mounted) {
-                Navigator.pushNamed(context, AppRoutes.chemistry);
+                Navigator.pushNamed(context, AppRoutes.guideOnboardingNeeds);
               }
             }
           },

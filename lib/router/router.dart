@@ -20,6 +20,7 @@ import '../pages/Profile/requestsReceived.dart';
 import '../pages/Profile/requestsSent.dart';
 import '../pages/Guides/guideRequestSent.dart';
 import '../pages/Guides/guideAvailableMatches.dart';
+import '../pages/Guides/guideOnboardingNeeds.dart';
 import '../pages/Needs/inputPage.dart';
 
 
@@ -47,11 +48,12 @@ class AppRoutes {
   static const String userprofile = '/userprofile';
   static const String editNeeds = '/editNeeds';
   static const String settings = '/settings';
-  static const String guideRequestSent= '/guideRequestSent';
-  static const String requestsSent= '/requestsSent';
-  static const String requestsReceived= '/requestsReceived';
-  static const String guideAvailableMatches= '/guideAvailableMatches';
-  static const String input='/input';
+  static const String guideRequestSent = '/guideRequestSent';
+  static const String guideOnboardingNeeds = '/guideOnboardingNeeds';
+  static const String requestsSent = '/requestsSent';
+  static const String requestsReceived = '/requestsReceived';
+  static const String guideAvailableMatches = '/guideAvailableMatches';
+  static const String input = '/input';
 
   static Route<dynamic> generateRoute(RouteSettings settings, bool isLoggedIn) {
     final arguments = settings.arguments;
@@ -144,6 +146,8 @@ class AppRoutes {
         return const Goals();
       case guideAvailableMatches:
         return const GuideAvailableMatches();
+      case guideOnboardingNeeds:
+        return GuideOnboardingNeeds();
       case photos:
         return const PhotoUploadPage();
       case matches:
