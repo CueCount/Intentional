@@ -91,6 +91,7 @@ class _basics extends State<Basics> {
               Container (
                 padding: const EdgeInsets.all(32), 
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Let\’s clear up the basics',

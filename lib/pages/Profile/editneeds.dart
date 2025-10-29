@@ -58,14 +58,6 @@ class _EditNeedsState extends State<EditNeeds> {
                           },
                         ),
                         LinkWidget(
-                          title: 'Physical',
-                          description: 'Physical preferences and attributes',
-                          onTap: () {
-                            // Navigate to physical page
-                            Navigator.pushNamed(context, AppRoutes.physical);
-                          },
-                        ),
-                        LinkWidget(
                           title: 'Goals',
                           description: 'Life goals and aspirations',
                           onTap: () {

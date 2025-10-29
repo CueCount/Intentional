@@ -16,7 +16,14 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       body: SafeArea(
         child: Container(
-          color: ColorPalette.peach,
+          decoration: BoxDecoration(
+            color: ColorPalette.peach,
+            image: DecorationImage(
+              image: AssetImage('assets/background.png'),
+              fit: BoxFit.cover,
+              opacity: 0.5,
+            ),
+          ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -31,15 +38,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 'One match at a time.\n One chat at a time.\n & the space to explore something real. ',
                 style: AppTextStyles.headingSmall,
                 textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              Container(
-                width: 180,
-                height: 180,
-                decoration: const BoxDecoration(
-                  color: Colors.grey,
-                  shape: BoxShape.circle,
-                ),
               ),
               const SizedBox(height: 20),
               Column(

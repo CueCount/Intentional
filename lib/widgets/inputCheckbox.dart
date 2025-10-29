@@ -40,9 +40,7 @@ class CustomCheckbox extends StatefulWidget {
 class _CustomCheckboxState extends State<CustomCheckbox> {
   @override
   Widget build(BuildContext context) {
-    bool shouldDisable = widget.maxSelections != null && 
-                        widget.currentSelectionCount >= widget.maxSelections! && 
-                        !widget.attribute.isSelected;
+    bool shouldDisable = widget.maxSelections != null && widget.currentSelectionCount >= widget.maxSelections! && !widget.attribute.isSelected;
     Widget checkboxContent = GestureDetector(
       onTap: shouldDisable ? null : () {
         setState(() {
@@ -52,48 +50,48 @@ class _CustomCheckboxState extends State<CustomCheckbox> {
       },
       child: Opacity(
         opacity: shouldDisable ? 0.4 : 1.0,
-      child: widget.isHorizontal
-      ? Container(
-          padding: AppCheckboxThemes.checkboxPadding,
-          decoration: AppCheckboxThemes.checkboxDecoration(widget.attribute.isSelected),
-          child: Row(
-            mainAxisSize: MainAxisSize.min, // This is key - makes row only as wide as needed
-            children: [
-              Text(
-                widget.attribute.title,
-                style: AppTextStyles.headingSmall.copyWith(
-                  color: widget.attribute.isSelected ? ColorPalette.white : ColorPalette.peach,
-                ),
-              ),
-              const SizedBox(width: 10),
-              AppCheckboxThemes.getCheckboxIcon(widget.attribute.isSelected),
-            ],
-          ),
-        )
-      : Container(
-          padding: AppCheckboxThemes.checkboxPadding,
-          decoration: AppCheckboxThemes.checkboxDecoration(widget.attribute.isSelected),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                widget.attribute.title,
-                textAlign: TextAlign.center,
-                style: AppCheckboxThemes.checkboxCardTitle(widget.attribute.isSelected),
-              ),
-              if (widget.attribute.description.isNotEmpty) ...[
-                const SizedBox(height: 4),
+        child: widget.isHorizontal
+        ? Container(
+            padding: AppCheckboxThemes.checkboxPadding,
+            decoration: AppCheckboxThemes.checkboxDecoration(widget.attribute.isSelected),
+            child: Row(
+              mainAxisSize: MainAxisSize.min, // This is key - makes row only as wide as needed
+              children: [
                 Text(
-                  widget.attribute.description,
-                  textAlign: TextAlign.center,
-                  style: AppCheckboxThemes.checkboxDescription(widget.attribute.isSelected),
+                  widget.attribute.title,
+                  style: AppTextStyles.headingSmall.copyWith(
+                    color: widget.attribute.isSelected ? ColorPalette.white : ColorPalette.peach,
+                  ),
                 ),
+                const SizedBox(width: 10),
+                AppCheckboxThemes.getCheckboxIcon(widget.attribute.isSelected),
               ],
-              const SizedBox(height: 4),
-              AppCheckboxThemes.getCheckboxIcon(widget.attribute.isSelected),
-            ],
+            ),
+          )
+        : Container(
+            padding: AppCheckboxThemes.checkboxPadding,
+            decoration: AppCheckboxThemes.checkboxDecoration(widget.attribute.isSelected),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  widget.attribute.title,
+                  textAlign: TextAlign.center,
+                  style: AppCheckboxThemes.checkboxCardTitle(widget.attribute.isSelected),
+                ),
+                if (widget.attribute.description.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.attribute.description,
+                    textAlign: TextAlign.center,
+                    style: AppCheckboxThemes.checkboxDescription(widget.attribute.isSelected),
+                  ),
+                ],
+                const SizedBox(height: 4),
+                AppCheckboxThemes.getCheckboxIcon(widget.attribute.isSelected),
+              ],
+            ),
           ),
-        ),
       ),
     );
     

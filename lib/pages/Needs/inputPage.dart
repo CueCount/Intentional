@@ -129,15 +129,16 @@ class _personalityQ1 extends State<PersonalityQ1> {
             children: [
               const CustomStatusBar(),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(32),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       currentInput!.title, // Use the title from the Input
-                      style: AppTextStyles.headingLarge.copyWith(
+                      style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.peach,
                       ),
-                      textAlign: TextAlign.center,
+                      textAlign: TextAlign.left,
                     ),
 
                     const SizedBox(height: 20),
@@ -147,7 +148,7 @@ class _personalityQ1 extends State<PersonalityQ1> {
                       runSpacing: 10.0,
                       children: currentInput!.possibleValues.map<Widget>((attribute) {
                         return SizedBox(
-                          width: (MediaQuery.of(context).size.width - 42) / 2, // 2 columns with padding and spacing
+                          width: double.infinity,
                           child: CustomCheckbox(
                             attribute: CheckboxAttribute(
                               title: attribute,
@@ -155,10 +156,9 @@ class _personalityQ1 extends State<PersonalityQ1> {
                               isSelected: selectedValues[attribute] ?? false,
                             ),
                             isHorizontal: true, 
-                            shrinkWrap: false, // Allow full width within the column
+                            shrinkWrap: true, 
                             onChanged: (isSelected) {
                               setState(() {
-                                // For single selection, clear others first
                                 if (isSelected) {
                                   selectedValues.forEach((key, value) {
                                     selectedValues[key] = false;

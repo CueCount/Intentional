@@ -93,6 +93,7 @@ class _goals extends State<Goals> {
               Container(
                 padding: const EdgeInsets.all(32), 
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Choose 3 Personal Life Goals',

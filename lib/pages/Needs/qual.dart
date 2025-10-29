@@ -27,6 +27,8 @@ class _QualifierRelDate extends State<QualifierRelDate> {
   List<Map<String, dynamic>> _suggestions = [];
   Map<String, dynamic>? _selectedCity;
   bool _isLoading = false;
+  final GlobalKey _textFieldKey = GlobalKey();
+  OverlayEntry? _overlayEntry;
   
   @override
   void initState() {
@@ -43,6 +45,97 @@ class _QualifierRelDate extends State<QualifierRelDate> {
         _isInitialized = true;
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _showOverlay() {
+    _removeOverlay();
+    
+    final RenderBox? renderBox = _textFieldKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) {
+      print('DEBUG: RenderBox is null');
+      return;
+    }
+    
+    final size = renderBox.size;
+    final offset = renderBox.localToGlobal(Offset.zero);
+    
+    print('DEBUG: TextField position - left: ${offset.dx}, top: ${offset.dy}, width: ${size.width}, height: ${size.height}');
+    print('DEBUG: Suggestions count: ${_suggestions.length}');
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: 32, // Match the padding from parent
+        right: 32, // Match the padding from parent
+        top: offset.dy + size.height + 5,
+        child: Material(
+          elevation: 8,
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.transparent,
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 250),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.red, // Temporarily red to see if it's rendering
+                width: 2,
+              ),
+            ),
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              shrinkWrap: true,
+              itemCount: _suggestions.length,
+              separatorBuilder: (context, index) => Divider(
+                height: 1,
+                color: Colors.grey.shade200,
+              ),
+              itemBuilder: (context, index) {
+                final city = _suggestions[index];
+                return InkWell(
+                  onTap: () {
+                    print('DEBUG: City tapped: ${city['name']}');
+                    setState(() {
+                      _selectedCity = city;
+                      _searchController.text = '${city['name'] ?? ''}, ${city['adminCode1'] ?? ''}';
+                      _suggestions = [];
+                    });
+                    _removeOverlay();
+                  },
+                  child: Container(
+                    color: Colors.blue.withOpacity(0.1), // Temporary background
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Text(
+                      '${city['name'] ?? ''}, ${city['adminCode1'] ?? ''}',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+    print('DEBUG: Overlay inserted');
   }
 
   Map<String, dynamic> getSelectedAttributes() {
@@ -76,30 +169,48 @@ class _QualifierRelDate extends State<QualifierRelDate> {
   }
 
   Future<void> searchCities(String query) async {
+    print('DEBUG: searchCities called with query: $query');
     if (query.length < 2) {
-      setState(() => _suggestions = []);
+      setState(() {
+        _suggestions = [];
+      });
+      _removeOverlay();
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
+      // Use HTTPS instead of HTTP
       final response = await http.get(Uri.parse(
-        'http://api.geonames.org/searchJSON?q=$query&maxRows=5&username=jmocko&country=US&featureClass=P'
+        'https://secure.geonames.org/searchJSON?q=$query&maxRows=5&username=jmocko&country=US&featureClass=P'
       ));
+
+      print('DEBUG: API response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        final results = List<Map<String, dynamic>>.from(data['geonames']);
+        print('DEBUG: Got ${results.length} results');
         setState(() {
-          _suggestions = List<Map<String, dynamic>>.from(data['geonames']);
+          _suggestions = results;
           _isLoading = false;
         });
+        
+        if (_suggestions.isNotEmpty) {
+          print('DEBUG: Calling _showOverlay');
+          _showOverlay();
+        } else {
+          _removeOverlay();
+        }
       }
     } catch (e) {
+      print('DEBUG: Error in searchCities: $e');
       setState(() {
         _suggestions = [];
         _isLoading = false;
       });
+      _removeOverlay();
     }
   }
 
@@ -170,7 +281,7 @@ class _QualifierRelDate extends State<QualifierRelDate> {
     final seekingInput = inputState.qual.firstWhere((i) => i.title == "Seeking");
     final locationInput = inputState.qual.firstWhere((i) => i.title == "Location");
     
-    return Scaffold( 
+    return Scaffold(
       body: Column(
         children: [
           const CustomStatusBar(), 
@@ -218,96 +329,57 @@ class _QualifierRelDate extends State<QualifierRelDate> {
 
                   const SizedBox(height: 10),
                   
-                  Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: ColorPalette.peach.withOpacity(0.5),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: Colors.black87,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Ex: New York',
-                            hintStyle: AppTextStyles.bodyMedium.copyWith(
-                              color: ColorPalette.peach,
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.all(16),
-                            suffixIcon: Icon(
-                              Icons.keyboard_arrow_down,
-                              color: ColorPalette.peach,
-                            ),
-                          ),
-                          onChanged: (value) {
-                            Future.delayed(const Duration(milliseconds: 500), () {
-                              if (value == _searchController.text) {
-                                searchCities(value);
-                              }
-                            });
-                          },
-                        ),
+                  Container(
+                    key: _textFieldKey,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: ColorPalette.peach.withOpacity(0.5),
+                        width: 1.5,
                       ),
-
-                      if (_isLoading)
-                        const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
-
-                      if (_suggestions.isNotEmpty)
-                        Container(
-                          margin: const EdgeInsets.only(top: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: _suggestions.length,
-                            itemBuilder: (context, index) {
-                              final city = _suggestions[index];
-                              return ListTile(
-                                title: Text(
-                                  '${city['name'] ?? ''}, ${city['adminCode1'] ?? ''}',
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                      color: Colors.black87,  // Explicitly set text color
-                                    ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Colors.black87,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Ex: New York',
+                        hintStyle: AppTextStyles.bodyMedium.copyWith(
+                          color: ColorPalette.peach,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(16),
+                        suffixIcon: _isLoading
+                            ? const Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
                                 ),
-                                onTap: () {
-                                  setState(() {
-                                    _selectedCity = city;
-                                    _searchController.text = '${city['name'] ?? ''}, ${city['adminCode1'] ?? ''}';
-                                    _suggestions = [];
-                                  });
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                    ],
+                              )
+                            : Icon(
+                                Icons.keyboard_arrow_down,
+                                color: ColorPalette.peach,
+                              ),
+                      ),
+                      onChanged: (value) {
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          if (value == _searchController.text) {
+                            searchCities(value);
+                          }
+                        });
+                      },
+                    ),
                   ),
                   
                 ],

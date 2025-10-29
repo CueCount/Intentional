@@ -90,6 +90,7 @@ class _relationship extends State<Relationship> {
               Container(
                 padding: const EdgeInsets.all(32), 
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Choose 3 Relationship Expectations You Have',
@@ -108,6 +109,7 @@ class _relationship extends State<Relationship> {
                         ? inputState.chemistryNeeds[0].possibleValues.map<Widget>((attribute) {
                             int selectedCount = selectedValues.values.where((v) => v).length;
                             return SizedBox(
+                              width: double.infinity,  // Add this
                               child: CustomCheckbox(
                                 attribute: CheckboxAttribute(
                                   title: attribute,
