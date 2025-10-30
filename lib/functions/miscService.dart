@@ -1,4 +1,5 @@
 class MiscService {
+
   int calculateAge(dynamic birthDateValue) {
     if (birthDateValue == null) return 0;
     
@@ -37,4 +38,5 @@ class MiscService {
     
     return age;
   }
+
 }
