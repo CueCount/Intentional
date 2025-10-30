@@ -9,39 +9,6 @@ class ReviewCaseService {
     return 'case_${userId}_$timestamp';
   }
 
-  // Create registration approval case when user registers
-  Future<String> createRegistrationCase({
-    required String userId,
-  }) async {
-    try {
-      final caseId = _generateCaseId(userId);
-      
-      final caseData = {
-        'caseId': caseId,
-        'userId': userId,
-        'type': 'registration_approval',
-        'status': 'pending',
-        'note': 'New user registration pending approval. Profile review required.',
-        'created': Timestamp.fromDate(DateTime.now()),
-        'closed': null,
-        'relatedChatId': null,
-      };
-
-      // Create the case document
-      await _firestore
-          .collection('cases')
-          .doc(caseId)
-          .set(caseData);
-
-      print('Registration case created: $caseId');
-      return caseId;
-
-    } catch (e) {
-      print('Error creating registration case: $e');
-      throw Exception('Failed to create registration case: $e');
-    }
-  }
-
   // Create flagged case when user is reported
   Future<String> createFlaggedCase({
     required String userId,

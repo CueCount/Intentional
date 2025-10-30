@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/inputState.dart';
-import '../functions/userReviewService.dart';
+import '../functions/caseService.dart';
 
 class FlagUserWidget extends StatefulWidget {
   final String targetUserId;
