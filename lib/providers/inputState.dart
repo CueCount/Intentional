@@ -101,7 +101,7 @@ class InputState extends ChangeNotifier {
   }
 
   /* = = = = = = = = =
-  I'm not even sure
+  
   = = = = = = = = = */
 
   void setCurrentSessionId(String userId) {

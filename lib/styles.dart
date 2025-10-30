@@ -52,20 +52,20 @@ class AppTextStyles {
 }
 
 class ColorPalette {
+
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color lite = Color(0xFFFAEBEB);
+  static const Color dark = Color(0xFF250E0E);
+  static const Color grey = Color(0xFF867A7A);
   
   static const Color peach = Color(0xFFFF294C);
   static const Color violet = Color(0xFFE349D9);
   static const Color green = Color(0xFF38B6A8);
   static const Color pink = Color(0xFF3F42D76);
 
-  static const Color white = Color(0xFFFFFFFF);
-  static const Color lite = Color(0xFFFAEBEB);
-  static const Color dark = Color(0xFF250E0E);
-  static const Color grey = Color(0xFF867A7A);
-
   static const Color peachLite = Color(0xFFFFEEF1);
-  static const Color violetLite = Color.fromARGB(255, 246, 205, 243);
-  static const Color greenLite = Color.fromARGB(255, 212, 251, 247);
+  static const Color violetLite = Color(0xFFFFE8FD);
+  static const Color greenLite = Color(0xFFD4FBF7);
   static const Color pinkLite = Color(0xFFFFBFD6);
   
   static const Color peachMedium = Color(0xFFF66078);
