@@ -24,78 +24,31 @@ class UserSyncProvider extends ChangeNotifier {
   }
 
   /* = = = = = = = = = 
-  Load Users:
-  Look at currentSessionIds
-  Grab Docs from Shared Pref
-  Query Firebase for Docs not in Shared Pref
-  Return Docs
+  Load Current Users
   = = = = = = = = = */
 
   Future<List<Map<String, dynamic>>> loadUsers(InputState inputState) async {
-    if (kDebugMode) {
-      print('loadUsers called, currentUserId: $_currentUserId');
-    }
+    if (kDebugMode) {print('loadUsers called, currentUserId: $_currentUserId');}
+
     try {
-      final sessionUserIds = await inputState.getInput('currentSessionList');
+      var sessionUserIds = await inputState.getInput('currentSessionList');
     
-      // If no session list or it's empty, try loading from SharedPreferences
+      // If no session list or it's empty, fetch it from Firebase
       if (sessionUserIds == null || (sessionUserIds is List && sessionUserIds.isEmpty)) {
         if (kDebugMode) {
-          print('User Provider: No session list found, attempting to load from SharedPreferences');
+          print('User Provider: No session list found locally, fetching from Firebase');
         }
         
-        final prefs = await SharedPreferences.getInstance();
-        List<String> usersList = prefs.getStringList('users_$_currentUserId') ?? [];
+        // Fetch currentSessionList from Firebase
+        await inputState.fetchSpecificInputs(['currentSessionList']);
         
-        // If no users found, this might be a new registration - retry a few times
-        if (usersList.isEmpty && _currentUserId != null) {
-          if (kDebugMode) {
-            print('User Provider: No users found, might be mid-transfer. Retrying...');
-          }
-          
-          // Try up to 5 times with 500ms delays
-          for (int i = 0; i < 5; i++) {
-            await Future.delayed(const Duration(milliseconds: 500));
-            usersList = prefs.getStringList('users_$_currentUserId') ?? [];
-            
-            if (usersList.isNotEmpty) {
-              if (kDebugMode) {
-                print('User Provider: Found ${usersList.length} users on attempt ${i + 1}');
-              }
-              break;
-            }
-          }
-        }
+        // Try to get it again after fetching
+        sessionUserIds = await inputState.getInput('currentSessionList');
         
-        if (usersList.isEmpty) {
-          if (kDebugMode) {
-            print('User Provider: Still no users after retries');
-          }
-          return [];
-        }
-        
-        // Parse and return all users
-        final allUsers = usersList.map((userJson) {
-          try {
-            return Map<String, dynamic>.from(jsonDecode(userJson));
-          } catch (e) {
-            if (kDebugMode) {
-              print('Error parsing user JSON: $e');
-            }
-            return null;
-          }
-        }).where((user) => user != null).cast<Map<String, dynamic>>().toList();
-        
-        if (kDebugMode) {
-          print('User Provider: Returning ${allUsers.length} users');
-        }
-        
-        return allUsers;
+        if (kDebugMode) {print('User Provider: Successfully fetched ${sessionUserIds.length} user IDs from Firebase');}
       }
-
-      if (kDebugMode) {
-        print('User Provider: Loading ${sessionUserIds.length} users from $_currentUserId');
-      }
+      
+      if (kDebugMode) {print('User Provider: Loading ${sessionUserIds.length} users from $_currentUserId');}
 
       final List<Map<String, dynamic>> loadedUsers = [];
 
@@ -107,13 +60,9 @@ class UserSyncProvider extends ChangeNotifier {
           
           if (userData != null) {
             loadedUsers.add(userData);
-            if (kDebugMode) {
-              print('User Provider: Loaded $userId from cache');
-            }
+            if (kDebugMode) {print('User Provider: Loaded $userId from cache');}
           } else {
-            if (kDebugMode) {
-              print('User Provider: User $userId missing, fetching from Firebase');
-            }
+            if (kDebugMode) {print('User Provider: User $userId missing, fetching from Firebase');}
             
             userData = await getUserByID(userId, _currentUserId);
             
@@ -300,18 +249,50 @@ class UserSyncProvider extends ChangeNotifier {
   }
 
   /* = = = = = = = = = 
-  Refresh Triggered:
-  Grab current_sesh_IDs
-  Send all to ignore_IDs list except those with Match Docs status = "ignored" || "pending"
-  Grab Need Inputs from current ID in Input Provider
-  Send them to Filter Function
-  Return Seeking Inputs
-  Query Firebase for Docs matching Seeking Inputs
-  Return User Docs, Save to Shared Pref users_currentseshID and save IDs to current_sesh_IDs list
-  Grab all Inputs and Lists from current ID in Input Provider
-  Sync them to Firebase User Doc
-  Trigger Route to Matches Page (which itself will grab new Docs)
+  Fetching New Users
   = = = = = = = = = */
+    
+  Future<void> fetchInitialUsers(InputState inputState) async {
+    try {
+      final currentSessionId = inputState.userId;
+      final ignoreIds = await inputState.getInput('ignoreList') ?? [];
+      final ignoreIdsList = List<String>.from(ignoreIds);
+      
+      if (currentSessionId.isEmpty) {
+        print('User Provider: No session ID for fetching initial users');
+        return;
+      }
+      
+      // Step 4: Query for users with retry logic (no ignoreList for initial fetch)
+      //final collectedUsers = await _fetchInitialUsersWithFilters();
+      final collectedUsers = await _queryWithRetryLogic(inputState, ignoreIdsList.toSet());
+      
+      if (collectedUsers.isEmpty) {
+        print('User Provider: No users found during initial fetch');
+        return;
+      }
+      
+      // Step 5: Store users in local storage
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = collectedUsers.map((user) => jsonEncode(user)).toList();
+      await prefs.setStringList('users_$currentSessionId', usersJson);
+      
+      // Step 6: Update currentSessionList with user IDs
+      final userIds = collectedUsers.map((user) => user['userId'] as String).toList();
+      await inputState.saveNeedLocally({
+        'currentSessionList': userIds,
+      });
+      
+      // Sync to Firebase
+      await inputState.syncInputs(fromId: currentSessionId, toId: currentSessionId);
+      
+      print('User Provider: Fetched ${collectedUsers.length} initial users');
+      print('User Provider: Saved to users_$currentSessionId');
+      
+    } catch (e) {
+      print('User Provider Error: Failed to fetch initial users - $e');
+    }
+  }
 
   Future<void> refreshDiscoverableUsers(BuildContext context) async {
     if (kDebugMode) {print("🔄 Refresh Triggered");}
@@ -656,53 +637,7 @@ class UserSyncProvider extends ChangeNotifier {
   }
 
   /* = = = = = = = = = 
-  Fetch First Batch of Users During Registration
-  = = = = = = = = = */
-  
-  Future<void> fetchInitialUsers(InputState inputState) async {
-    try {
-      final currentSessionId = inputState.userId;
-      final ignoreIds = await inputState.getInput('ignoreList') ?? [];
-      final ignoreIdsList = List<String>.from(ignoreIds);
-      
-      if (currentSessionId.isEmpty) {
-        print('User Provider: No session ID for fetching initial users');
-        return;
-      }
-      
-      // Step 4: Query for users with retry logic (no ignoreList for initial fetch)
-      //final collectedUsers = await _fetchInitialUsersWithFilters();
-      final collectedUsers = await _queryWithRetryLogic(inputState, ignoreIdsList.toSet());
-      
-      if (collectedUsers.isEmpty) {
-        print('User Provider: No users found during initial fetch');
-        return;
-      }
-      
-      // Step 5: Store users in local storage
-      final prefs = await SharedPreferences.getInstance();
-      final usersJson = collectedUsers.map((user) => jsonEncode(user)).toList();
-      await prefs.setStringList('users_$currentSessionId', usersJson);
-      
-      // Step 6: Update currentSessionList with user IDs
-      final userIds = collectedUsers.map((user) => user['userId'] as String).toList();
-      await inputState.saveNeedLocally({
-        'currentSessionList': userIds,
-      });
-      
-      // Sync to Firebase
-      await inputState.syncInputs(fromId: currentSessionId, toId: currentSessionId);
-      
-      print('User Provider: Fetched ${collectedUsers.length} initial users');
-      print('User Provider: Saved to users_$currentSessionId');
-      
-    } catch (e) {
-      print('User Provider Error: Failed to fetch initial users - $e');
-    }
-  }
-
-  /* = = = = = = = = = 
-  MISC Helper Methods
+  Helpers
   = = = = = = = = = */
 
   Map<String, dynamic> _convertTimestampsToStrings(Map<String, dynamic> data) {

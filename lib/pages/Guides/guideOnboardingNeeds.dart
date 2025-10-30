@@ -21,7 +21,7 @@ class _GuideOnboardingNeeds extends State<GuideOnboardingNeeds> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Icon(
-                Icons.message,
+                Icons.celebration,
                 size: 80,
                 color: Colors.white,
               ),
