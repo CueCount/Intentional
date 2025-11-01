@@ -127,7 +127,6 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
               Container(
                 padding: const EdgeInsets.all(16),
                 child: Column (
-
                   children: [
                     
                     /* = = = = = = = = = 

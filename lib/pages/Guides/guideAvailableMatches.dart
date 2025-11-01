@@ -64,40 +64,49 @@ class _GuideAvailableMatches extends State<GuideAvailableMatches> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    Container(
-                      width: 300,
-                      child: Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 20,
-                        runSpacing: 20,
-                        children: List.generate(
-                          _userPhotos.length > 7 ? 7 : _userPhotos.length,
-                          (index) => _buildPhotoCircle(_userPhotos[index]),
-                        ),
+                    // Overlapping profile images
+                    _buildOverlappingProfiles(),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Potential\nMatches are\nWaiting!',
+                      style: AppTextStyles.headingLarge.copyWith(
+                        color: Colors.white,
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        height: 1.1,
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Potential Matches are In!',
-                      style: AppTextStyles.headingLarge,
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 8),
                     Text(
-                      'Access match requests once you verify your identity.',
-                      style: AppTextStyles.headingSmall,
+                      'Send match requests\nonce you verify your identity.',
+                      style: AppTextStyles.headingSmall.copyWith(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 18,
+                      ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 16),
                     TextButton.icon(
                       onPressed: () {
                         Navigator.pushNamed(context, AppRoutes.photos);
                       },
-                      icon: Text(
-                        'Complete Verification',
-                        style: AppTextStyles.headingMedium.copyWith(color: Colors.white),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       ),
-                      label: const Icon(Icons.arrow_forward, color: Colors.white),
+                      icon: Text(
+                        'Verify Yourself',
+                        style: AppTextStyles.headingMedium.copyWith(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      label: const Icon(
+                        Icons.arrow_forward, 
+                        color: Colors.white,
+                        size: 28,
+                      ),
                     ),
                   ],
                 ),
@@ -107,24 +116,59 @@ class _GuideAvailableMatches extends State<GuideAvailableMatches> {
     );
   }
 
-  Widget _buildPhotoCircle(String? photoUrl) {
-    return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.grey[300],
-        image: photoUrl != null 
-          ? DecorationImage(
-              image: NetworkImage(photoUrl),
-              fit: BoxFit.cover,
-            )
-          : null,
+  Widget _buildOverlappingProfiles() {
+    final displayCount = _userPhotos.length > 7 ? 7 : _userPhotos.length;
+    final overlapOffset = 40.0;
+    final totalWidth = 60.0 + (overlapOffset * (displayCount - 1));
+    
+    return SizedBox(
+      height: 70,
+      width: totalWidth,
+      child: Stack(
+        children: List.generate(
+          displayCount,
+          (index) {
+            // Reverse the index so the first image appears on top
+            final reversedIndex = displayCount - 1 - index;
+            return Positioned(
+              left: reversedIndex * overlapOffset,
+              child: _buildPhotoCircle(_userPhotos[reversedIndex]),
+            );
+          },
+        ),
       ),
-      child: photoUrl == null 
-        ? const Icon(Icons.person, color: Colors.grey, size: 40)
-        : null,
     );
   }
 
+  Widget _buildPhotoCircle(String? photoUrl) {
+    return Container(
+      width: 70,
+      height: 70,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: ColorPalette.peach,
+        border: Border.all(
+          color: ColorPalette.peach,
+          width: 5,
+        ),
+      ),
+      child: ClipOval(
+        child: photoUrl != null 
+          ? Image.network(
+              photoUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.person, color: Colors.grey, size: 40),
+                );
+              },
+            )
+          : Container(
+              color: Colors.grey[300],
+              child: const Icon(Icons.person, color: Colors.grey, size: 40),
+            ),
+      ),
+    );
+  }
 }

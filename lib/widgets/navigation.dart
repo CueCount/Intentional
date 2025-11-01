@@ -151,21 +151,50 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
               // Otherwise, show refresh button
               return Row(
                 children: [
-                  if (_countdownText.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: Text(
+                  if (_canRefresh == false)
+                    TextButton.icon(
+                      icon: Text(
                         _countdownText,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: ColorPalette.grey,
                         ),
                       ),
-                    ),
-                    IconButton(
-                      icon: Icon(
+                      label: Icon(
                         Icons.refresh,
-                        color: _canRefresh ? ColorPalette.peach : Colors.grey[400],
+                        color: ColorPalette.grey,
+                        size: 24,
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: _canRefresh 
+                      ? () async {
+                          final userSync = Provider.of<UserSyncProvider>(context, listen: false);
+                          await userSync.refreshDiscoverableUsers(context);
+                          _checkRefreshStatus();
+                        } 
+                      : null,
+                    ),
+                  
+                  if (_canRefresh == true)
+                    TextButton.icon(
+                      icon: Text(
+                        'New Profiles',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: ColorPalette.peach,
+                        ),
+                      ),
+                      label: Icon(
+                        Icons.refresh,
+                        color: ColorPalette.peach,
+                        size: 24,
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       onPressed: _canRefresh 
                       ? () async {

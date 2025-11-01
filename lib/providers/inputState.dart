@@ -49,10 +49,10 @@ class InputState extends ChangeNotifier {
   String get userId => _currentSessionId;
 
   /* = = = = = = = = =
-  Save Inputs 
+  Save Inputs Onboarding 
   = = = = = = = = = */
 
-  Future<void> saveNeedLocally(Map<String, dynamic>? needData) async {
+  Future<void> inputsSaveOnboarding(Map<String, dynamic>? needData) async {
     try {
       // Use the session ID we already have from AuthProvider
       if (_currentSessionId.isEmpty) {
@@ -101,7 +101,7 @@ class InputState extends ChangeNotifier {
   }
 
   /* = = = = = = = = =
-  
+  Current Session Id
   = = = = = = = = = */
 
   void setCurrentSessionId(String userId) {
@@ -123,15 +123,24 @@ class InputState extends ChangeNotifier {
     deniedList.clear();
   }
   
-  Future<Map<String, dynamic>> getAllInputs() async {
+  /* = = = = = = = = =
+  Loading Input
+  = = = = = = = = = */
+
+  Future<Map<String, dynamic>> inputsLoad() async {
     try {
       if (_currentSessionId.isEmpty) {
-        print('InputState: No session ID for getting inputs');
         return {};
       }
       
       final prefs = await SharedPreferences.getInstance();
       final inputsJson = prefs.getString('inputs_$_currentSessionId');
+
+      // if 
+
+      // if
+
+      // if
       
       if (inputsJson != null) {
         return jsonDecode(inputsJson);
@@ -597,7 +606,7 @@ class InputState extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final usersList = prefs.getStringList('users_$_currentSessionId') ?? [];
-      final currentUserData = await inputState.getAllInputs();
+      final currentUserData = await inputState.inputsLoad();
       
       bool hasUpdates = false;
       List<String> updatedUsers = [];

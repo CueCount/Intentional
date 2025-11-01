@@ -296,10 +296,9 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                       );
                     },
                     child: Text(
-                      'Refresh Data',
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        decoration: TextDecoration.underline,
+                      'Data Missing - Refresh',
+                      style: AppTextStyles.headingMedium.copyWith(
+                        color: ColorPalette.peach,
                       ),
                     ),
                   ),
@@ -319,7 +318,17 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                     (profile['compatibility']['topReasons'] as List).length > 1)
                   PillText(
                     text: profile['compatibility']['topReasons'][1],
-                    colorVariant: "peachLite",
+                    colorVariant: "violetLite",
+                  ),
+
+                const SizedBox(height: 8),
+
+                if (profile['compatibility']?['interests'] != null && 
+                    profile['compatibility']['interests']['matches'] != null &&
+                    (profile['compatibility']['interests']['matches'] as List).isNotEmpty)
+                  PillText(
+                    text: profile['compatibility']['interests']['reason'],
+                    colorVariant: "greenLite",
                   ),
 
                 const SizedBox(height: 16),
