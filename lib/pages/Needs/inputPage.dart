@@ -190,7 +190,7 @@ class _personalityQ1 extends State<PersonalityQ1> {
           buttonText: isLoggedIn ? 'Save' : 'Continue',
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
           onPressed: () async {
-            await inputState.saveNeedLocally(inputData);
+            await inputState.inputsSaveOnboarding(inputData);
             if (context.mounted) {
               Navigator.pushNamed(
                 context, 

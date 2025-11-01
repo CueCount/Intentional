@@ -27,6 +27,7 @@ class _QualifierRelDate extends State<QualifierRelDate> {
   List<Map<String, dynamic>> _suggestions = [];
   Map<String, dynamic>? _selectedCity;
   bool _isLoading = false;
+  bool _isLoadingData = true;
   final GlobalKey _textFieldKey = GlobalKey();
   OverlayEntry? _overlayEntry;
   
@@ -34,16 +35,56 @@ class _QualifierRelDate extends State<QualifierRelDate> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final inputState = Provider.of<InputState>(context, listen: false); 
-      for (var input in inputState.qual) {
-        groupSelectedValues[input.title] = {};
-        for (var value in input.possibleValues) {
-          groupSelectedValues[input.title]![value] = false;
+      _loadExistingValues();
+    });
+  }
+
+  Future<void> _loadExistingValues() async {
+    final inputState = Provider.of<InputState>(context, listen: false);
+    
+    // Initialize all possible values as false first
+    for (var input in inputState.qual) {
+      groupSelectedValues[input.title] = {};
+      for (var value in input.possibleValues) {
+        groupSelectedValues[input.title]![value] = false;
+      }
+    }
+    
+    try {
+      // Get existing Gender selection
+      final existingGender = await inputState.getInput('Gender');
+      if (existingGender != null && existingGender is List && existingGender.isNotEmpty) {
+        for (String selectedValue in existingGender) {
+          if (groupSelectedValues['Gender']?.containsKey(selectedValue) ?? false) {
+            groupSelectedValues['Gender']![selectedValue] = true;
+          }
         }
       }
-      setState(() {
-        _isInitialized = true;
-      });
+      
+      // Get existing Seeking selection
+      final existingSeeking = await inputState.getInput('Seeking');
+      if (existingSeeking != null && existingSeeking is List && existingSeeking.isNotEmpty) {
+        for (String selectedValue in existingSeeking) {
+          if (groupSelectedValues['Seeking']?.containsKey(selectedValue) ?? false) {
+            groupSelectedValues['Seeking']![selectedValue] = true;
+          }
+        }
+      }
+      
+      // Get existing Location
+      final existingLocation = await inputState.getInput('Location');
+      if (existingLocation != null && existingLocation is Map) {
+        _selectedCity = Map<String, dynamic>.from(existingLocation);
+        _searchController.text = '${_selectedCity!['name']}, ${_selectedCity!['adminCode1']}';
+      }
+      
+    } catch (e) {
+      print('qual: Error loading existing values - $e');
+    }
+    
+    setState(() {
+      _isInitialized = true;
+      _isLoadingData = false;
     });
   }
 
@@ -402,12 +443,12 @@ class _QualifierRelDate extends State<QualifierRelDate> {
 
           onPressed: () async {
             if (isLoggedIn) {
-              await inputState.saveNeedLocally(inputData);
+              await inputState.inputsSaveOnboarding(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await inputState.saveNeedLocally(inputData);
+              await inputState.inputsSaveOnboarding(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.age);
               }

@@ -55,11 +55,11 @@ class PillText extends StatelessWidget {
       case "green":
         return ColorPalette.white;
       case "greenLite":
-        return ColorPalette.white;
+        return ColorPalette.green;
       case "violet":
         return ColorPalette.white;
       case "violetLite":
-        return ColorPalette.white;
+        return ColorPalette.violet;
       default:
         return ColorPalette.white;
     }

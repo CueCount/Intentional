@@ -22,7 +22,7 @@ import '../pages/Guides/guideRequestSent.dart';
 import '../pages/Guides/guideAvailableMatches.dart';
 import '../pages/Guides/guideOnboardingNeeds.dart';
 import '../pages/Needs/inputPage.dart';
-
+import '../pages/loading.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -54,6 +54,7 @@ class AppRoutes {
   static const String requestsReceived = '/requestsReceived';
   static const String guideAvailableMatches = '/guideAvailableMatches';
   static const String input = '/input';
+  static const String loading = '/loading';
 
   static Route<dynamic> generateRoute(RouteSettings settings, bool isLoggedIn) {
     final arguments = settings.arguments;
@@ -123,6 +124,8 @@ class AppRoutes {
         return const Settings();
       case guideRequestSent:
         return const GuideRequestSent();
+      case loading:
+        return const RefreshLoadingScreen();
       default:
         return const Matches();
     }

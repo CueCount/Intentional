@@ -83,7 +83,7 @@ class _Matches extends State<Matches> {
   Future<List<Map<String, dynamic>>> _getMissingInputs(InputState inputState) async {
     try {
       // Get all saved inputs from SharedPreferences
-      final savedInputs = await inputState.getAllInputs();
+      final savedInputs = await inputState.inputsLoad();
       
       // Define all input types to check
       final allInputTypes = [

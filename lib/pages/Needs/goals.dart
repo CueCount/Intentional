@@ -152,12 +152,12 @@ class _goals extends State<Goals> {
           isEnabled: isComplete,
           onPressed: () async {
             if (isLoggedIn) {
-              await inputState.saveNeedLocally(inputData);
+              await inputState.inputsSaveOnboarding(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await inputState.saveNeedLocally(inputData);
+              await inputState.inputsSaveOnboarding(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.guideAvailableMatches);
               }

@@ -279,7 +279,7 @@ class UserSyncProvider extends ChangeNotifier {
       
       // Step 6: Update currentSessionList with user IDs
       final userIds = collectedUsers.map((user) => user['userId'] as String).toList();
-      await inputState.saveNeedLocally({
+      await inputState.inputsSaveOnboarding({
         'currentSessionList': userIds,
       });
       
@@ -301,6 +301,10 @@ class UserSyncProvider extends ChangeNotifier {
 
     try {
       if (_currentUserId == null) return;
+
+      // Navigate to loading page
+      Navigator.pushNamed(context, '/loading');
+      await Future.delayed(const Duration(milliseconds: 100));
       
       // Step 1: Clean up currentSessionList
       final usersToRemove = await _filterAndMoveNonPendingUsers(inputState, matchProvider);
@@ -352,12 +356,12 @@ class UserSyncProvider extends ChangeNotifier {
       ignoreList.addAll(currentSessionList);
       
       // Save updated ignore list
-      await inputState.saveNeedLocally({
+      await inputState.inputsSaveOnboarding({
         'ignoreList': ignoreList,
       });
 
       // Instead of saving anything, just clear the currentSessionList 
-      await inputState.saveNeedLocally({
+      await inputState.inputsSaveOnboarding({
         'currentSessionList': [],  // Empty list
       });
       
@@ -474,7 +478,7 @@ class UserSyncProvider extends ChangeNotifier {
         // STEP 3: Filter out users below compatibility threshold
         if (newUniqueUsers.isNotEmpty) {
           // Get current user's actual data for matching
-          final currentUserData = await inputState.getAllInputs();
+          final currentUserData = await inputState.inputsLoad();
 
           // Add debug logging here
           if (kDebugMode) {
@@ -624,7 +628,7 @@ class UserSyncProvider extends ChangeNotifier {
     final newUserIds = newUsers.map((user) => user['userId'] as String).toList();
   
     // Save ONLY the new user IDs
-    await inputState.saveNeedLocally({
+    await inputState.inputsSaveOnboarding({
       'currentSessionList': newUserIds,
     });
     
