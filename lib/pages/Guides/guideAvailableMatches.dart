@@ -58,6 +58,7 @@ class _GuideAvailableMatches extends State<GuideAvailableMatches> {
       body: SafeArea(
         child: Container(
           color: ColorPalette.peach,
+          padding: const EdgeInsets.all(32),
           child: _isLoading 
             ? const Center(child: CircularProgressIndicator(color: Colors.white))
             : Center(
@@ -171,4 +172,5 @@ class _GuideAvailableMatches extends State<GuideAvailableMatches> {
       ),
     );
   }
+
 }

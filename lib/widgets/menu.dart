@@ -136,9 +136,10 @@ class AppMenuOverlay extends StatelessWidget {
                         },
                         isPrimary: false,
                       ),
-                      const SizedBox(height: 16),
-                      
-                      _buildDebugMenuItem(context),
+
+                      // commented out debug print button
+                      //const SizedBox(height: 16),
+                      //_buildDebugMenuItem(context),
                     ],
                   ),
                 ),

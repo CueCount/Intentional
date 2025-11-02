@@ -15,7 +15,15 @@ class _GuideRequestSent extends State<GuideRequestSent> {
     return Scaffold(
       body: SafeArea(
         child: Container(
-          color: ColorPalette.peach,
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: ColorPalette.peach,
+            image: DecorationImage(
+              image: AssetImage('assets/compressed_sentRequest.jpg'),
+              fit: BoxFit.cover,
+              opacity: 0.5,
+            ),
+          ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

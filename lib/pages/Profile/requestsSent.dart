@@ -44,7 +44,6 @@ class _RequestSentState extends State<RequestSent> {
     }
   }
 
-
   Future<void> _loadUserData() async {
     final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
     final userProvider = Provider.of<UserSyncProvider>(context, listen: false);
@@ -84,7 +83,7 @@ class _RequestSentState extends State<RequestSent> {
             children: [
               const CustomStatusBar(),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
                     Text(
