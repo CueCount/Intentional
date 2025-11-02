@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/inputState.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/link.dart';
 import '../../widgets/errorDialog.dart';
@@ -30,7 +29,7 @@ class _SettingsState extends State<Settings> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
-                      'Settings',
+                      'Your Account',
                       style: AppTextStyles.headingLarge.copyWith(
                         color: ColorPalette.peach,
                       ),
@@ -39,11 +38,11 @@ class _SettingsState extends State<Settings> {
                     Column(
                       children: [
                         LinkWidget(
-                          title: 'Your Account',
-                          description: 'Account settings and preferences',
+                          title: 'Your Information',
+                          description: 'Edit your First Name, Email, and Password',
                           onTap: () {
                             // Navigate to account page
-                            Navigator.pushNamed(context, AppRoutes.basicInfo);
+                            Navigator.pushNamed(context, AppRoutes.registerInfo);
                           },
                         ),
                         LinkWidget(

@@ -90,10 +90,16 @@ class _Matches extends State<Matches> {
         'personalityQ1',
         'personalityQ2', 
         'personalityQ3',
+        // New
+        'personalityQ4',
+        'relationshipQ1',
+        'relationshipQ2',
+        'relationshipQ3',
+        'relationshipQ4',
 
-        'emotionalNeeds',
-        'chemistryNeeds',
-        'logisticNeeds',
+        'personality',
+        'relationship',
+        'interests',
         'lifeGoalNeeds',
       ];
       
@@ -135,11 +141,15 @@ class _Matches extends State<Matches> {
       'personalityQ1': inputState.personalityQ1,
       'personalityQ2': inputState.personalityQ2,
       'personalityQ3': inputState.personalityQ3,
+      'personalityQ4': inputState.personalityQ4,
+      'relationshipQ1': inputState.relationshipQ1,
+      'relationshipQ2': inputState.relationshipQ2,
+      'relationshipQ3': inputState.relationshipQ3,
+      'relationshipQ4': inputState.relationshipQ4,
       
-      'emotionalNeeds': inputState.emotionalNeeds,
-      'physicalNeeds': inputState.physicalNeeds,
-      'chemistryNeeds': inputState.chemistryNeeds,
-      'logisticNeeds': inputState.logisticNeeds,
+      'personality': inputState.personality,
+      'relationship': inputState.relationship,
+      'interests': inputState.interests,
       'lifeGoalNeeds': inputState.lifeGoalNeeds,
     };
     

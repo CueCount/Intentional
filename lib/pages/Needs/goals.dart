@@ -96,7 +96,7 @@ class _goals extends State<Goals> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Choose 3 Personal Life Goals',
+                      'Define 3 Life Goals to Pursue Together',
                       style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.peach,
                       ),

@@ -620,38 +620,65 @@ class InputState extends ChangeNotifier {
           final result = MatchCalculationService().calculateMatch(
             currentUser: currentUserData,
             potentialMatch: userData,
+            includeArchetypes: true,
           );
           
-          // Update with flattened structure
+          // Full data structure with complete archetype analysis
           userData['compatibility'] = {
+            // Core compatibility data
             'percentage': result.percentage,
             'matchQuality': result.matchQuality,
             'topReasons': result.topReasons,
             
-            'emotional': {
-              'score': result.breakdown['emotional']?.score ?? 0,
-              'percentage': result.breakdown['emotional']?.percentage ?? 0,
-              'matches': result.breakdown['emotional']?.matches ?? [],
-              'reason': result.breakdown['emotional']?.reason ?? '',
+            // Category breakdowns
+            'personality': {
+              'score': result.breakdown['personality']?.score ?? 0,
+              'percentage': result.breakdown['personality']?.percentage ?? 0,
+              'matches': result.breakdown['personality']?.matches ?? [],
+              'reason': result.breakdown['personality']?.reason ?? '',
             },
-            'chemistry': {
-              'score': result.breakdown['chemistry']?.score ?? 0,
-              'percentage': result.breakdown['chemistry']?.percentage ?? 0,
-              'matches': result.breakdown['chemistry']?.matches ?? [],
-              'reason': result.breakdown['chemistry']?.reason ?? '',
+            'relationship': {
+              'score': result.breakdown['relationship']?.score ?? 0,
+              'percentage': result.breakdown['relationship']?.percentage ?? 0,
+              'matches': result.breakdown['relationship']?.matches ?? [],
+              'reason': result.breakdown['relationship']?.reason ?? '',
             },
-            'lifestyle': {
-              'score': result.breakdown['lifestyle']?.score ?? 0,
-              'percentage': result.breakdown['lifestyle']?.percentage ?? 0,
-              'matches': result.breakdown['lifestyle']?.matches ?? [],
-              'reason': result.breakdown['lifestyle']?.reason ?? '',
+            'interests': {
+              'score': result.breakdown['interests']?.score ?? 0,
+              'percentage': result.breakdown['interests']?.percentage ?? 0,
+              'matches': result.breakdown['interests']?.matches ?? [],
+              'reason': result.breakdown['interests']?.reason ?? '',
             },
-            'lifeGoals': {
-              'score': result.breakdown['lifeGoals']?.score ?? 0,
-              'percentage': result.breakdown['lifeGoals']?.percentage ?? 0,
-              'matches': result.breakdown['lifeGoals']?.matches ?? [],
-              'reason': result.breakdown['lifeGoals']?.reason ?? '',
+            'goals': {
+              'score': result.breakdown['goals']?.score ?? 0,
+              'percentage': result.breakdown['goals']?.percentage ?? 0,
+              'matches': result.breakdown['goals']?.matches ?? [],
+              'reason': result.breakdown['goals']?.reason ?? '',
             },
+            
+            // NEW: Complete archetype analysis
+            'archetypes': result.archetypeAnalysis != null ? {
+              // Primary archetypes
+              'personality': result.archetypeAnalysis!['personalityArchetype'] != null ? {
+                'name': result.archetypeAnalysis!['personalityArchetype']['name'],
+                'description': result.archetypeAnalysis!['personalityArchetype']['description'],
+                'strengths': result.archetypeAnalysis!['personalityArchetype']['strengths'] ?? [],
+                'watchOuts': result.archetypeAnalysis!['personalityArchetype']['watchOuts'] ?? [],
+              } : null,
+              'relationship': result.archetypeAnalysis!['relationshipStyle'] != null ? {
+                'name': result.archetypeAnalysis!['relationshipStyle']['name'],
+                'description': result.archetypeAnalysis!['relationshipStyle']['description'],
+                'characteristics': result.archetypeAnalysis!['relationshipStyle']['characteristics'] ?? [],
+                'idealDate': result.archetypeAnalysis!['relationshipStyle']['idealDate'],
+                'longTermOutlook': result.archetypeAnalysis!['relationshipStyle']['longTermOutlook'],
+              } : null,
+              // Summary data
+              'summary': result.archetypeAnalysis!['summary'],
+              'narrative': result.archetypeAnalysis!['narrative'],
+              // Distribution analysis
+              'traitDistribution': result.archetypeAnalysis!['traitDistribution'],
+              'dynamicsPattern': result.archetypeAnalysis!['dynamicsPattern'],
+            } : null,
             
             'calculatedAt': DateTime.now().toIso8601String(),
           };
@@ -739,63 +766,107 @@ class InputState extends ChangeNotifier {
     )
   ];
 
-  List<Input> emotionalNeeds = [
+  List<Input> personality = [
     Input(
-      title: "Emotional Needs",
+      title: "personality",
       possibleValues: [
-        "High Empathy and Sensitivity",
-        "Exceptionally Proactive, Takes Action",
-        "Introspective and Self Aware",
-        "Socially Commanding and Experienced",
-        "Sweet, Romantic, and Affectionate",
-        "Book Smart and Highly Intelligent"
+        "Empathetic",
+        "Proactive",
+        "Introspective",
+        "Outgoing",
+        "Romantic",
+        "Honest",
+        "Intelligent",
+        "Curious",
+        "Loyal",
+        "Confident",
+        "Patient",
+        "Playful",
+        "Ambitious",
+        "Generous",
       ],
       type: "checkbox"
     ),
   ];
 
-  List<Input> physicalNeeds = [
+  List<Input> relationship = [
     Input(
-      title: "How Tall?",
-      possibleValues: [0, 100],
-      type: "rangeSlider",
-    ),
-  ];
-
-  List<Input> chemistryNeeds = [
-    Input(
-      title: "Chemistry Needs",
+      title: "relationship",
       possibleValues: [
-        "Best Friends",
-        "Power Couple",
-        "The Provider and Provided For",
-        "Romantic Lovers",
-        "Feisty Sex Freaks",
-        "Wanderlust Explorers"
+        "We’re Best Friends",
+        "We Explore the World",
+        "We Run a Business Together",
+        "Let’s Be Homebodies",
+        "We’re a Career Couple",
+        "I Financially Provide for Them",
+        "They Financially Provide for Me",
+        "We’re Romantic Lovers",
+        "We’re Feisty Freaks",
+        "We Share Religious Faith",
+        "We’re a Parenting Team",
+        "We’re a Fitness Couple",
       ],
       type: "checkbox"
     ),
   ];
 
-  List<Input> logisticNeeds = [
+  List<Input> interests = [
     Input(
-      title: "Chemistry Needs",
+      title: "interests",
       possibleValues: [
-        "Bar Hopping",
-        "Playing Sports",
-        "Foodie",
-        "Arts and Crafts",
-        "Binge Watching",
-        "Gaming",
+        "Hiking",
+        "Camping",
+        "Surfing",
+        "Rock Climbing",
+        "Biking",
+        "Scuba Diving",
+        "Road Trips",
+        "Skiing / Snowboarding",
+        "Painting / Drawing",
         "Music",
-        "Nature",
-        "Traveling",
+        "Photography",
+        "Writing",
+        "Theatre",
+        "Dance",
+        "Design",
+        "Film",
         "Reading",
-        "Cooking",
-        "Shopping",
-        "Volunteering",
-        "Fitness",
         "Meditation",
+        "Personal Development",
+        "Psychology",
+        "Philosophy",
+        "Road Trips",
+        "Journaling",
+        "Languages",
+        "Gym",
+        "Running",
+        "Yoga",
+        "Martial Arts",
+        "CrossFit",
+        "Nutrition",
+        "Team Sports",
+        "Swimming",
+        "Tennis",
+        "Journaling",
+        "Cooking",
+        "Wine Tasting",
+        "Coffee Culture",
+        "Fashion",
+        "Gardening",
+        "Traveling",
+        "Collecting Art",
+        "Restaurants",
+        "Coding",
+        "AI & Future Tech",
+        "Gaming",
+        "Investing",
+        "Gadgets",
+        "History",
+        "Religion",
+        "Volunteering",
+        "Spirituality",
+        "Family",
+        "Activism",
       ],
       type: "checkbox"
     ),
@@ -803,22 +874,28 @@ class InputState extends ChangeNotifier {
 
   List<Input> lifeGoalNeeds = [
     Input(
-      title: "Prompts",
+      title: "lifeGoals",
       possibleValues: [
-        "Travel Frequently and Extensively",
-        "Own a Nice Home, Car, and Toys",
-        "Maximize Freedom and Flexibility",
-        "Maximize Financial Security",
-        "Build a Business, An Empire",
-        "Pursue Our Craziest Dreams"
+        "Visit Every Country",
+        "Raise a Family",
+        "Maximize Social Status",
+        "Build an Empire",
+        "Chill Out and Enjoy Life",
+        "Live Sustainably",
+        "Gain Financial Freedom",
+        "Discover Inner Peace",
+        "Cultivate Community",
+        "Become Wealthy",
       ],
       type: "checkbox"
     ),
   ];
 
+  // Extra Needs
+
   List<Input> personalityQ1 = [
     Input(
-      title: "When youre recharging after a long week, which you do prefer?",
+      title: "When you're recharging after a long week, which you do prefer?",
       possibleValues: [
         "Going out, meeting people",
         "Quiet time alone / with partner"
@@ -844,6 +921,61 @@ class InputState extends ChangeNotifier {
       possibleValues: [
         "Reliable, punctual, and decisive",
         "Go with the flow and adapt easily"
+      ],
+      type: "checkbox"
+    ),
+  ];
+
+  List<Input> personalityQ4 = [
+    Input(
+      title: "How do you prefer to experience life?",
+      possibleValues: [
+        "Seeking new adventures and experiences",
+        "Finding comfort in routines and traditions"
+      ],
+      type: "checkbox"
+    ),
+  ];
+
+  List<Input> relationshipQ1 = [
+    Input(
+      title: "How do you prefer to handle conflict?",
+      possibleValues: [
+        "Address issues immediately and directly",
+        "Take time to process before discussing"
+      ],
+      type: "checkbox"
+    ),
+  ];
+
+  List<Input> relationshipQ2 = [
+    Input(
+      title: "Your ideal amount of together time?",
+      possibleValues: [
+        "Most of our free time together",
+        "Healthy balance of together and apart"
+      ],
+      type: "checkbox"
+    ),
+  ];
+
+  List<Input> relationshipQ3 = [
+    Input(
+      title: "How do you show and receive love best?",
+      possibleValues: [
+        "Words of affirmation and quality time",
+        "Physical touch and acts of service"
+      ],
+      type: "checkbox"
+    ),
+  ];
+  
+  List<Input> relationshipQ4 = [
+    Input(
+      title: "What's your communication style?",
+      possibleValues: [
+        "Share everything, full transparency",
+        "Some privacy, independence is healthy"
       ],
       type: "checkbox"
     ),

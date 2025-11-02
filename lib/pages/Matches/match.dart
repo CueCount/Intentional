@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:provider/provider.dart';
+import '../../providers/inputState.dart';
 import '../../functions/miscService.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
@@ -15,10 +17,11 @@ class Match extends StatefulWidget {
 
 class _Match extends State<Match>  with TickerProviderStateMixin {
   Map<String, dynamic>? profile; 
+  String? currentUserImage;
 
   // Simple animation tracking - just need one controller per section
   AnimationController? _photoController;
-  AnimationController? _overviewController;
+  AnimationController? _archetypeController;
   AnimationController? _chemistryController;
   AnimationController? _photo2Controller;
   AnimationController? _physicalController;
@@ -34,7 +37,7 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
 
     // Create all animation controllers upfront (simple!)
     _photoController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
-    _overviewController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _archetypeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _chemistryController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _photo2Controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _physicalController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
@@ -55,6 +58,15 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
       setState(() {
         profile = profileData;
       });
+
+      final inputState = Provider.of<InputState>(context, listen: false);
+      final photos = await inputState.getInput('photos');
+      
+      if (photos != null && photos is List && photos.isNotEmpty) {
+        setState(() {
+          currentUserImage = photos[0] as String;
+        });
+      }
 
     });
   
@@ -96,7 +108,7 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
   void dispose() {
     // Clean up all controllers
     _photoController?.dispose();
-    _overviewController?.dispose();
+    _archetypeController?.dispose();
     _chemistryController?.dispose();
     _photo2Controller?.dispose();
     _physicalController?.dispose();
@@ -168,100 +180,132 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                             ),
                           ),
                           Text(
-                            "${profile?['nameFirst'] ?? 'Unknown'}, ${MiscService().calculateAge(profile?['birthDate'])}, ${profile?['school']}, ${profile?['career']}",
+                            "${profile?['nameFirst'] ?? 'Unknown'}, ${MiscService().calculateAge(profile?['birthDate'])}",
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: ColorPalette.peach,
                             ),
-                          ),
+                          ),                          
                         ],
                       ),
                     ),
 
                     /* = = = = = = = = = 
-                    MBTI Overview
-                    = = = = = = = = = = */
-                    /*Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
-                      margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        color: ColorPalette.peachLite,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'MBTI Match',
-                            style: AppTextStyles.headingMedium.copyWith(
-                              color: ColorPalette.peach,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Lorium ipsum lorium ipsum',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: ColorPalette.peach,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),*/
-
-                    /* = = = = = = = = = 
-                    Chemistry Match
+                    Relationship Archetype Overview
                     = = = = = = = = = = */
                     _buildAnimatedSection(
-                      key: 'chemistry',
-                      controller: _chemistryController,
+                      key: 'archetype',
+                      controller: _archetypeController,
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
                         margin: const EdgeInsets.only(bottom: 20),
                         decoration: BoxDecoration(
-                          color: ColorPalette.peach,
+                          color: ColorPalette.peachLite,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '${profile?['compatibility']?['chemistry']?['percentage']?.toInt() ?? 0}%',
-                              style: AppTextStyles.headingLarge.copyWith(
-                                color: ColorPalette.white,
+                            SizedBox(
+                              height: 80,
+                              width: double.infinity,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 140, 
+                                  child: Stack(
+                                    children: [
+                                      Positioned(
+                                        left: 0,
+                                        child: Container(
+                                          width: 80,
+                                          height: 80,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: ColorPalette.peachLite,
+                                              width: 3,
+                                            ),
+                                          ),
+                                          child: ClipOval(
+                                            child: currentUserImage != null
+                                                ? Image.network(
+                                                    currentUserImage!,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      return Container(
+                                                        color: ColorPalette.peachLite,
+                                                        child: Icon(
+                                                          Icons.person,
+                                                          size: 40,
+                                                          color: ColorPalette.peach,
+                                                        ),
+                                                      );
+                                                    },
+                                                  )
+                                                : Container(
+                                                    color: ColorPalette.peach.withOpacity(0.2),
+                                                    child: Icon(
+                                                      Icons.person,
+                                                      size: 40,
+                                                      color: ColorPalette.peach,
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        right: 0,
+                                        child: Container(
+                                          width: 80,
+                                          height: 80,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: ColorPalette.peachLite,
+                                              width: 3,
+                                            ),
+                                          ),
+                                          child: ClipOval(
+                                            child: Image.network(
+                                              photos[0],
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
+                            const SizedBox(height: 16),
                             Text(
-                              'Chemistry Match',
+                              "${profile?['compatibility']?['archetypes']?['title'] ?? ''}",
                               style: AppTextStyles.headingMedium.copyWith(
-                                color: ColorPalette.white,
+                                color: ColorPalette.peach,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "${profile?['compatibility']?['archetypes']?['narrative'] ?? ''}",
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: ColorPalette.peach,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              "Ideal Date: \n${profile?['compatibility']?['archetypes']?['idealDate'] ?? ''}",
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: ColorPalette.grey,
                               ),
                             ),
                             const SizedBox(height: 12),
-                            
-                            // Display the reason
-                            if (profile?['compatibility']?['chemistry']?['reason'] != null)
-                              Column(
-                                children: [
-                                  PillText(
-                                    text: profile!['compatibility']['chemistry']['reason'],
-                                    colorVariant: "peachMedium"
-                                  ),
-                                  const SizedBox(height: 8),
-                                ],
+                            Text(
+                              "Long Term Outlook: \n${profile?['compatibility']?['archetypes']?['longTermOutlook'] ?? ''}",
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: ColorPalette.grey,
                               ),
-                            
-                            // Display all matches (not just the first one)
-                            if (profile?['compatibility']?['chemistry']?['matches'] != null)
-                              ...((profile!['compatibility']['chemistry']['matches'] as List).map((match) => 
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: PillText(
-                                    text: match, 
-                                    colorVariant: "peachMedium"
-                                  ),
-                                ),
-                              ).toList()),
+                            ),
                           ],
                         ),
                       ),
@@ -296,10 +340,100 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                       ),
 
                     /* = = = = = = = = = 
+                    MBTI Overview
+                    = = = = = = = = = = */
+                    /*Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: ColorPalette.peachLite,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'MBTI Match',
+                            style: AppTextStyles.headingMedium.copyWith(
+                              color: ColorPalette.peach,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Lorium ipsum lorium ipsum',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: ColorPalette.peach,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),*/
+
+                    /* = = = = = = = = = 
+                    Relationship Match
+                    = = = = = = = = = = */
+                    _buildAnimatedSection(
+                      key: 'relationship',
+                      controller: _chemistryController,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: ColorPalette.peach,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${profile?['compatibility']?['relationship']?['percentage']?.toInt() ?? 0}%',
+                              style: AppTextStyles.headingLarge.copyWith(
+                                color: ColorPalette.white,
+                              ),
+                            ),
+                            Text(
+                              'Relationship Match',
+                              style: AppTextStyles.headingMedium.copyWith(
+                                color: ColorPalette.white,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            
+                            // Display the reason
+                            if (profile?['compatibility']?['relationship']?['reason'] != null)
+                              Column(
+                                children: [
+                                  PillText(
+                                    text: profile!['compatibility']['relationship']['reason'],
+                                    colorVariant: "peachMedium"
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
+                            
+                            // Display all matches (not just the first one)
+                            if (profile?['compatibility']?['relationship']?['matches'] != null)
+                              ...((profile!['compatibility']['relationship']['matches'] as List).map((match) => 
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: PillText(
+                                    text: match, 
+                                    colorVariant: "peachMedium"
+                                  ),
+                                ),
+                              ).toList()),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    /* = = = = = = = = = 
                     Personality Match
                     = = = = = = = = = = */       
                     _buildAnimatedSection(
-                      key: 'physical',
+                      key: 'personality',
                       controller: _physicalController,
                       child: Container(
                         width: double.infinity,
@@ -435,33 +569,6 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                     ),
 
                     /* = = = = = = = = = 
-                    Fourth Photo
-                    = = = = = = = = = = */
-                    if (photos.length > 3)
-                      _buildAnimatedSection(
-                        key: 'photo4',
-                        controller: _photo4Controller,
-                        child: Container(
-                          width: double.infinity,
-                          height: 400,
-                          margin: const EdgeInsets.only(bottom: 20),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.network(
-                              photos[3],
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Colors.grey[300],
-                                  child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    /* = = = = = = = = = 
                     Goals Match
                     = = = = = = = = = = */
                     _buildAnimatedSection(
@@ -516,6 +623,33 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                         ),
                       ),
                     ),
+
+                    /* = = = = = = = = = 
+                    Fourth Photo
+                    = = = = = = = = = = */
+                    if (photos.length > 3)
+                      _buildAnimatedSection(
+                        key: 'photo4',
+                        controller: _photo4Controller,
+                        child: Container(
+                          width: double.infinity,
+                          height: 400,
+                          margin: const EdgeInsets.only(bottom: 20),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(
+                              photos[3],
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey[300],
+                                  child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
 
                     /* = = = = = = = = = 
                     Call to Action

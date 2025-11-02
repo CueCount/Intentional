@@ -6,7 +6,7 @@ class MatchingConfig {
 
   // Category weights (must sum to 1.0)
   static const Map<String, double> categoryWeights = {
-    'chemistry': 0.30,
+    'relationship': 0.30,
     'personality': 0.25,
     'interests': 0.25,
     'goals': 0.20,
@@ -25,106 +25,402 @@ class MatchingConfig {
   = = = = = = = = = */
   
   // Chemistry compatibility matrix
-  static const Map<String, Map<String, double>> chemistryMatrix = {
-    'Best Friends': {
-      'Best Friends': 0.8,
-      'Power Couple': 0.5,
-      'The Provider and Provided For': 0.3,
-      'Romantic Lovers': 0.9,
-      'Feisty Sex Freaks': 0.6,
-      'Wanderlust Explorers': 0.95,
+  static const Map<String, Map<String, double>> relationshipMatrix = {
+    "We're Best Friends": {
+      "We're Best Friends": 0.95,
+      "We Explore the World": 0.90,
+      "We Run a Business Together": 0.70,
+      "Let's Be Homebodies": 0.85,
+      "We're a Career Couple": 0.60,
+      "I Financially Provide for Them": 0.50,
+      "They Financially Provide for Me": 0.50,
+      "We're Romantic Lovers": 0.90,
+      "We're Feisty Freaks": 0.75,
+      "We Share Religious Faith": 0.70,
+      "We're a Parenting Team": 0.80,
+      "We're a Fitness Couple": 0.75,
     },
-    'Power Couple': {
-      'Best Friends': 0.5,
-      'Power Couple': 0.85,
-      'The Provider and Provided For': 0.9,
-      'Romantic Lovers': 0.4,
-      'Feisty Sex Freaks': 0.7,
-      'Wanderlust Explorers': 0.6,
+    "We Explore the World": {
+      "We're Best Friends": 0.90,
+      "We Explore the World": 0.95,
+      "We Run a Business Together": 0.65,
+      "Let's Be Homebodies": 0.30,
+      "We're a Career Couple": 0.60,
+      "I Financially Provide for Them": 0.45,
+      "They Financially Provide for Me": 0.45,
+      "We're Romantic Lovers": 0.80,
+      "We're Feisty Freaks": 0.85,
+      "We Share Religious Faith": 0.60,
+      "We're a Parenting Team": 0.50,
+      "We're a Fitness Couple": 0.90,
     },
-    'The Provider and Provided For': {
-      'Best Friends': 0.3,
-      'Power Couple': 0.9,
-      'The Provider and Provided For': 0.7,
-      'Romantic Lovers': 0.6,
-      'Feisty Sex Freaks': 0.5,
-      'Wanderlust Explorers': 0.4,
+    "We Run a Business Together": {
+      "We're Best Friends": 0.70,
+      "We Explore the World": 0.65,
+      "We Run a Business Together": 0.90,
+      "Let's Be Homebodies": 0.55,
+      "We're a Career Couple": 0.95,
+      "I Financially Provide for Them": 0.80,
+      "They Financially Provide for Me": 0.80,
+      "We're Romantic Lovers": 0.60,
+      "We're Feisty Freaks": 0.65,
+      "We Share Religious Faith": 0.65,
+      "We're a Parenting Team": 0.70,
+      "We're a Fitness Couple": 0.60,
     },
-    'Romantic Lovers': {
-      'Best Friends': 0.9,
-      'Power Couple': 0.4,
-      'The Provider and Provided For': 0.6,
-      'Romantic Lovers': 0.95,
-      'Feisty Sex Freaks': 0.8,
-      'Wanderlust Explorers': 0.7,
+    "Let's Be Homebodies": {
+      "We're Best Friends": 0.85,
+      "We Explore the World": 0.30,
+      "We Run a Business Together": 0.55,
+      "Let's Be Homebodies": 0.95,
+      "We're a Career Couple": 0.50,
+      "I Financially Provide for Them": 0.70,
+      "They Financially Provide for Me": 0.70,
+      "We're Romantic Lovers": 0.85,
+      "We're Fiesty Freaks": 0.70,
+      "We Share Religious Faith": 0.80,
+      "We're a Parenting Team": 0.90,
+      "We're a Fitness Couple": 0.40,
     },
-    'Feisty Sex Freaks': {
-      'Best Friends': 0.6,
-      'Power Couple': 0.7,
-      'The Provider and Provided For': 0.5,
-      'Romantic Lovers': 0.8,
-      'Feisty Sex Freaks': 0.9,
-      'Wanderlust Explorers': 0.75,
+    "We're a Career Couple": {
+      "We're Best Friends": 0.60,
+      "We Explore the World": 0.60,
+      "We Run a Business Together": 0.95,
+      "Let's Be Homebodies": 0.50,
+      "We're a Career Couple": 0.90,
+      "I Financially Provide for Them": 0.75,
+      "They Financially Provide for Me": 0.75,
+      "We're Romantic Lovers": 0.55,
+      "We're Feisty Freaks": 0.65,
+      "We Share Religious Faith": 0.60,
+      "We're a Parenting Team": 0.65,
+      "We're a Fitness Couple": 0.70,
     },
-    'Wanderlust Explorers': {
-      'Best Friends': 0.95,
-      'Power Couple': 0.6,
-      'The Provider and Provided For': 0.4,
-      'Romantic Lovers': 0.7,
-      'Feisty Sex Freaks': 0.75,
-      'Wanderlust Explorers': 0.9,
+    "I Financially Provide for Them": {
+      "We're Best Friends": 0.50,
+      "We Explore the World": 0.45,
+      "We Run a Business Together": 0.80,
+      "Let's Be Homebodies": 0.70,
+      "We're a Career Couple": 0.75,
+      "I Financially Provide for Them": 0.85,
+      "They Financially Provide for Me": 0.20, // Asymmetric relationship
+      "We're Romantic Lovers": 0.65,
+      "We're Feisty Freaks": 0.60,
+      "We Share Religious Faith": 0.70,
+      "We're a Parenting Team": 0.75,
+      "We're a Fitness Couple": 0.50,
+    },
+    "They Financially Provide for Me": {
+      "We're Best Friends": 0.50,
+      "We Explore the World": 0.45,
+      "We Run a Business Together": 0.80,
+      "Let's Be Homebodies": 0.70,
+      "We're a Career Couple": 0.75,
+      "I Financially Provide for Them": 0.20, // Asymmetric relationship
+      "They Financially Provide for Me": 0.85,
+      "We're Romantic Lovers": 0.65,
+      "We're Feisty Freaks": 0.60,
+      "We Share Religious Faith": 0.70,
+      "We're a Parenting Team": 0.75,
+      "We're a Fitness Couple": 0.50,
+    },
+    "We're Romantic Lovers": {
+      "We're Best Friends": 0.90,
+      "We Explore the World": 0.80,
+      "We Run a Business Together": 0.60,
+      "Let's Be Homebodies": 0.85,
+      "We're a Career Couple": 0.55,
+      "I Financially Provide for Them": 0.65,
+      "They Financially Provide for Me": 0.65,
+      "We're Romantic Lovers": 0.95,
+      "We're Feisty Freaks": 0.85,
+      "We Share Religious Faith": 0.75,
+      "We're a Parenting Team": 0.80,
+      "We're a Fitness Couple": 0.70,
+    },
+    "We're Feisty Freaks": {
+      "We're Best Friends": 0.75,
+      "We Explore the World": 0.85,
+      "We Run a Business Together": 0.65,
+      "Let's Be Homebodies": 0.70,
+      "We're a Career Couple": 0.65,
+      "I Financially Provide for Them": 0.60,
+      "They Financially Provide for Me": 0.60,
+      "We're Romantic Lovers": 0.85,
+      "We're Feisty Freaks": 0.95,
+      "We Share Religious Faith": 0.50,
+      "We're a Parenting Team": 0.60,
+      "We're a Fitness Couple": 0.85,
+    },
+    "We Share Religious Faith": {
+      "We're Best Friends": 0.70,
+      "We Explore the World": 0.60,
+      "We Run a Business Together": 0.65,
+      "Let's Be Homebodies": 0.80,
+      "We're a Career Couple": 0.60,
+      "I Financially Provide for Them": 0.70,
+      "They Financially Provide for Me": 0.70,
+      "We're Romantic Lovers": 0.75,
+      "We're Feisty Freaks": 0.50,
+      "We Share Religious Faith": 0.95,
+      "We're a Parenting Team": 0.85,
+      "We're a Fitness Couple": 0.65,
+    },
+    "We're a Parenting Team": {
+      "We're Best Friends": 0.80,
+      "We Explore the World": 0.50,
+      "We Run a Business Together": 0.70,
+      "Let's Be Homebodies": 0.90,
+      "We're a Career Couple": 0.65,
+      "I Financially Provide for Them": 0.75,
+      "They Financially Provide for Me": 0.75,
+      "We're Romantic Lovers": 0.80,
+      "We're Feisty Freaks": 0.60,
+      "We Share Religious Faith": 0.85,
+      "We're a Parenting Team": 0.95,
+      "We're a Fitness Couple": 0.60,
+    },
+    "We're a Fitness Couple": {
+      "We're Best Friends": 0.75,
+      "We Explore the World": 0.90,
+      "We Run a Business Together": 0.60,
+      "Let's Be Homebodies": 0.40,
+      "We're a Career Couple": 0.70,
+      "I Financially Provide for Them": 0.50,
+      "They Financially Provide for Me": 0.50,
+      "We're Romantic Lovers": 0.70,
+      "We're Feisty Freaks": 0.85,
+      "We Share Religious Faith": 0.65,
+      "We're a Parenting Team": 0.60,
+      "We're a Fitness Couple": 0.95,
     },
   };
   
   // Personality compatibility matrix
   static const Map<String, Map<String, double>> personalityMatrix = {
-    'High Empathy and Sensitivity': {
-      'High Empathy and Sensitivity': 0.7,
-      'Exceptionally Proactive, Takes Action': 0.85,
-      'Introspective and Self Aware': 0.9,
-      'Socially Commanding and Experienced': 0.6,
-      'Sweet, Romantic, and Affectionate': 0.95,
-      'Book Smart and Highly Intelligent': 0.75,
+    "Empathetic": {
+      "Empathetic": 0.75,      // Good but can be overwhelming if both too sensitive
+      "Proactive": 0.85,        // Great balance - empathy + action
+      "Introspective": 0.90,    // Deep understanding
+      "Outgoing": 0.70,         // Can work well - draws empath out
+      "Romantic": 0.95,         // Perfect match
+      "Honest": 0.85,           // Trust and understanding
+      "Intelligent": 0.75,      // Good combination
+      "Curious": 0.70,          // Decent match
+      "Loyal": 0.90,            // Strong foundation
+      "Confident": 0.65,        // Can work if confident person is gentle
+      "Patient": 0.95,          // Excellent match
+      "Playful": 0.75,          // Lightens the mood
+      "Ambitious": 0.60,        // May clash if ambition lacks empathy
+      "Generous": 0.95,         // Beautiful combination
     },
-    'Exceptionally Proactive, Takes Action': {
-      'High Empathy and Sensitivity': 0.85,
-      'Exceptionally Proactive, Takes Action': 0.6,
-      'Introspective and Self Aware': 0.7,
-      'Socially Commanding and Experienced': 0.8,
-      'Sweet, Romantic, and Affectionate': 0.7,
-      'Book Smart and Highly Intelligent': 0.75,
+    "Proactive": {
+      "Empathetic": 0.85,
+      "Proactive": 0.65,        // Can clash if both always taking charge
+      "Introspective": 0.70,    // Balance of action and thought
+      "Outgoing": 0.80,         // Good energy match
+      "Romantic": 0.70,         // Can work well
+      "Honest": 0.80,           // Direct and action-oriented
+      "Intelligent": 0.85,      // Strategic action
+      "Curious": 0.85,          // Adventure and exploration
+      "Loyal": 0.75,            // Dependable combination
+      "Confident": 0.85,        // Power couple potential
+      "Patient": 0.70,          // Good balance
+      "Playful": 0.80,          // Fun and active
+      "Ambitious": 0.90,        // Excellent match for goals
+      "Generous": 0.75,         // Action with heart
     },
-    'Introspective and Self Aware': {
-      'High Empathy and Sensitivity': 0.9,
-      'Exceptionally Proactive, Takes Action': 0.7,
-      'Introspective and Self Aware': 0.75,
-      'Socially Commanding and Experienced': 0.5,
-      'Sweet, Romantic, and Affectionate': 0.8,
-      'Book Smart and Highly Intelligent': 0.9,
+    "Introspective": {
+      "Empathetic": 0.90,
+      "Proactive": 0.70,
+      "Introspective": 0.70,    // Can be too internal if both
+      "Outgoing": 0.65,         // Needs balance
+      "Romantic": 0.85,         // Deep romantic connection
+      "Honest": 0.90,           // Truth and self-awareness
+      "Intelligent": 0.95,      // Deep conversations
+      "Curious": 0.90,          // Exploring ideas together
+      "Loyal": 0.80,            // Thoughtful commitment
+      "Confident": 0.60,        // May clash with styles
+      "Patient": 0.85,          // Good understanding
+      "Playful": 0.65,          // Different energies
+      "Ambitious": 0.70,        // Can work with understanding
+      "Generous": 0.80,         // Thoughtful giving
     },
-    'Socially Commanding and Experienced': {
-      'High Empathy and Sensitivity': 0.6,
-      'Exceptionally Proactive, Takes Action': 0.8,
-      'Introspective and Self Aware': 0.5,
-      'Socially Commanding and Experienced': 0.7,
-      'Sweet, Romantic, and Affectionate': 0.65,
-      'Book Smart and Highly Intelligent': 0.7,
+    "Outgoing": {
+      "Empathetic": 0.70,
+      "Proactive": 0.80,
+      "Introspective": 0.65,
+      "Outgoing": 0.75,         // Fun but may lack depth
+      "Romantic": 0.70,         // Can be exciting
+      "Honest": 0.75,           // Open communication
+      "Intelligent": 0.70,      // Social intelligence
+      "Curious": 0.85,          // Exploring together
+      "Loyal": 0.70,            // Social but committed
+      "Confident": 0.90,        // Great social match
+      "Patient": 0.60,          // Different paces
+      "Playful": 0.95,          // Perfect fun match
+      "Ambitious": 0.80,        // Networking power
+      "Generous": 0.85,         // Social generosity
     },
-    'Sweet, Romantic, and Affectionate': {
-      'High Empathy and Sensitivity': 0.95,
-      'Exceptionally Proactive, Takes Action': 0.7,
-      'Introspective and Self Aware': 0.8,
-      'Socially Commanding and Experienced': 0.65,
-      'Sweet, Romantic, and Affectionate': 0.85,
-      'Book Smart and Highly Intelligent': 0.75,
+    "Romantic": {
+      "Empathetic": 0.95,
+      "Proactive": 0.70,
+      "Introspective": 0.85,
+      "Outgoing": 0.70,
+      "Romantic": 0.90,         // Beautiful but needs some contrast
+      "Honest": 0.80,           // True romance
+      "Intelligent": 0.75,      // Smart romance
+      "Curious": 0.75,          // Exploring love
+      "Loyal": 0.95,            // Devoted love
+      "Confident": 0.75,        // Confident romance
+      "Patient": 0.90,          // Gentle love
+      "Playful": 0.85,          // Fun and romantic
+      "Ambitious": 0.65,        // May have different priorities
+      "Generous": 0.95,         // Giving in love
     },
-    'Book Smart and Highly Intelligent': {
-      'High Empathy and Sensitivity': 0.75,
-      'Exceptionally Proactive, Takes Action': 0.75,
-      'Introspective and Self Aware': 0.9,
-      'Socially Commanding and Experienced': 0.7,
-      'Sweet, Romantic, and Affectionate': 0.75,
-      'Book Smart and Highly Intelligent': 0.8,
+    "Honest": {
+      "Empathetic": 0.85,
+      "Proactive": 0.80,
+      "Introspective": 0.90,
+      "Outgoing": 0.75,
+      "Romantic": 0.80,
+      "Honest": 0.85,           // Truth-based relationship
+      "Intelligent": 0.85,      // Truthful discourse
+      "Curious": 0.80,          // Open exploration
+      "Loyal": 0.95,            // Trust foundation
+      "Confident": 0.80,        // Confident honesty
+      "Patient": 0.85,          // Understanding truth
+      "Playful": 0.70,          // Light but honest
+      "Ambitious": 0.75,        // Transparent goals
+      "Generous": 0.85,         // Open-hearted
+    },
+    "Intelligent": {
+      "Empathetic": 0.75,
+      "Proactive": 0.85,
+      "Introspective": 0.95,
+      "Outgoing": 0.70,
+      "Romantic": 0.75,
+      "Honest": 0.85,
+      "Intelligent": 0.85,      // Intellectual match
+      "Curious": 0.95,          // Learning together
+      "Loyal": 0.75,            // Smart commitment
+      "Confident": 0.80,        // Intellectual confidence
+      "Patient": 0.80,          // Thoughtful patience
+      "Playful": 0.70,          // Different approaches
+      "Ambitious": 0.90,        // Strategic ambition
+      "Generous": 0.75,         // Thoughtful giving
+    },
+    "Curious": {
+      "Empathetic": 0.70,
+      "Proactive": 0.85,
+      "Introspective": 0.90,
+      "Outgoing": 0.85,
+      "Romantic": 0.75,
+      "Honest": 0.80,
+      "Intelligent": 0.95,
+      "Curious": 0.90,          // Exploration partners
+      "Loyal": 0.70,            // Adventure vs stability
+      "Confident": 0.80,        // Confident exploration
+      "Patient": 0.65,          // Different paces
+      "Playful": 0.90,          // Fun discoveries
+      "Ambitious": 0.85,        // Growth-oriented
+      "Generous": 0.75,         // Sharing discoveries
+    },
+    "Loyal": {
+      "Empathetic": 0.90,
+      "Proactive": 0.75,
+      "Introspective": 0.80,
+      "Outgoing": 0.70,
+      "Romantic": 0.95,
+      "Honest": 0.95,
+      "Intelligent": 0.75,
+      "Curious": 0.70,
+      "Loyal": 0.95,            // Deep commitment
+      "Confident": 0.75,        // Secure loyalty
+      "Patient": 0.90,          // Steadfast patience
+      "Playful": 0.75,          // Fun but committed
+      "Ambitious": 0.70,        // Different focuses
+      "Generous": 0.90,         // Giving loyalty
+    },
+    "Confident": {
+      "Empathetic": 0.65,
+      "Proactive": 0.85,
+      "Introspective": 0.60,
+      "Outgoing": 0.90,
+      "Romantic": 0.75,
+      "Honest": 0.80,
+      "Intelligent": 0.80,
+      "Curious": 0.80,
+      "Loyal": 0.75,
+      "Confident": 0.70,        // May compete
+      "Patient": 0.65,          // Different approaches
+      "Playful": 0.85,          // Confident fun
+      "Ambitious": 0.95,        // Power combination
+      "Generous": 0.75,         // Confident giving
+    },
+    "Patient": {
+      "Empathetic": 0.95,
+      "Proactive": 0.70,
+      "Introspective": 0.85,
+      "Outgoing": 0.60,
+      "Romantic": 0.90,
+      "Honest": 0.85,
+      "Intelligent": 0.80,
+      "Curious": 0.65,
+      "Loyal": 0.90,
+      "Confident": 0.65,
+      "Patient": 0.85,          // Peaceful but may lack spark
+      "Playful": 0.70,          // Different energies
+      "Ambitious": 0.60,        // Different paces
+      "Generous": 0.90,         // Patient giving
+    },
+    "Playful": {
+      "Empathetic": 0.75,
+      "Proactive": 0.80,
+      "Introspective": 0.65,
+      "Outgoing": 0.95,
+      "Romantic": 0.85,
+      "Honest": 0.70,
+      "Intelligent": 0.70,
+      "Curious": 0.90,
+      "Loyal": 0.75,
+      "Confident": 0.85,
+      "Patient": 0.70,
+      "Playful": 0.90,          // Fun together
+      "Ambitious": 0.70,        // Work-play balance
+      "Generous": 0.85,         // Joyful giving
+    },
+    "Ambitious": {
+      "Empathetic": 0.60,
+      "Proactive": 0.90,
+      "Introspective": 0.70,
+      "Outgoing": 0.80,
+      "Romantic": 0.65,
+      "Honest": 0.75,
+      "Intelligent": 0.90,
+      "Curious": 0.85,
+      "Loyal": 0.70,
+      "Confident": 0.95,
+      "Patient": 0.60,
+      "Playful": 0.70,
+      "Ambitious": 0.85,        // Shared drive but may compete
+      "Generous": 0.70,         // Success with heart
+    },
+    "Generous": {
+      "Empathetic": 0.95,
+      "Proactive": 0.75,
+      "Introspective": 0.80,
+      "Outgoing": 0.85,
+      "Romantic": 0.95,
+      "Honest": 0.85,
+      "Intelligent": 0.75,
+      "Curious": 0.75,
+      "Loyal": 0.90,
+      "Confident": 0.75,
+      "Patient": 0.90,
+      "Playful": 0.85,
+      "Ambitious": 0.70,
+      "Generous": 0.90,         // Beautiful giving relationship
     },
   };
   
@@ -166,9 +462,9 @@ class MatchingConfig {
   = = = = = = = = = */
 
   // Helper function to get chemistry score
-  static double getChemistryScore(String trait1, String trait2) {
-    return chemistryMatrix[trait1]?[trait2] ?? 
-           chemistryMatrix[trait2]?[trait1] ?? 
+  static double getRelationshipScore(String trait1, String trait2) {
+    return relationshipMatrix[trait1]?[trait2] ?? 
+           relationshipMatrix[trait2]?[trait1] ?? 
            0.0;
   }
   

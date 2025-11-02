@@ -136,17 +136,17 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
                 return const SizedBox(width: 48); 
               }
               
-              // If there's an active match, show chat button
+              /*
               if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                 return IconButton(
                   icon: const Icon(
                     Icons.chat_bubble_outline, color: ColorPalette.peach
                   ),
                   onPressed: () {
-                     Navigator.pushNamed(context, AppRoutes.chat, arguments: snapshot.data);
+                     Navigator.pushNamed(context, AppRoutes.chat, arguments: {'matchId': matchId, 'otherUserName': targetUserId,});
                   },
                 );
-              }
+              }*/
               
               // Otherwise, show refresh button
               return Row(

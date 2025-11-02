@@ -35,9 +35,8 @@ class UserSyncProvider extends ChangeNotifier {
     
       // If no session list or it's empty, fetch it from Firebase
       if (sessionUserIds == null || (sessionUserIds is List && sessionUserIds.isEmpty)) {
-        if (kDebugMode) {
-          print('User Provider: No session list found locally, fetching from Firebase');
-        }
+
+        if (kDebugMode) {print('User Provider: No session list found locally, fetching from Firebase');}
         
         // Fetch currentSessionList from Firebase
         await inputState.fetchSpecificInputs(['currentSessionList']);
@@ -46,6 +45,7 @@ class UserSyncProvider extends ChangeNotifier {
         sessionUserIds = await inputState.getInput('currentSessionList');
         
         if (kDebugMode) {print('User Provider: Successfully fetched ${sessionUserIds.length} user IDs from Firebase');}
+        
       }
       
       if (kDebugMode) {print('User Provider: Loading ${sessionUserIds.length} users from $_currentUserId');}
@@ -215,11 +215,11 @@ class UserSyncProvider extends ChangeNotifier {
               'matches': result.breakdown['personality']?.matches ?? [],
               'reason': result.breakdown['personality']?.reason ?? '',
             },
-            'chemistry': {
-              'score': result.breakdown['chemistry']?.score ?? 0,
-              'percentage': result.breakdown['chemistry']?.percentage ?? 0,
-              'matches': result.breakdown['chemistry']?.matches ?? [],
-              'reason': result.breakdown['chemistry']?.reason ?? '',
+            'relationship': {
+              'score': result.breakdown['relationship']?.score ?? 0,
+              'percentage': result.breakdown['relationship']?.percentage ?? 0,
+              'matches': result.breakdown['relationship']?.matches ?? [],
+              'reason': result.breakdown['relationship']?.reason ?? '',
             },
             'interests': {
               'score': result.breakdown['interests']?.score ?? 0,
@@ -512,11 +512,11 @@ class UserSyncProvider extends ChangeNotifier {
                   'matches': result.breakdown['personality']?.matches ?? [],
                   'reason': result.breakdown['personality']?.reason ?? '',
                 },
-                'chemistry': {
-                  'score': result.breakdown['chemistry']?.score ?? 0,
-                  'percentage': result.breakdown['chemistry']?.percentage ?? 0,
-                  'matches': result.breakdown['chemistry']?.matches ?? [],
-                  'reason': result.breakdown['chemistry']?.reason ?? '',
+                'relationship': {
+                  'score': result.breakdown['relationship']?.score ?? 0,
+                  'percentage': result.breakdown['relationship']?.percentage ?? 0,
+                  'matches': result.breakdown['relationship']?.matches ?? [],
+                  'reason': result.breakdown['relationship']?.reason ?? '',
                 },
                 'interests': {
                   'score': result.breakdown['interests']?.score ?? 0,
@@ -530,6 +530,14 @@ class UserSyncProvider extends ChangeNotifier {
                   'matches': result.breakdown['goals']?.matches ?? [],
                   'reason': result.breakdown['goals']?.reason ?? '',
                 },
+                'archetypes': result.archetypeAnalysis != null ? {
+                  'personalityType': result.personalityArchetype ?? 'Unique',
+                  'relationshipStyle': result.relationshipStyle ?? 'Custom',
+                  'title': result.archetypeTitle ?? 'Your Match',
+                  'narrative': result.archetypeNarrative ?? '',
+                  'idealDate': result.idealDate ?? '',
+                  'longTermOutlook': result.longTermOutlook ?? '',
+                } : null,
                 'calculatedAt': DateTime.now().toIso8601String(),
               };
               usersWithCompatibility.add(user);

@@ -233,7 +233,7 @@ class AppAuthProvider extends ChangeNotifier {
       }
       
       // Get all temp data from SharedPreferences via InputProvider
-      final tempData = await inputProvider.getAllInputs();
+      final tempData = await inputProvider.inputsLoad();
       tempData['email'] = email;
       print('📱 Temp data retrieved: ${tempData.keys.toList()}');
       print('📱 Has photos: ${tempData.containsKey('photos')}');

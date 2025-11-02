@@ -34,7 +34,7 @@ class _chemistry extends State<Chemistry> {
     final inputState = Provider.of<InputState>(context, listen: false);
     
     // Initialize all possible values as false first
-    for (var input in inputState.emotionalNeeds) {
+    for (var input in inputState.personality) {
       for (var value in input.possibleValues) {
         selectedValues[value] = false; 
       }
@@ -42,11 +42,11 @@ class _chemistry extends State<Chemistry> {
     
     try {
       // Get existing emotional needs from provider
-      final existingEmotionalNeeds = await inputState.getInput('EmotionalNeed');
+      final existingPersonality = await inputState.getInput('personality');
       
-      if (existingEmotionalNeeds != null && existingEmotionalNeeds is List) {
+      if (existingPersonality != null && existingPersonality is List) {
         // Mark existing selections as true
-        for (String selectedValue in existingEmotionalNeeds) {
+        for (String selectedValue in existingPersonality) {
           if (selectedValues.containsKey(selectedValue)) {
             selectedValues[selectedValue] = true;
           }
@@ -63,7 +63,7 @@ class _chemistry extends State<Chemistry> {
 
   Map<String, dynamic> getSelectedAttributes() {
     return {
-      "EmotionalNeed": selectedValues.entries
+      "personality": selectedValues.entries
           .where((entry) => entry.value)  
           .map((entry) => entry.key)       
           .toList(),                       
@@ -94,7 +94,7 @@ class _chemistry extends State<Chemistry> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Choose 3 Personality Traits You Value',
+                      'Choose 4 Personality Traits You Value Most',
                       style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.peach,
                       ),
@@ -104,11 +104,12 @@ class _chemistry extends State<Chemistry> {
                     Wrap(
                       spacing: 10.0, // horizontal spacing between items
                       runSpacing: 10.0, // vertical spacing between rows
-                      children: inputState.emotionalNeeds.isNotEmpty 
-                      ? inputState.emotionalNeeds[0].possibleValues.map<Widget>((attribute) {
+                      alignment: WrapAlignment.start,
+                      children: inputState.personality.isNotEmpty 
+                      ? inputState.personality[0].possibleValues.map<Widget>((attribute) {
                         int selectedCount = selectedValues.values.where((v) => v).length;
                           return SizedBox(
-                            width: MediaQuery.of(context).size.width - 32, // Full width minus padding
+                            //width: MediaQuery.of(context).size.width - 32, // Full width minus padding
                             child: CustomCheckbox(
                               attribute: CheckboxAttribute(
                                 title: attribute,
@@ -116,7 +117,7 @@ class _chemistry extends State<Chemistry> {
                                 isSelected: selectedValues[attribute] ?? false,
                               ),
                               isHorizontal: true,
-                              maxSelections: 3, // Set the limit to 3
+                              maxSelections: 4, 
                               currentSelectionCount: selectedCount,
                               onChanged: (isSelected) {
                                 setState(() {
