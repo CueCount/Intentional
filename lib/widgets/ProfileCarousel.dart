@@ -385,7 +385,12 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 30),
         decoration: BoxDecoration(
-          color: ColorPalette.peachLite,
+          color: ColorPalette.peach,
+          image: DecorationImage(
+            image: AssetImage('assets/compressed_refreshCard.jpg'),
+            fit: BoxFit.cover,
+            opacity: 0.5,
+          ),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Padding(
@@ -397,22 +402,22 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
               Icon(
                 Icons.refresh,
                 size: 48,
-                color: ColorPalette.peach,
+                color: ColorPalette.white,
               ),
               const SizedBox(height: 16),
               Text(
-                'Next Prospect Refresh in 17 Hours',
+                'Next Refresh Will Be Available Again Later',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.headingMedium.copyWith(
-                  color: ColorPalette.peach,
+                  color: ColorPalette.white,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'We limit the number of profiles seen at once for everyone. If you want to explore different profiles revise some of your Needs and they will be applied on the next Refresh :)',
+                'Fewer profiles, deeper connections. We believe in quality over quantity.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: ColorPalette.peach.withOpacity(0.8),
+                  color: ColorPalette.white,
                 ),
               ),
             ],

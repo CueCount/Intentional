@@ -118,7 +118,7 @@ class _relationship extends State<Relationship> {
                                 ),
                                 isHorizontal: true,
                                 shrinkWrap: true, 
-                                maxSelections: 3, 
+                                maxSelections: 5, 
                                 currentSelectionCount: selectedCount,
                                 onChanged: (isSelected) {
                                   setState(() {

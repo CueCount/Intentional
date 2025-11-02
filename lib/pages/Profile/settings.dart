@@ -55,13 +55,13 @@ class _SettingsState extends State<Settings> {
                         ),
                         LinkWidget(
                           title: 'Your Subscription',
-                          description: 'Manage your subscription and billing',
+                          description: '[Not available for this demo] Manage your subscription and billing',
                           onTap: () {
                             // Navigate to subscription page
                             Navigator.pushNamed(context, AppRoutes.subscription);
                           },
                         ),
-                        LinkWidget(
+                        /*LinkWidget(
                           title: 'Reset Local Data',
                           description: 'Manage your subscription and billing',
                           onTap: () {
@@ -74,7 +74,7 @@ class _SettingsState extends State<Settings> {
                               ),
                             );
                           },
-                        ),
+                        ),*/
                         LinkWidget(
                           title: 'Logout',
                           description: 'Sign out of your account',
@@ -85,7 +85,7 @@ class _SettingsState extends State<Settings> {
                             authProvider.signOut();
                           },
                         ),
-                        LinkWidget(
+                        /*LinkWidget(
                           title: 'Delete Your Account',
                           description: 'Permanently delete your account',
                           onTap: () {
@@ -93,7 +93,7 @@ class _SettingsState extends State<Settings> {
                             // You might want to show a confirmation dialog here
                             Navigator.pushNamed(context, AppRoutes.home);
                           },
-                        ),
+                        ),*/
                       ],
                     ),
                   ],

@@ -19,7 +19,7 @@ class _MyHomePageState extends State<MyHomePage> {
           decoration: BoxDecoration(
             color: ColorPalette.peach,
             image: DecorationImage(
-              image: AssetImage('assets/background.png'),
+              image: AssetImage('assets/compressed_background.jpg'),
               fit: BoxFit.cover,
               opacity: 0.5,
             ),

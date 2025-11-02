@@ -56,7 +56,7 @@ class MatchCTA extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'You and this person are exclusively connected. Start chatting to get to know each other better!',
+                    'You and this person are exclusively connected. Start chatting!',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: ColorPalette.peach,
                     ),
@@ -93,7 +93,7 @@ class MatchCTA extends StatelessWidget {
                         final updateResult = await matchSync.unmatch(matchId);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(updateResult['message'])),
+                            SnackBar(content: Text(updateResult['Unmatched — no hard feelings, just new beginnings ✨'])),
                           );
                         }
                       }
@@ -121,7 +121,7 @@ class MatchCTA extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: ColorPalette.peachLite,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -166,13 +166,13 @@ class MatchCTA extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'This person wants to match with you - accept to start an exclusive connection or reject to pass.',
+                    'Someone’s interested 👀 Accept to spark an exclusive connection—or swipe them away.',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: ColorPalette.peach,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Row(
+                  Column(
                     children: [
                       Expanded(
                         child: TextButton(
@@ -181,19 +181,19 @@ class MatchCTA extends StatelessWidget {
                               final result = await matchSync.acceptMatch(matchId, currentSessionId, targetUserId);
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(result['message'])),
+                                  SnackBar(content: Text(result['It’s a match! 💫'])),
                                 );
                               }
                             }
                           },
                           style: TextButton.styleFrom(
-                            backgroundColor: Colors.green.withOpacity(0.2),
+                            backgroundColor: ColorPalette.greenLite,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           child: Text(
                             'Accept',
                             style: AppTextStyles.headingMedium.copyWith(
-                              color: Colors.green,
+                              color: ColorPalette.green,
                             ),
                           ),
                         ),
@@ -206,19 +206,19 @@ class MatchCTA extends StatelessWidget {
                               final result = await matchSync.rejectMatch(matchId, targetUserId);
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(result['message'])),
+                                  SnackBar(content: Text(result['You kept it moving 👋'])),
                                 );
                               }
                             }
                           },
                           style: TextButton.styleFrom(
-                            backgroundColor: Colors.red.withOpacity(0.2),
+                            backgroundColor: ColorPalette.violetLite,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           child: Text(
                             'Reject',
                             style: AppTextStyles.headingMedium.copyWith(
-                              color: Colors.red,
+                              color: ColorPalette.violet,
                             ),
                           ),
                         ),
@@ -249,14 +249,7 @@ class MatchCTA extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Find out if it\'s mutual. If she accepts your request you will be exclusively matched with her. ',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: ColorPalette.peach,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Hopefully she gets to you before someone else does ;) ',
+                    'Once your request is accepted, you\'ll both be matched exclusively.',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: ColorPalette.peach,
                     ),

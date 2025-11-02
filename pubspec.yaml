@@ -77,7 +77,10 @@ flutter:
 
   assets:
     - assets/int.png
-    - assets/background.png
+    - assets/compressed_background.jpg
+    - assets/compressed_funPart.jpg
+    - assets/compressed_sentRequest.jpg
+    - assets/compressed_refreshCard.jpg
 
   fonts:
     - family: Fraunces
