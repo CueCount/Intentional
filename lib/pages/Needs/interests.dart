@@ -34,7 +34,7 @@ class _interests extends State<Interests> {
     final inputState = Provider.of<InputState>(context, listen: false);
     
     // Initialize all possible values as false first
-    for (var input in inputState.logisticNeeds) {
+    for (var input in inputState.interests) {
       for (var value in input.possibleValues) {
         selectedValues[value] = false; 
       }
@@ -42,11 +42,11 @@ class _interests extends State<Interests> {
     
     try {
       // Get existing logistics/interests from provider using new array format
-      final existingLogisticNeeds = await inputState.getInput('LogisticNeed');
+      final existingInterests = await inputState.getInput('interests');
       
-      if (existingLogisticNeeds != null && existingLogisticNeeds is List) {
+      if (existingInterests != null && existingInterests is List) {
         // Mark existing selections as true
-        for (String selectedValue in existingLogisticNeeds) {
+        for (String selectedValue in existingInterests) {
           if (selectedValues.containsKey(selectedValue)) {
             selectedValues[selectedValue] = true;
           }
@@ -67,7 +67,7 @@ class _interests extends State<Interests> {
 
   Map<String, dynamic> getSelectedAttributes() {
     return {
-      "LogisticNeed": selectedValues.entries
+      "interests": selectedValues.entries
           .where((entry) => entry.value)  
           .map((entry) => entry.key)       
           .toList(),                       
@@ -98,7 +98,7 @@ class _interests extends State<Interests> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Choose 1-10 Interests You Want to Share',
+                    'What are 9 Interests You Desire to Share with Them',
                     style: AppTextStyles.headingMedium.copyWith(
                       color: ColorPalette.peach,
                     ),
@@ -108,8 +108,8 @@ class _interests extends State<Interests> {
                     spacing: 10.0,
                     runSpacing: 10.0,
                     alignment: WrapAlignment.start,
-                    children: inputState.logisticNeeds.isNotEmpty
-                    ? inputState.logisticNeeds[0].possibleValues.map<Widget>((attribute) {
+                    children: inputState.interests.isNotEmpty
+                    ? inputState.interests[0].possibleValues.map<Widget>((attribute) {
                         int selectedCount = selectedValues.values.where((v) => v).length;
 
                         return SizedBox(
@@ -121,7 +121,7 @@ class _interests extends State<Interests> {
                               isSelected: selectedValues[attribute] ?? false,
                             ),
                             isHorizontal: true, 
-                            maxSelections: 10, 
+                            maxSelections: 9, 
                             currentSelectionCount: selectedCount,
                             onChanged: (isSelected) {
                               setState(() {

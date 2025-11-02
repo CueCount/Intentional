@@ -226,8 +226,8 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                       ),
                     ),)
                   : ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: AspectRatio(
+                    borderRadius: BorderRadius.circular(12),
+                    child: AspectRatio(
                       aspectRatio: 1 / 1.25,  // Same ratio for the error state
                       child: Container(
                         width: double.infinity,

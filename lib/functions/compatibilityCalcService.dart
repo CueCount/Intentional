@@ -1,4 +1,5 @@
-import 'compatibilityConfigService.dart'; 
+import 'compatibilityConfigService.dart';
+import 'compatibilityArchetypes.dart';
 
 class MatchCalculationService {
   // Singleton pattern
@@ -6,29 +7,30 @@ class MatchCalculationService {
   factory MatchCalculationService() => _instance;
   MatchCalculationService._internal();
   
-  // Calculate match between two users (NO CONFIG PARAMETER NEEDED!)
+  // Calculate match between two users with optional archetype analysis
   MatchResult calculateMatch({
     required Map<String, dynamic> currentUser,
     required Map<String, dynamic> potentialMatch,
+    bool includeArchetypes = true,
   }) {
     Map<String, CategoryScore> categoryScores = {};
     
-    // 1. Calculate Chemistry Score
-    categoryScores['chemistry'] = _calculateChemistryScore(
-      currentUser['ChemistryNeed'] ?? [],
-      potentialMatch['ChemistryNeed'] ?? [],
+    // 1. Calculate Chemistry/Relationship Score
+    categoryScores['relationship'] = _calculateRelationshipScore(
+      currentUser['relationship'] ?? [],
+      potentialMatch['relationship'] ?? [],
     );
     
     // 2. Calculate Personality Score
     categoryScores['personality'] = _calculatePersonalityScore(
-      currentUser['EmotionalNeed'] ?? [],
-      potentialMatch['EmotionalNeed'] ?? [],
+      currentUser['personality'] ?? [],
+      potentialMatch['personality'] ?? [],
     );
     
     // 3. Calculate Interests Score
     categoryScores['interests'] = _calculateInterestsScore(
-      currentUser['LogisticNeed'] ?? [],
-      potentialMatch['LogisticNeed'] ?? [],
+      currentUser['interests'] ?? [],
+      potentialMatch['interests'] ?? [],
     );
     
     // 4. Calculate Goals Score
@@ -54,12 +56,30 @@ class MatchCalculationService {
     // 7. Determine Match Quality using MatchingConfig helper
     String matchQuality = MatchingConfig.getMatchQuality(overallPercentage);
     
+    // 8. Add Archetype Analysis if requested
+    Map<String, dynamic>? archetypeAnalysis;
+    if (includeArchetypes) {
+      archetypeAnalysis = _performArchetypeAnalysis(
+        currentUserRelationship: currentUser['relationship'] ?? [],
+        matchRelationship: potentialMatch['relationship'] ?? [],
+        currentUserPersonality: currentUser['personality'] ?? [],
+        matchPersonality: potentialMatch['personality'] ?? [],
+        categoryScores: categoryScores,
+      );
+      
+      // Add archetype-based reasons if they exist
+      if (archetypeAnalysis['enhancedReasons'] != null) {
+        topReasons = _mergeReasons(topReasons, archetypeAnalysis['enhancedReasons']);
+      }
+    }
+    
     return MatchResult(
       userId: potentialMatch['userId'] ?? potentialMatch['uid'] ?? '',
       percentage: overallPercentage,
       matchQuality: matchQuality,
       topReasons: topReasons,
       breakdown: categoryScores,
+      archetypeAnalysis: archetypeAnalysis,
     );
   }
   
@@ -67,6 +87,7 @@ class MatchCalculationService {
   List<MatchResult> calculateMultipleMatches({
     required Map<String, dynamic> currentUser,
     required List<Map<String, dynamic>> potentialMatches,
+    bool includeArchetypes = false, // Default to false for performance
   }) {
     List<MatchResult> results = [];
     
@@ -77,6 +98,7 @@ class MatchCalculationService {
       final result = calculateMatch(
         currentUser: currentUser,
         potentialMatch: match,
+        includeArchetypes: includeArchetypes,
       );
       
       // Only include if above minimum threshold
@@ -91,18 +113,185 @@ class MatchCalculationService {
     return results;
   }
   
-  // CHEMISTRY CALCULATION - Now uses MatchingConfig helper
-  CategoryScore _calculateChemistryScore(
-    List<dynamic> userChemistry,
-    List<dynamic> matchChemistry,
+  // Perform archetype analysis
+  Map<String, dynamic> _performArchetypeAnalysis({
+    required List<dynamic> currentUserRelationship,
+    required List<dynamic> matchRelationship,
+    required List<dynamic> currentUserPersonality,
+    required List<dynamic> matchPersonality,
+    required Map<String, CategoryScore> categoryScores,
+  }) {
+    // Analyze personality archetypes
+    Map<String, dynamic> personalityAnalysis = 
+        RelationshipArchetypeAnalyzer.analyzePersonalityArchetypes(
+      user1Traits: currentUserPersonality,
+      user2Traits: matchPersonality,
+    );
+    
+    // Analyze relationship styles
+    Map<String, dynamic> relationshipAnalysis = 
+        RelationshipArchetypeAnalyzer.analyzeRelationshipArchetypes(
+      user1Dynamics: currentUserRelationship,
+      user2Dynamics: matchRelationship,
+    );
+    
+    // Generate narrative
+    String narrative = _generateArchetypeNarrative(
+      personalityArchetype: personalityAnalysis['primaryArchetype'],
+      relationshipStyle: relationshipAnalysis['primaryStyle'],
+      categoryScores: categoryScores,
+    );
+    
+    // Generate enhanced reasons based on archetypes
+    List<String> enhancedReasons = _generateArchetypeReasons(
+      personalityArchetype: personalityAnalysis['primaryArchetype'],
+      relationshipStyle: relationshipAnalysis['primaryStyle'],
+    );
+    
+    // Create summary
+    Map<String, String> summary = _createArchetypeSummary(
+      personalityArchetype: personalityAnalysis['primaryArchetype'],
+      relationshipStyle: relationshipAnalysis['primaryStyle'],
+    );
+    
+    return {
+      'personalityArchetype': personalityAnalysis['primaryArchetype'],
+      'relationshipStyle': relationshipAnalysis['primaryStyle'],
+      'allPersonalityArchetypes': personalityAnalysis['allArchetypes'],
+      'allRelationshipStyles': relationshipAnalysis['allStyles'],
+      'narrative': narrative,
+      'summary': summary,
+      'enhancedReasons': enhancedReasons,
+      'traitDistribution': personalityAnalysis['traitAnalysis'],
+      'dynamicsPattern': relationshipAnalysis['dynamicsAnalysis'],
+    };
+  }
+  
+  // Generate archetype narrative
+  String _generateArchetypeNarrative({
+    Map<String, dynamic>? personalityArchetype,
+    Map<String, dynamic>? relationshipStyle,
+    required Map<String, CategoryScore> categoryScores,
+  }) {
+    StringBuffer narrative = StringBuffer();
+    
+    if (personalityArchetype != null && relationshipStyle != null) {
+      // Special combinations
+      if (personalityArchetype['name'] == 'Power Couple' && 
+          relationshipStyle['name'] == 'Empire Builders') {
+        narrative.write('Power couple building an empire together - '
+            'an unstoppable force in both love and business.');
+      } else if (personalityArchetype['name'] == 'The Romantics' && 
+                 relationshipStyle['name'] == 'Passionate Lovers') {
+        narrative.write('Deeply romantic souls with passionate chemistry - '
+            'a love story for the ages.');
+      } else if (personalityArchetype['name'] == 'The Intellectuals' && 
+                 relationshipStyle['name'] == 'Best Friend Lovers') {
+        narrative.write('Intellectual best friends in love - '
+            'stimulating minds and hearts in perfect harmony.');
+      } else if (personalityArchetype['name'] == 'Adventure Partners' && 
+                 relationshipStyle['name'] == 'Adventure Seekers') {
+        narrative.write('Born adventurers on a lifelong journey together - '
+            'every day is a new exciting chapter.');
+      } else {
+        narrative.write('${personalityArchetype['name']} with '
+            '${relationshipStyle['name']} style - ${personalityArchetype['description']}');
+      }
+    } else if (personalityArchetype != null) {
+      narrative.write('${personalityArchetype['name']}: ${personalityArchetype['description']}');
+    } else if (relationshipStyle != null) {
+      narrative.write('${relationshipStyle['name']}: ${relationshipStyle['description']}');
+    } else {
+      // No clear archetype - create custom message based on scores
+      double relationshipScore = categoryScores['relationship']?.score ?? 0;
+      double personalityScore = categoryScores['personality']?.score ?? 0;
+      
+      if (relationshipScore > 0.7 && personalityScore > 0.7) {
+        narrative.write('A unique and strong connection that defies conventional categories.');
+      } else {
+        narrative.write('Your distinctive combination creates its own special dynamic.');
+      }
+    }
+    
+    return narrative.toString();
+  }
+  
+  // Generate archetype-based reasons
+  List<String> _generateArchetypeReasons({
+    Map<String, dynamic>? personalityArchetype,
+    Map<String, dynamic>? relationshipStyle,
+  }) {
+    List<String> reasons = [];
+    
+    if (personalityArchetype != null && personalityArchetype['strengths'] != null) {
+      List<dynamic> strengths = personalityArchetype['strengths'];
+      if (strengths.isNotEmpty) {
+        reasons.add(strengths.first.toString());
+      }
+    }
+    
+    if (relationshipStyle != null && relationshipStyle['characteristics'] != null) {
+      List<dynamic> characteristics = relationshipStyle['characteristics'];
+      if (characteristics.isNotEmpty) {
+        reasons.add(characteristics.first.toString());
+      }
+    }
+    
+    return reasons;
+  }
+  
+  // Create archetype summary
+  Map<String, String> _createArchetypeSummary({
+    Map<String, dynamic>? personalityArchetype,
+    Map<String, dynamic>? relationshipStyle,
+  }) {
+    String title = 'Unique Match';
+    String subtitle = '';
+    
+    if (personalityArchetype != null && relationshipStyle != null) {
+      title = '${personalityArchetype['name']} + ${relationshipStyle['name']}';
+      subtitle = 'A ${personalityArchetype['name'].toString().toLowerCase()} couple with ${relationshipStyle['name'].toString().toLowerCase()} dynamics';
+    } else if (personalityArchetype != null) {
+      title = personalityArchetype['name'];
+      subtitle = personalityArchetype['description'];
+    } else if (relationshipStyle != null) {
+      title = relationshipStyle['name'];
+      subtitle = relationshipStyle['description'];
+    }
+    
+    return {
+      'title': title,
+      'subtitle': subtitle,
+      'idealDate': relationshipStyle?['idealDate'] ?? 'Discover what works for you',
+      'longTermOutlook': relationshipStyle?['longTermOutlook'] ?? 'Writing your own story',
+    };
+  }
+  
+  // Merge standard reasons with archetype reasons
+  List<String> _mergeReasons(List<String> standardReasons, List<String> archetypeReasons) {
+    List<String> merged = [...standardReasons];
+    
+    for (String archetypeReason in archetypeReasons) {
+      if (!merged.contains(archetypeReason) && merged.length < 5) {
+        merged.add(archetypeReason);
+      }
+    }
+    
+    return merged.take(3).toList(); // Keep top 3
+  }
+  
+  // Relationship CALCULATION - Now uses MatchingConfig helper
+  CategoryScore _calculateRelationshipScore(
+    List<dynamic> userRelationship,
+    List<dynamic> matchRelationship,
   ) {
-    if (userChemistry.isEmpty || matchChemistry.isEmpty) {
+    if (userRelationship.isEmpty || matchRelationship.isEmpty) {
       return CategoryScore(
-        category: 'chemistry',
+        category: 'relationship',
         score: 0.0,
         percentage: 0.0,
         matches: [],
-        reason: 'No chemistry preferences set',
+        reason: 'No relationship preferences set',
       );
     }
     
@@ -111,10 +300,10 @@ class MatchCalculationService {
     String bestMatchTrait = '';
     
     // Find best compatibility score using MatchingConfig helper
-    for (String userTrait in userChemistry) {
-      for (String matchTrait in matchChemistry) {
+    for (String userTrait in userRelationship) {
+      for (String matchTrait in matchRelationship) {
         // Use the helper function from MatchingConfig
-        double score = MatchingConfig.getChemistryScore(userTrait, matchTrait);
+        double score = MatchingConfig.getRelationshipScore(userTrait, matchTrait);
         
         if (score > bestScore) {
           bestScore = score;
@@ -127,17 +316,17 @@ class MatchCalculationService {
     // Generate reason
     String reason = '';
     if (bestScore >= 0.9) {
-      reason = 'Perfect chemistry match';
+      reason = 'Perfect relationship match';
     } else if (bestScore >= 0.7) {
-      reason = 'Strong chemistry compatibility';
+      reason = 'Strong relationship compatibility';
     } else if (bestScore >= 0.5) {
-      reason = 'Moderate chemistry match';
+      reason = 'Moderate relationship match';
     } else {
-      reason = 'Different chemistry styles';
+      reason = 'Different relationship styles';
     }
     
     return CategoryScore(
-      category: 'chemistry',
+      category: 'relationship',
       score: bestScore,
       percentage: bestScore * 100,
       matches: bestScore > 0 ? [bestUserTrait, bestMatchTrait] : [],
@@ -348,9 +537,38 @@ class MatchCalculationService {
     return reasons;
   }
 
+  // Helper method to get user's personality archetype (for profile display)
+  Map<String, dynamic> getUserArchetype({
+    required List<dynamic> personalityTraits,
+  }) {
+    var analysis = RelationshipArchetypeAnalyzer.analyzePersonalityArchetypes(
+      user1Traits: personalityTraits,
+      user2Traits: [], // Empty to analyze just one user
+    );
+    
+    return {
+      'archetype': analysis['primaryArchetype'],
+      'allArchetypes': analysis['allArchetypes'],
+    };
+  }
+
+  // Helper method to get user's relationship style (for profile display)
+  Map<String, dynamic> getUserRelationshipStyle({
+    required List<dynamic> relationshipDynamics,
+  }) {
+    var analysis = RelationshipArchetypeAnalyzer.analyzeRelationshipArchetypes(
+      user1Dynamics: relationshipDynamics,
+      user2Dynamics: [], // Empty to analyze just one user
+    );
+    
+    return {
+      'style': analysis['primaryStyle'],
+      'allStyles': analysis['allStyles'],
+    };
+  }
 }
 
-// Data classes
+// Updated MatchResult class with archetype analysis
 class MatchResult {
   final String userId;
   final double percentage;
@@ -358,6 +576,7 @@ class MatchResult {
   
   final List<String> topReasons;
   final Map<String, CategoryScore> breakdown;
+  final Map<String, dynamic>? archetypeAnalysis; // New field
   
   MatchResult({
     required this.userId,
@@ -365,7 +584,27 @@ class MatchResult {
     required this.matchQuality,
     required this.topReasons,
     required this.breakdown,
+    this.archetypeAnalysis, // Optional
   });
+  
+  // Convenience getters for archetype data
+  String? get personalityArchetype => 
+    archetypeAnalysis?['personalityArchetype']?['name'];
+    
+  String? get relationshipStyle => 
+    archetypeAnalysis?['relationshipStyle']?['name'];
+    
+  String? get archetypeNarrative => 
+    archetypeAnalysis?['narrative'];
+    
+  String? get archetypeTitle => 
+    archetypeAnalysis?['summary']?['title'];
+    
+  String? get idealDate => 
+    archetypeAnalysis?['summary']?['idealDate'];
+    
+  String? get longTermOutlook => 
+    archetypeAnalysis?['summary']?['longTermOutlook'];
 }
 
 class CategoryScore {

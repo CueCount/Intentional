@@ -7,7 +7,7 @@ import '../pages/Needs/qual.dart';
 import '../pages/Needs/age.dart';
 import '../pages/Needs/basics.dart';
 import '../pages/Needs/photos.dart';
-import '../pages/Needs/chemistry.dart';
+import '../pages/Needs/personality.dart';
 import '../pages/Needs/relationship.dart';
 import '../pages/Needs/interests.dart';
 import '../pages/Needs/goals.dart';
@@ -22,6 +22,8 @@ import '../pages/Guides/guideRequestSent.dart';
 import '../pages/Guides/guideAvailableMatches.dart';
 import '../pages/Guides/guideOnboardingNeeds.dart';
 import '../pages/Needs/inputPage.dart';
+import '../pages/Profile/registerInfo.dart';
+import '../pages/Profile/resetPassword.dart';
 import '../pages/loading.dart';
 
 class AppRoutes {
@@ -54,7 +56,9 @@ class AppRoutes {
   static const String requestsReceived = '/requestsReceived';
   static const String guideAvailableMatches = '/guideAvailableMatches';
   static const String input = '/input';
+  static const String registerInfo = '/registerInfo';
   static const String loading = '/loading';
+  static const String resetPassword = '/resetPassword';
 
   static Route<dynamic> generateRoute(RouteSettings settings, bool isLoggedIn) {
     final arguments = settings.arguments;
@@ -122,6 +126,10 @@ class AppRoutes {
         return const EditNeeds();
       case settings:
         return const Settings();
+      case registerInfo:
+        return const RegisterInfo();
+      case resetPassword:
+        return const ResetPassword();
       case guideRequestSent:
         return const GuideRequestSent();
       case loading:
@@ -171,4 +179,5 @@ class AppRoutes {
         return const MyHomePage(title: 'Landing Page',);
     }
   }
+
 }

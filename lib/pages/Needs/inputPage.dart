@@ -89,9 +89,9 @@ class _personalityQ1 extends State<PersonalityQ1> {
       'personalityQ2': inputState.personalityQ2,
       'personalityQ3': inputState.personalityQ3,
 
-      'emotionalNeeds': inputState.emotionalNeeds,
-      'chemistryNeeds': inputState.chemistryNeeds,
-      'logisticNeeds': inputState.logisticNeeds,
+      'personality': inputState.personality,
+      'relationship': inputState.relationship,
+      'interests': inputState.interests,
       'lifeGoalNeeds': inputState.lifeGoalNeeds,
     };
     

@@ -33,7 +33,7 @@ class _relationship extends State<Relationship> {
     final inputState = Provider.of<InputState>(context, listen: false);
     
     // Initialize all possible values as false first
-    for (var input in inputState.chemistryNeeds) {
+    for (var input in inputState.relationship) {
       for (var value in input.possibleValues) {
         selectedValues[value] = false; 
       }
@@ -41,11 +41,11 @@ class _relationship extends State<Relationship> {
     
     try {
       // Get existing chemistry needs from provider
-      final existingChemistryNeeds = await inputState.getInput('ChemistryNeed');
+      final existingRelationship = await inputState.getInput('relationship');
       
-      if (existingChemistryNeeds != null && existingChemistryNeeds is List) {
+      if (existingRelationship != null && existingRelationship is List) {
         // Mark existing selections as true
-        for (String selectedValue in existingChemistryNeeds) {
+        for (String selectedValue in existingRelationship) {
           if (selectedValues.containsKey(selectedValue)) {
             selectedValues[selectedValue] = true;
           }
@@ -62,7 +62,7 @@ class _relationship extends State<Relationship> {
 
   Map<String, dynamic> getSelectedAttributes() {
     return {
-      "ChemistryNeed": selectedValues.entries
+      "relationship": selectedValues.entries
           .where((entry) => entry.value)  
           .map((entry) => entry.key)       
           .toList(),                       
@@ -93,7 +93,7 @@ class _relationship extends State<Relationship> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Choose 3 Relationship Expectations You Have',
+                      'Prioritize 5 Expectations You Have of a Relationship',
                       style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.peach,
                       ),
@@ -105,8 +105,8 @@ class _relationship extends State<Relationship> {
                       spacing: 10.0, // horizontal spacing between items
                       runSpacing: 10.0, // vertical spacing between rows
                       alignment: WrapAlignment.start,
-                      children: inputState.chemistryNeeds.isNotEmpty 
-                        ? inputState.chemistryNeeds[0].possibleValues.map<Widget>((attribute) {
+                      children: inputState.relationship.isNotEmpty 
+                        ? inputState.relationship[0].possibleValues.map<Widget>((attribute) {
                             int selectedCount = selectedValues.values.where((v) => v).length;
                             return SizedBox(
                               width: double.infinity,  // Add this

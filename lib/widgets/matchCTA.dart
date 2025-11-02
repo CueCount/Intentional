@@ -41,7 +41,7 @@ class MatchCTA extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: Colors.pink.withOpacity(0.1),
+                color: ColorPalette.peachLite,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -232,7 +232,11 @@ class MatchCTA extends StatelessWidget {
           case RequestStatus.available:
             return Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: ColorPalette.peachLite,
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
