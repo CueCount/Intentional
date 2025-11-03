@@ -9,6 +9,8 @@ import '../providers/inputState.dart';
 import '../pages/Needs/photoEditor.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'photo_service_web.dart' if (dart.library.io) 'photo_service_mobile.dart';
+// Add this import for image compression
+import 'package:image/image.dart' as img;
 
 class PhotoService {
   final BuildContext context;
@@ -23,6 +25,73 @@ class PhotoService {
     required this.onPhotosUpdated,
     required this.photoUrls,
   });
+
+  // NEW: Image compression method
+  static Future<Uint8List> compressImageForWeb(
+    Uint8List imageBytes, {
+    int maxWidth = 800,
+    int maxHeight = 800,
+    int quality = 75,
+  }) async {
+    try {
+      // Only compress on web where storage is limited
+      if (!kIsWeb) {
+        return imageBytes;
+      }
+
+      // Decode the image
+      img.Image? image = img.decodeImage(imageBytes);
+      
+      if (image == null) {
+        print('⚠️ Could not decode image, using original');
+        return imageBytes;
+      }
+      
+      // Calculate new dimensions while maintaining aspect ratio
+      int width = image.width;
+      int height = image.height;
+      
+      if (width > maxWidth || height > maxHeight) {
+        double widthRatio = maxWidth / width;
+        double heightRatio = maxHeight / height;
+        double ratio = widthRatio < heightRatio ? widthRatio : heightRatio;
+        
+        width = (width * ratio).round();
+        height = (height * ratio).round();
+        
+        // Resize the image
+        image = img.copyResize(image, width: width, height: height);
+      }
+      
+      // Encode as JPEG with quality setting
+      List<int> compressed = img.encodeJpg(image, quality: quality);
+      
+      Uint8List result = Uint8List.fromList(compressed);
+      
+      // Log compression results
+      double originalSizeMB = imageBytes.length / (1024 * 1024);
+      double compressedSizeMB = result.length / (1024 * 1024);
+      double reduction = ((originalSizeMB - compressedSizeMB) / originalSizeMB) * 100;
+      
+      print('🗜️ Image compressed: ${originalSizeMB.toStringAsFixed(2)}MB → ${compressedSizeMB.toStringAsFixed(2)}MB (${reduction.toStringAsFixed(0)}% reduction)');
+      
+      // If compression didn't help much, try more aggressive settings
+      if (compressedSizeMB > 0.5 && quality > 50) {
+        print('📉 Still too large, trying more aggressive compression...');
+        return compressImageForWeb(
+          imageBytes,
+          maxWidth: 600,
+          maxHeight: 600,
+          quality: 50,
+        );
+      }
+      
+      return result;
+    } catch (e) {
+      print('❌ Error compressing image: $e');
+      return imageBytes;
+    }
+  }
 
   static Future<List<String>> uploadAllPhotos(BuildContext context, String userId) async {
     final inputState = Provider.of<InputState>(context, listen: false);
@@ -63,20 +132,6 @@ class PhotoService {
       
       if (image == null) return;
       
-      // Navigate to editor page with the picked image
-      /*final result = await Navigator.push<InputPhoto>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PhotoEditorPage(imageFile: image),
-        ),
-      );
-      
-      if (result != null && context.mounted) {
-        final inputState = Provider.of<InputState>(context, listen: false);
-        inputState.photoInputs.add(result);
-        await inputState.savePhotosLocally();
-      }*/
-
       Navigator.push<InputPhoto>(
         context,
         MaterialPageRoute(
@@ -105,27 +160,12 @@ class PhotoService {
       
       final photo = inputState.photoInputs[index];
       
-      // Navigate to editor with existing photo
-      /*final result = await Navigator.push<InputPhoto>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PhotoEditorPage(
-            existingPhoto: photo,
-          ),
-        ),
-      );
-      
-      if (result != null && context.mounted) {
-        inputState.photoInputs[index] = result;
-        await inputState.savePhotosLocally();
-      }*/
-
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => PhotoEditorPage(
             existingPhoto: photo,
-            existingPhotoIndex: index, // Pass the index
+            existingPhotoIndex: index,
           ),
         ),
       );
@@ -165,22 +205,29 @@ class PhotoService {
 
   static Future<InputPhoto?> saveEditedImage(Uint8List editedBytes) async {
     try {
+      // COMPRESS FOR WEB BEFORE SAVING
+      Uint8List processedBytes = editedBytes;
+      if (kIsWeb) {
+        print('🔄 Compressing image for web storage...');
+        processedBytes = await compressImageForWeb(editedBytes);
+      }
+      
       String? localPath;
 
       if (kIsWeb) {
-        // Web: Create blob URL
-        localPath = PhotoServicePlatform.createObjectUrl(editedBytes);
+        // Web: Create blob URL from compressed bytes
+        localPath = PhotoServicePlatform.createObjectUrl(processedBytes);
       } else {
-        // Mobile: Save to app directory
+        // Mobile: Save to app directory (original bytes)
         final appDir = await getApplicationDocumentsDirectory();
         final fileName = 'edited_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final file = File('${appDir.path}/$fileName');
-        await file.writeAsBytes(editedBytes);
+        await file.writeAsBytes(processedBytes);
         localPath = file.path;
       }
 
       return InputPhoto(
-        croppedBytes: editedBytes,
+        croppedBytes: processedBytes,  // Use compressed bytes
         localPath: localPath,
       );
     } catch (e) {
