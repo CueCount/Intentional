@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../styles.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final String buttonText;
   final IconData buttonIcon;
   final bool isEnabled;
@@ -33,7 +33,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 onPressed: () => Navigator.pop(context),
               ),
               TextButton(
-                //onPressed: onPressed,
                 onPressed: isEnabled ? onPressed : null,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

@@ -63,7 +63,7 @@ class _basics extends State<Basics> {
 
   Map<String, dynamic> getSelectedAttributes() {
     return {
-      "Basics": selectedValues.entries
+      "basics": selectedValues.entries
           .where((entry) => entry.value)  
           .map((entry) => entry.key)       
           .toList(),                       

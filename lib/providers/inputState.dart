@@ -711,7 +711,7 @@ class InputState extends ChangeNotifier {
 
   List<Input> basics = [
     Input(
-      title: "Let\’s clear up the basics",
+      title: "basics",
       possibleValues: [
         "Short Term Exploration",
         "Long Term, Taking My Time",
