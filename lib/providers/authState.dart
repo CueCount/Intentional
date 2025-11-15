@@ -235,7 +235,7 @@ class AppAuthProvider extends ChangeNotifier {
     _blockAuthListener = true;
     
     _isLoading = true;
-    notifyListeners();
+    //notifyListeners();
     
     UserCredential? userCredential;
     String? authenticatedUserId;
@@ -245,7 +245,7 @@ class AppAuthProvider extends ChangeNotifier {
       if (tempId == null || tempId.isEmpty) {
         _blockAuthListener = false;
         _isLoading = false;
-        notifyListeners();
+        //notifyListeners();
         return RegistrationResult.failure(
           message: 'No temporary session found. Please restart the app and try again.',
           code: 'no-temp-session',
@@ -267,7 +267,7 @@ class AppAuthProvider extends ChangeNotifier {
       if (tempData.isEmpty) {
         _blockAuthListener = false;
         _isLoading = false;
-        notifyListeners();
+        //notifyListeners();
         return RegistrationResult.failure(
           message: 'No profile data found. Please complete your profile first.',
           code: 'no-temp-data',
@@ -287,7 +287,7 @@ class AppAuthProvider extends ChangeNotifier {
       } on FirebaseAuthException catch (e) {
         _blockAuthListener = false;
         _isLoading = false;
-        notifyListeners();
+        //notifyListeners();
         
         if (kDebugMode) {
           print('❌ Firebase Auth Error: ${e.code}');
@@ -302,7 +302,7 @@ class AppAuthProvider extends ChangeNotifier {
       if (userCredential.user == null) {
         _blockAuthListener = false;
         _isLoading = false;
-        notifyListeners();
+        //notifyListeners();
         return RegistrationResult.failure(
           message: 'Failed to create user account. Please try again.',
           code: 'user-creation-failed',
@@ -351,7 +351,7 @@ class AppAuthProvider extends ChangeNotifier {
         
         _blockAuthListener = false;
         _isLoading = false;
-        notifyListeners();
+        //notifyListeners();
         
         return RegistrationResult.failure(
           message: 'Failed to save your profile data. Please try again. Error: ${e.toString()}',
@@ -446,7 +446,7 @@ class AppAuthProvider extends ChangeNotifier {
       
       _blockAuthListener = false;
       _isLoading = false;
-      notifyListeners();
+      //notifyListeners();
       
       return RegistrationResult.failure(
         message: 'An unexpected error occurred: ${e.toString()}',

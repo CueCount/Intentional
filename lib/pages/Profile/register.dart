@@ -7,6 +7,7 @@ import '../../providers/inputState.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/bottomNavigationBar.dart';
 import '../../router/router.dart';
+import '../../widgets/registration_result.dart'; // Add this import
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -106,11 +107,21 @@ class _RegisterPageState extends State<RegisterPage> {
       }
       
       // Call signUp and get result
-      final result = await authProvider.signUp(
+      final RegistrationResult result = await authProvider.signUp(
         email,
         password,
         inputProvider,
       );
+
+      print('🔴 DEBUG: signUp returned');
+      print('🔴 DEBUG: result.success = ${result.success}');
+      print('🔴 DEBUG: result.errorMessage = ${result.errorMessage}');
+      print('🔴 DEBUG: result.errorCode = ${result.errorCode}');
+
+      if (!mounted) {
+        print('🔴 DEBUG: Widget not mounted, returning');
+        return;
+      }
 
       if (!mounted) return;
 
@@ -428,7 +439,11 @@ class _RegisterPageState extends State<RegisterPage> {
         buttonText: _isLoading ? 'Creating Account...' : 'Register',
         buttonIcon: Icons.arrow_forward,
         isEnabled: !_isLoading && isComplete,
-        onPressed: _isLoading ? null : () => _handleRegistration(),
+        onPressed: () {
+          if (!_isLoading && isComplete) {
+            _handleRegistration();
+          }
+        },
       ),
     );
   }
