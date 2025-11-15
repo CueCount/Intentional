@@ -63,7 +63,7 @@ class _basics extends State<Basics> {
 
   Map<String, dynamic> getSelectedAttributes() {
     return {
-      "Basics": selectedValues.entries
+      "basics": selectedValues.entries
           .where((entry) => entry.value)  
           .map((entry) => entry.key)       
           .toList(),                       
@@ -94,7 +94,7 @@ class _basics extends State<Basics> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Let\’s clear up the basics',
+                      'What kind of connection are you looking for?',
                       style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.peach,
                       ),
@@ -102,8 +102,8 @@ class _basics extends State<Basics> {
                     ),
                     const SizedBox(height: 20),
                     Wrap(
-                      spacing: 10.0, // horizontal spacing between items
-                      runSpacing: 10.0, // vertical spacing between rows
+                      spacing: 10.0, 
+                      runSpacing: 10.0,
                       children: inputState.basics.isNotEmpty 
                       ? inputState.basics[0].possibleValues.map<Widget>((attribute) {
                           return SizedBox(

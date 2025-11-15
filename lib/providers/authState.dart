@@ -4,7 +4,8 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../functions/chatService.dart'; 
+import '../functions/chatService.dart';
+import '../../widgets/registration_result.dart'; // Add this import
 
 class AppAuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -15,6 +16,9 @@ class AppAuthProvider extends ChangeNotifier {
   String? _tempId;
   bool _isLoading = true;
   bool _isInitialized = false;
+
+  // Flag to block auth listener during registration
+  bool _blockAuthListener = false;
 
   // Getters
   User? get user => _user;
@@ -92,16 +96,25 @@ class AppAuthProvider extends ChangeNotifier {
   void init() {
     _sub?.cancel();
     _sub = _auth.authStateChanges().listen((u) async {
+      // CRITICAL: Block auth listener during registration
+      // We'll manually update state when registration completes
+      if (_blockAuthListener) {
+        if (kDebugMode) {
+          print('🚫 AuthProvider: Blocking auth state change during registration');
+        }
+        return;
+      }
+      
+      if (kDebugMode) {
+        print('👤 AuthProvider: Auth state changed - User: ${u?.uid ?? "null"}');
+      }
+      
       final previousUserId = _user?.uid ?? _tempId;
       final newUserId = u?.uid;
       
       _user = u;
       
       if (u != null) {
-        // User is logged in - clean up temp session if it exists
-        /*if (_tempId != null) {
-          await _cleanupTempSession();
-        }*/
         _isLoading = false;
         if (!_isInitialized) _isInitialized = true;
 
@@ -128,17 +141,14 @@ class AppAuthProvider extends ChangeNotifier {
           }
         }
         
-        // Notify if user changed
         if (previousUserId != newUserId) {
           notifyListeners();
         }
       } else {
-        // No authenticated user - set up temp session
         _tempId = await _getOrCreateTempId();
         _isLoading = false;
         if (!_isInitialized) _isInitialized = true;
         
-        // Notify if session changed (from real user to temp)
         if (previousUserId != _tempId) {
           notifyListeners();
         }
@@ -213,59 +223,171 @@ class AppAuthProvider extends ChangeNotifier {
     // Force immediate state update instead of waiting for stream
     _user = null;
     _isLoading = false;
-    notifyListeners(); // This will immediately trigger your app-level listener
+    notifyListeners();
   }
 
   /* = = = = = = = =
-  Register User 
+  Register User - NOW RETURNS RESULT INSTEAD OF THROWING
   = = = = = = = = */
 
-  Future<void> signUp(String email, String password, inputProvider) async {
+  Future<RegistrationResult> signUp(String email, String password, inputProvider) async {
+    // BLOCK the auth listener from reacting to Firebase Auth changes
+    _blockAuthListener = true;
+    
+    _isLoading = true;
+    //notifyListeners();
+    
+    UserCredential? userCredential;
+    String? authenticatedUserId;
+    
     try {
-
-      _isLoading = true;
-      notifyListeners();
-      
-      // Get the temp ID 
       final tempId = _tempId;
       if (tempId == null || tempId.isEmpty) {
-        throw Exception('No temporary session found');
+        _blockAuthListener = false;
+        _isLoading = false;
+        //notifyListeners();
+        return RegistrationResult.failure(
+          message: 'No temporary session found. Please restart the app and try again.',
+          code: 'no-temp-session',
+        );
       }
       
-      // Get all temp data from SharedPreferences via InputProvider
+      if (kDebugMode) {
+        print('🚀 Starting registration for temp ID: $tempId');
+      }
+      
+      // Get all temp data
       final tempData = await inputProvider.inputsLoad();
       tempData['email'] = email;
-      print('📱 Temp data retrieved: ${tempData.keys.toList()}');
-      print('📱 Has photos: ${tempData.containsKey('photos')}');
-      if (tempData.isEmpty) {
-        throw Exception('No temporary data to transfer');
+      
+      if (kDebugMode) {
+        print('📱 Temp data retrieved: ${tempData.keys.toList()}');
       }
       
-      // Create Firebase Auth user
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      if (tempData.isEmpty) {
+        _blockAuthListener = false;
+        _isLoading = false;
+        //notifyListeners();
+        return RegistrationResult.failure(
+          message: 'No profile data found. Please complete your profile first.',
+          code: 'no-temp-data',
+        );
+      }
+      
+      // STEP 1: Create Firebase Auth user
+      if (kDebugMode) {
+        print('🔐 Creating Firebase Auth user...');
+      }
+      
+      try {
+        userCredential = await _auth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      } on FirebaseAuthException catch (e) {
+        _blockAuthListener = false;
+        _isLoading = false;
+        //notifyListeners();
+        
+        if (kDebugMode) {
+          print('❌ Firebase Auth Error: ${e.code}');
+        }
+        
+        return RegistrationResult.failure(
+          message: _getFirebaseErrorMessage(e.code),
+          code: e.code,
+        );
+      }
       
       if (userCredential.user == null) {
-        throw Exception('Failed to create user');
+        _blockAuthListener = false;
+        _isLoading = false;
+        //notifyListeners();
+        return RegistrationResult.failure(
+          message: 'Failed to create user account. Please try again.',
+          code: 'user-creation-failed',
+        );
       }
       
-      final authenticatedUserId = userCredential.user!.uid;
+      authenticatedUserId = userCredential.user!.uid;
       
-      // Transfer temp data to authenticated user in Firestore
-      await inputProvider.syncInputs(
-        fromId: tempId,
-        toId: authenticatedUserId,
-      );
+      if (kDebugMode) {
+        print('✅ User created: $authenticatedUserId');
+        print('🚫 Auth listener is BLOCKED - no navigation yet');
+      }
+      
+      // STEP 2: Sync data to Firestore
+      if (kDebugMode) {
+        print('📦 Syncing data to Firestore...');
+      }
+      
+      try {
+        await inputProvider.syncInputs(
+          fromId: tempId,
+          toId: authenticatedUserId,
+        );
+        
+        if (kDebugMode) {
+          print('✅ Data synced to Firestore');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('❌ Failed to sync inputs: $e');
+          print('🗑️ Attempting to delete Firebase Auth user...');
+        }
+        
+        // Delete the auth user to allow retry
+        try {
+          await userCredential.user?.delete();
+          if (kDebugMode) {
+            print('✅ Deleted Firebase Auth user to allow retry');
+          }
+        } catch (deleteError) {
+          if (kDebugMode) {
+            print('❌ Could not delete Firebase Auth user: $deleteError');
+            print('⚠️ This will create a ghost account!');
+          }
+        }
+        
+        _blockAuthListener = false;
+        _isLoading = false;
+        //notifyListeners();
+        
+        return RegistrationResult.failure(
+          message: 'Failed to save your profile data. Please try again. Error: ${e.toString()}',
+          code: 'data-sync-failed',
+        );
+      }
 
-      // Transfer the users list
-      await _transferUsersList(tempId, authenticatedUserId);
+      // STEP 3: Transfer users list
+      if (kDebugMode) {
+        print('👥 Transferring users list...');
+      }
       
-      // Update InputProvider to use the new authenticated session
+      try {
+        await _transferUsersList(tempId, authenticatedUserId);
+        if (kDebugMode) {
+          print('✅ Users list transferred');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ Failed to transfer users list: $e');
+          print('⚠️ Non-critical error, continuing...');
+        }
+      }
+      
+      // STEP 4: Update InputProvider session
+      if (kDebugMode) {
+        print('🔄 Updating session ID...');
+      }
+      
       inputProvider.setCurrentSessionId(authenticatedUserId);
 
-      // Connect to Stream Chat with the new user
+      // STEP 5: Connect to Stream Chat
+      if (kDebugMode) {
+        print('💬 Connecting to Stream Chat...');
+      }
+      
       try {
         final userName = tempData['nameFirst'] ?? 'User';
         if (!_chatService.isUserConnected()) {
@@ -274,19 +396,79 @@ class AppAuthProvider extends ChangeNotifier {
             userName: userName,
           );
         }
+        
+        if (kDebugMode) {
+          print('✅ Connected to Stream Chat');
+        }
       } catch (e) {
         if (kDebugMode) {
-          print('AuthProvider: Failed to connect to Stream Chat - $e');
+          print('⚠️ Failed to connect to Stream Chat: $e');
+          print('⚠️ Non-critical error, continuing...');
         }
       }
       
+      // STEP 6: NOW update internal state and UNBLOCK listener
+      if (kDebugMode) {
+        print('✅ Registration complete - updating state and unblocking listener');
+      }
+      
+      _user = userCredential.user;
+      _blockAuthListener = false; // UNBLOCK the listener
       _isLoading = false;
+      
+      // NOW notify listeners - everything is ready
       notifyListeners();
       
+      if (kDebugMode) {
+        print('✅ State updated - app can now navigate');
+      }
+      
+      return RegistrationResult.success();
+      
     } catch (e) {
+      if (kDebugMode) {
+        print('❌ Unexpected registration error: $e');
+      }
+      
+      // Try to clean up
+      if (userCredential?.user != null) {
+        try {
+          await userCredential!.user!.delete();
+          if (kDebugMode) {
+            print('🗑️ Deleted Firebase Auth user after unexpected error');
+          }
+        } catch (deleteError) {
+          if (kDebugMode) {
+            print('❌ Could not delete Firebase Auth user: $deleteError');
+          }
+        }
+      }
+      
+      _blockAuthListener = false;
       _isLoading = false;
-      notifyListeners();
-      throw e;
+      //notifyListeners();
+      
+      return RegistrationResult.failure(
+        message: 'An unexpected error occurred: ${e.toString()}',
+        code: 'unexpected-error',
+      );
+    }
+  }
+
+  String _getFirebaseErrorMessage(String code) {
+    switch (code) {
+      case 'weak-password':
+        return 'The password is too weak. Please use at least 6 characters.';
+      case 'email-already-in-use':
+        return 'An account already exists with this email. Try logging in instead.';
+      case 'invalid-email':
+        return 'The email address is invalid.';
+      case 'operation-not-allowed':
+        return 'Email/password accounts are not enabled. Please contact support.';
+      case 'network-request-failed':
+        return 'Network error. Please check your internet connection and try again.';
+      default:
+        return 'Registration failed: $code. Please try again.';
     }
   }
 
@@ -294,23 +476,16 @@ class AppAuthProvider extends ChangeNotifier {
   Helpers 
   = = = = = = = = */
 
-  // this should probably be in the Input State, but whatever, this is a hack anyway
   Future<void> _transferUsersList(String fromId, String toId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final usersList = prefs.getStringList('users_$fromId');
+    final prefs = await SharedPreferences.getInstance();
+    final usersList = prefs.getStringList('users_$fromId');
+    
+    if (usersList != null && usersList.isNotEmpty) {
+      await prefs.setStringList('users_$toId', usersList);
+      await prefs.remove('users_$fromId');
       
-      if (usersList != null && usersList.isNotEmpty) {
-        await prefs.setStringList('users_$toId', usersList);
-        await prefs.remove('users_$fromId');
-        
-        if (kDebugMode) {
-          print('AuthProvider: Transferred ${usersList.length} users from users_$fromId to users_$toId');
-        }
-      }
-    } catch (e) {
       if (kDebugMode) {
-        print('AuthProvider: Failed to transfer users list - $e');
+        print('AuthProvider: Transferred ${usersList.length} users from users_$fromId to users_$toId');
       }
     }
   }
@@ -334,5 +509,4 @@ class AppAuthProvider extends ChangeNotifier {
     _sub?.cancel();
     super.dispose();
   }
-
 }

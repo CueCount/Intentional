@@ -293,6 +293,99 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                               ),
                             ),
                             const SizedBox(height: 16),
+                            // Summary
+                            if (profile?['compatibility']?['archetypes']?['summary'] != null)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Summary",
+                                    style: AppTextStyles.headingSmall.copyWith(
+                                      color: ColorPalette.peach,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "${profile!['compatibility']['archetypes']['summary']}",
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: ColorPalette.peach,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+                              ),
+                            // Personality Strengths (handling as array)
+                            if (profile?['compatibility']?['archetypes']?['personality']?['strengths'] != null &&
+                                (profile!['compatibility']['archetypes']['personality']['strengths'] as List).isNotEmpty)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Strengths",
+                                    style: AppTextStyles.headingSmall.copyWith(
+                                      color: ColorPalette.peach,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  ...((profile!['compatibility']['archetypes']['personality']['strengths'] as List).map((strength) => 
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text("• ", style: AppTextStyles.bodyMedium.copyWith(color: ColorPalette.peach)),
+                                          Expanded(
+                                            child: Text(
+                                              strength.toString(),
+                                              style: AppTextStyles.bodyMedium.copyWith(
+                                                color: ColorPalette.peach,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ).toList()),
+                                  const SizedBox(height: 16),
+                                ],
+                              ),
+                            if (profile?['compatibility']?['archetypes']?['personality']?['watchOuts'] != null &&
+                                (profile!['compatibility']['archetypes']['personality']['watchOuts'] as List).isNotEmpty)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Watch Outs",
+                                    style: AppTextStyles.headingSmall.copyWith(
+                                      color: ColorPalette.peach,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  ...((profile!['compatibility']['archetypes']['personality']['watchOuts'] as List).map((watchOut) => 
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text("• ", style: AppTextStyles.bodyMedium.copyWith(color: ColorPalette.peach)),
+                                          Expanded(
+                                            child: Text(
+                                              watchOut.toString(),
+                                              style: AppTextStyles.bodyMedium.copyWith(
+                                                color: ColorPalette.peach,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ).toList()),
+                                  const SizedBox(height: 16),
+                                ],
+                              ),
                             Text(
                               "Ideal Date: \n${profile?['compatibility']?['archetypes']?['idealDate'] ?? ''}",
                               style: AppTextStyles.bodyMedium.copyWith(

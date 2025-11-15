@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../styles.dart';
 import '../../providers/authState.dart';
 import '../../providers/inputState.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/bottomNavigationBar.dart';
+import '../../router/router.dart';
+import '../../widgets/registration_result.dart'; // Add this import
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -19,83 +20,203 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
 
-  final AppAuthProvider _authProvider = AppAuthProvider();
   bool _isLoading = false;
-  String? _errorMessage;
+  bool _registrationInProgress = false;
 
   @override
   void initState() {
     super.initState();
-    // Add listeners to trigger rebuilds when text changes
     _nameController.addListener(_onFormChanged);
     _emailController.addListener(_onFormChanged);
     _passwordController.addListener(_onFormChanged);
   }
 
   void _onFormChanged() {
-    // Trigger rebuild to update button state
     setState(() {});
   }
 
   Future<void> _handleRegistration() async {
+    // Prevent double-tap
+    if (_registrationInProgress) {
+      if (kDebugMode) {
+        print('⚠️ Registration already in progress, ignoring tap');
+      }
+      return;
+    }
+
+    // Hide keyboard
+    FocusScope.of(context).unfocus();
+
     setState(() {
-      _errorMessage = null;
       _isLoading = true;
+      _registrationInProgress = true;
     });
+
+    if (kDebugMode) {
+      print('🚀 Starting registration process...');
+    }
 
     try {
       final authProvider = Provider.of<AppAuthProvider>(context, listen: false);
       final inputProvider = Provider.of<InputState>(context, listen: false);
 
+      // Validate inputs
+      final name = _nameController.text.trim();
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+
+      if (name.isEmpty || email.isEmpty || password.isEmpty) {
+        _showErrorSnackBar('Please fill in all fields');
+        setState(() {
+          _isLoading = false;
+          _registrationInProgress = false;
+        });
+        return;
+      }
+
+      if (!_isValidEmail(email)) {
+        _showErrorSnackBar('Please enter a valid email address');
+        setState(() {
+          _isLoading = false;
+          _registrationInProgress = false;
+        });
+        return;
+      }
+
+      if (password.length < 6) {
+        _showErrorSnackBar('Password must be at least 6 characters');
+        setState(() {
+          _isLoading = false;
+          _registrationInProgress = false;
+        });
+        return;
+      }
+
+      if (kDebugMode) {
+        print('📝 Saving name and email to InputState...');
+      }
+
       // Save nameFirst and email to InputState BEFORE calling signUp
       await inputProvider.inputsSaveOnboarding({
-        'nameFirst': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
+        'nameFirst': name,
+        'email': email,
       });
+
+      if (kDebugMode) {
+        print('🔐 Calling authProvider.signUp...');
+      }
       
-      await authProvider.signUp(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
+      // Call signUp and get result
+      final RegistrationResult result = await authProvider.signUp(
+        email,
+        password,
         inputProvider,
       );
 
-      /*if (mounted) {
-        inputProvider.clearAllData();
+      print('🔴 DEBUG: signUp returned');
+      print('🔴 DEBUG: result.success = ${result.success}');
+      print('🔴 DEBUG: result.errorMessage = ${result.errorMessage}');
+      print('🔴 DEBUG: result.errorCode = ${result.errorCode}');
+
+      if (!mounted) {
+        print('🔴 DEBUG: Widget not mounted, returning');
+        return;
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        _registrationInProgress = false;
+      });
+
+      // Handle result
+      if (result.success) {
+        if (kDebugMode) {
+          print('✅ Registration successful! Navigating...');
+        }
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Account created successfully!'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // Wait a moment for the success message to show
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        if (!mounted) return;
+
+        // Navigate to next screen
         Navigator.pushNamedAndRemoveUntil(
           context,
-          AppRoutes.subscription,
+          AppRoutes.matches, // Change this to your desired route
           (_) => false,
         );
-      }*/
+      } else {
+        // Registration failed - show error and STAY on page
+        if (kDebugMode) {
+          print('❌ Registration failed: ${result.errorMessage}');
+          print('❌ Error code: ${result.errorCode}');
+        }
 
-    } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = _getFirebaseErrorMessage(e.code);
-        });
+        _showErrorSnackBar(result.errorMessage ?? 'Registration failed');
       }
+
     } catch (e) {
+      // This shouldn't happen anymore since signUp returns Result
+      // But just in case...
+      if (kDebugMode) {
+        print('❌ Unexpected error in _handleRegistration: $e');
+      }
+      
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Registration failed: ${e.toString()}';
+          _registrationInProgress = false;
         });
+        
+        _showErrorSnackBar('An unexpected error occurred. Please try again.');
       }
     }
   }
 
-  String _getFirebaseErrorMessage(String code) {
-    switch (code) {
-      case 'weak-password':
-        return 'The password is too weak.';
-      case 'email-already-in-use':
-        return 'An account already exists for that email.';
-      case 'invalid-email':
-        return 'The email address is invalid.';
-      default:
-        return 'Registration failed. Please try again.';
-    }
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(message),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Dismiss',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
+  }
+
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
   bool isFormComplete() {
@@ -103,16 +224,13 @@ class _RegisterPageState extends State<RegisterPage> {
     bool hasEmail = _emailController.text.trim().isNotEmpty;
     bool hasPassword = _passwordController.text.trim().isNotEmpty;
     
-    bool isValidEmail = _emailController.text.trim().isNotEmpty && 
-        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-            .hasMatch(_emailController.text.trim());
+    bool isValidEmail = hasEmail && _isValidEmail(_emailController.text.trim());
     
-    return hasName && hasEmail && hasPassword && isValidEmail;
+    return hasName && isValidEmail && hasPassword && _passwordController.text.trim().length >= 6;
   }
 
   @override
   void dispose() {
-    // Remove listeners before disposing
     _nameController.removeListener(_onFormChanged);
     _emailController.removeListener(_onFormChanged);
     _passwordController.removeListener(_onFormChanged);
@@ -126,14 +244,15 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     bool isComplete = isFormComplete();
+    
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
               const CustomStatusBar(),
-              Container (
-                padding: const EdgeInsets.all(16),
+              Container(
+                padding: const EdgeInsets.all(32),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -144,43 +263,54 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                     
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 16),
 
                     TextField(
-                    controller: _nameController,
-                    style: const TextStyle(color: ColorPalette.peach),
-                    decoration: InputDecoration(
-                      labelText: 'First Name',
-                      labelStyle: const TextStyle(color: ColorPalette.peach),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: const BorderSide(
-                          color: Colors.grey,
-                          width: 1,
+                      controller: _nameController,
+                      enabled: !_isLoading,
+                      style: const TextStyle(color: ColorPalette.peach),
+                      decoration: InputDecoration(
+                        labelText: 'First Name',
+                        labelStyle: const TextStyle(color: ColorPalette.peach),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: const BorderSide(
+                            color: ColorPalette.peach,
+                            width: 1,
+                          ),
                         ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: const BorderSide(
-                          color: Colors.grey,
-                          width: 1,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: const BorderSide(
+                            color: ColorPalette.peach,
+                            width: 1,
+                          ),
                         ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: const BorderSide(
-                          color: Colors.grey,
-                          width: 1,
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: const BorderSide(
+                            color: ColorPalette.peach,
+                            width: 2,
+                          ),
                         ),
+                        disabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(
+                            color: ColorPalette.peach.withOpacity(0.5),
+                            width: 1,
+                          ),
+                        ),
+                        suffixIcon: const Icon(Icons.person, color: ColorPalette.peach),
                       ),
-                      suffixIcon: const Icon(Icons.mail, color: Colors.grey),
                     ),
-                  ),
+
+                    const SizedBox(height: 10),
                     
                     TextField(
                       controller: _emailController,
+                      enabled: !_isLoading,
                       keyboardType: TextInputType.emailAddress,
                       style: const TextStyle(color: ColorPalette.peach),
                       decoration: InputDecoration(
@@ -206,6 +336,13 @@ class _RegisterPageState extends State<RegisterPage> {
                           borderRadius: BorderRadius.circular(15),
                           borderSide: const BorderSide(
                             color: ColorPalette.peach,
+                            width: 2,
+                          ),
+                        ),
+                        disabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(
+                            color: ColorPalette.peach.withOpacity(0.5),
                             width: 1,
                           ),
                         ),
@@ -217,6 +354,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                     TextField(
                       controller: _passwordController,
+                      enabled: !_isLoading,
                       obscureText: true,
                       style: const TextStyle(color: ColorPalette.peach),
                       decoration: InputDecoration(
@@ -242,6 +380,13 @@ class _RegisterPageState extends State<RegisterPage> {
                           borderRadius: BorderRadius.circular(15),
                           borderSide: const BorderSide(
                             color: ColorPalette.peach,
+                            width: 2,
+                          ),
+                        ),
+                        disabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(
+                            color: ColorPalette.peach.withOpacity(0.5),
                             width: 1,
                           ),
                         ),
@@ -249,63 +394,40 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
 
-                    if (_errorMessage != null)
-                      Container(
-                        margin: const EdgeInsets.only(top: 10),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(
-                            color: Colors.red.shade700,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-
                     const SizedBox(height: 20),
 
-                    /*SizedBox(
-                      width: double.infinity,
-                      child: TextButton(
-                        onPressed: _isLoading ? null : _handleRegistration,
-                        style: TextButton.styleFrom(
-                          backgroundColor: ColorPalette.peach,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
+                    if (_isLoading)
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: ColorPalette.peach.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(15),
                         ),
-                        child: _isLoading 
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Register',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-                              ],
+                        child: const Column(
+                          children: [
+                            CircularProgressIndicator(
+                              color: ColorPalette.peach,
                             ),
+                            SizedBox(height: 10),
+                            Text(
+                              'Creating your account...',
+                              style: TextStyle(
+                                color: ColorPalette.peach,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'This may take a few seconds',
+                              style: TextStyle(
+                                color: ColorPalette.peach,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),*/
-
                   ],
                 ),
               ),
@@ -314,10 +436,14 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
       bottomNavigationBar: CustomAppBar(
-        buttonText: _isLoading ? 'Registering...' : 'Register',
+        buttonText: _isLoading ? 'Creating Account...' : 'Register',
         buttonIcon: Icons.arrow_forward,
         isEnabled: !_isLoading && isComplete,
-        onPressed: _handleRegistration,
+        onPressed: () {
+          if (!_isLoading && isComplete) {
+            _handleRegistration();
+          }
+        },
       ),
     );
   }
