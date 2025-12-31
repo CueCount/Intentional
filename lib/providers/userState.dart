@@ -116,77 +116,77 @@ class UserSyncProvider extends ChangeNotifier {
   }
 
   Future<List<String>?> _fetchSessionListWithRetry(InputState inputState, {
-  int maxRetries = 5,
-  Duration initialDelay = const Duration(milliseconds: 500),
-  double backoffMultiplier = 1.5,
-}) async {
-  var sessionUserIds = await inputState.getInput('currentSessionList');
-  
-  // If already available, return immediately
-  if (sessionUserIds != null && sessionUserIds is List && sessionUserIds.isNotEmpty) {
-    if (kDebugMode) {
-      print('User Provider: Session list already available with ${sessionUserIds.length} users');
-    }
-    return List<String>.from(sessionUserIds);
-  }
-  
-  // Retry logic
-  Duration currentDelay = initialDelay;
-  
-  for (int attempt = 1; attempt <= maxRetries; attempt++) {
-    if (kDebugMode) {
-      print('User Provider: Attempt $attempt/$maxRetries to fetch currentSessionList');
+    int maxRetries = 5,
+    Duration initialDelay = const Duration(milliseconds: 500),
+    double backoffMultiplier = 1.5,
+  }) async {
+    var sessionUserIds = await inputState.getInput('currentSessionList');
+    
+    // If already available, return immediately
+    if (sessionUserIds != null && sessionUserIds is List && sessionUserIds.isNotEmpty) {
+      if (kDebugMode) {
+        print('User Provider: Session list already available with ${sessionUserIds.length} users');
+      }
+      return List<String>.from(sessionUserIds);
     }
     
-    try {
-      // Fetch currentSessionList from Firebase
-      await inputState.fetchSpecificInputs(['currentSessionList']);
-      
-      // Try to get it after fetching
-      sessionUserIds = await inputState.getInput('currentSessionList');
-      
-      // Check if we got valid data
-      if (sessionUserIds != null && sessionUserIds is List && sessionUserIds.isNotEmpty) {
-        if (kDebugMode) {
-          print('User Provider: Successfully fetched ${sessionUserIds.length} user IDs on attempt $attempt');
-        }
-        return List<String>.from(sessionUserIds);
-      }
-      
-      // If not the last attempt, wait before retrying
-      if (attempt < maxRetries) {
-        if (kDebugMode) {
-          print('User Provider: No data yet, waiting ${currentDelay.inMilliseconds}ms before retry...');
-        }
-        await Future.delayed(currentDelay);
-        
-        // Increase delay for next attempt (exponential backoff)
-        currentDelay = Duration(
-          milliseconds: (currentDelay.inMilliseconds * backoffMultiplier).round()
-        );
-      }
-      
-    } catch (e) {
+    // Retry logic
+    Duration currentDelay = initialDelay;
+    
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
       if (kDebugMode) {
-        print('User Provider Error: Attempt $attempt failed - $e');
+        print('User Provider: Attempt $attempt/$maxRetries to fetch currentSessionList');
       }
       
-      // If not the last attempt, wait before retrying
-      if (attempt < maxRetries) {
-        await Future.delayed(currentDelay);
-        currentDelay = Duration(
-          milliseconds: (currentDelay.inMilliseconds * backoffMultiplier).round()
-        );
+      try {
+        // Fetch currentSessionList from Firebase
+        await inputState.fetchSpecificInputs(['currentSessionList']);
+        
+        // Try to get it after fetching
+        sessionUserIds = await inputState.getInput('currentSessionList');
+        
+        // Check if we got valid data
+        if (sessionUserIds != null && sessionUserIds is List && sessionUserIds.isNotEmpty) {
+          if (kDebugMode) {
+            print('User Provider: Successfully fetched ${sessionUserIds.length} user IDs on attempt $attempt');
+          }
+          return List<String>.from(sessionUserIds);
+        }
+        
+        // If not the last attempt, wait before retrying
+        if (attempt < maxRetries) {
+          if (kDebugMode) {
+            print('User Provider: No data yet, waiting ${currentDelay.inMilliseconds}ms before retry...');
+          }
+          await Future.delayed(currentDelay);
+          
+          // Increase delay for next attempt (exponential backoff)
+          currentDelay = Duration(
+            milliseconds: (currentDelay.inMilliseconds * backoffMultiplier).round()
+          );
+        }
+        
+      } catch (e) {
+        if (kDebugMode) {
+          print('User Provider Error: Attempt $attempt failed - $e');
+        }
+        
+        // If not the last attempt, wait before retrying
+        if (attempt < maxRetries) {
+          await Future.delayed(currentDelay);
+          currentDelay = Duration(
+            milliseconds: (currentDelay.inMilliseconds * backoffMultiplier).round()
+          );
+        }
       }
     }
+    
+    if (kDebugMode) {
+      print('User Provider: Failed to fetch currentSessionList after $maxRetries attempts');
+    }
+    
+    return null;
   }
-  
-  if (kDebugMode) {
-    print('User Provider: Failed to fetch currentSessionList after $maxRetries attempts');
-  }
-  
-  return null;
-}
 
   Future<Map<String, dynamic>?> getUserFromCache(String userId, String currentSessionId) async {
     try {

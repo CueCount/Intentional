@@ -18,8 +18,6 @@ class Match extends StatefulWidget {
 class _Match extends State<Match>  with TickerProviderStateMixin {
   Map<String, dynamic>? profile; 
   String? currentUserImage;
-
-  // Simple animation tracking - just need one controller per section
   AnimationController? _photoController;
   AnimationController? _archetypeController;
   AnimationController? _chemistryController;
