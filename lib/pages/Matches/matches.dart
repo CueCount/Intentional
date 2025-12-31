@@ -16,7 +16,6 @@ class Matches extends StatefulWidget {
 }
 
 class _Matches extends State<Matches> {
-
   List<Map<String, dynamic>> _userData = [];
   List<Map<String, dynamic>> _inputData = [];
   bool _isLoading = true;
