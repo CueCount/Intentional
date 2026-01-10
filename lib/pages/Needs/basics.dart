@@ -42,7 +42,7 @@ class _basics extends State<Basics> {
     
     try {
       // Get existing emotional needs from provider
-      final existingBasics = await inputState.getInput('basics');
+      final existingBasics = await inputState.fetchInputFromLocal('basics');
       
       if (existingBasics != null && existingBasics is List) {
         // Mark existing selections as true
@@ -147,12 +147,12 @@ class _basics extends State<Basics> {
 
           onPressed: () async {
             if (isLoggedIn) {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocal(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocalInOnboarding(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.guideOnboardingNeeds);
               }

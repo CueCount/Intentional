@@ -52,7 +52,7 @@ class _QualifierRelDate extends State<QualifierRelDate> {
     
     try {
       // Get existing Gender selection
-      final existingGender = await inputState.getInput('Gender');
+      final existingGender = await inputState.fetchInputFromLocal('Gender');
       if (existingGender != null && existingGender is List && existingGender.isNotEmpty) {
         for (String selectedValue in existingGender) {
           if (groupSelectedValues['Gender']?.containsKey(selectedValue) ?? false) {
@@ -62,7 +62,7 @@ class _QualifierRelDate extends State<QualifierRelDate> {
       }
       
       // Get existing Seeking selection
-      final existingSeeking = await inputState.getInput('Seeking');
+      final existingSeeking = await inputState.fetchInputFromLocal('Seeking');
       if (existingSeeking != null && existingSeeking is List && existingSeeking.isNotEmpty) {
         for (String selectedValue in existingSeeking) {
           if (groupSelectedValues['Seeking']?.containsKey(selectedValue) ?? false) {
@@ -72,7 +72,7 @@ class _QualifierRelDate extends State<QualifierRelDate> {
       }
       
       // Get existing Location
-      final existingLocation = await inputState.getInput('Location');
+      final existingLocation = await inputState.fetchInputFromLocal('Location');
       if (existingLocation != null && existingLocation is Map) {
         _selectedCity = Map<String, dynamic>.from(existingLocation);
         _searchController.text = '${_selectedCity!['name']}, ${_selectedCity!['adminCode1']}';
@@ -443,12 +443,12 @@ class _QualifierRelDate extends State<QualifierRelDate> {
 
           onPressed: () async {
             if (isLoggedIn) {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocal(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocalInOnboarding(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.age);
               }

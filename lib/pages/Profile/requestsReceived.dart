@@ -59,13 +59,14 @@ class _RequestReceivedState extends State<RequestReceived> {
             _userDataCache[requesterUserId] = userData;
           });
         } else {
-          // Fetch from Firebase if not in cache
-          final firebaseData = await userProvider.getUserByID(requesterUserId, inputState.userId);
+          final firebaseData = await userProvider.getUserByID(requesterUserId, inputState.userId, inputState);
           if (firebaseData != null) {
-            setState(() {
-              _userDataCache[requesterUserId] = firebaseData;
-            });
-          }
+          final usersWithCompatibility = await inputState.generateCompatibility([firebaseData]);
+          await userProvider.storeUserInCache(usersWithCompatibility.first, inputState.userId);
+          setState(() {
+            _userDataCache[requesterUserId] = usersWithCompatibility.first;  // Get first item back
+          });
+        }
         }
       }
     }

@@ -58,7 +58,7 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
       });
 
       final inputState = Provider.of<InputState>(context, listen: false);
-      final photos = await inputState.getInput('photos');
+      final photos = await inputState.fetchInputFromLocal('photos');
       
       if (photos != null && photos is List && photos.isNotEmpty) {
         setState(() {

@@ -61,7 +61,7 @@ class _personalityQ1 extends State<PersonalityQ1> {
     
     try {
       // Get existing values from provider using the input name
-      final existingValues = await inputState.getInput(widget.inputName);
+      final existingValues = await inputState.fetchInputFromLocal(widget.inputName);
       
       if (existingValues != null && existingValues is List) {
         // Mark existing selections as true
@@ -190,7 +190,7 @@ class _personalityQ1 extends State<PersonalityQ1> {
           buttonText: isLoggedIn ? 'Save' : 'Continue',
           buttonIcon: isLoggedIn ? Icons.save : Icons.arrow_forward,
           onPressed: () async {
-            await inputState.inputsSaveOnboarding(inputData);
+            await inputState.saveInputToRemoteThenLocal(inputData);
             if (context.mounted) {
               Navigator.pushNamed(
                 context, 

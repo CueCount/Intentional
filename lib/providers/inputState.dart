@@ -49,58 +49,6 @@ class InputState extends ChangeNotifier {
   String get userId => _currentSessionId;
 
   /* = = = = = = = = =
-  Save Inputs Onboarding 
-  = = = = = = = = = */
-
-  Future<void> inputsSaveOnboarding(Map<String, dynamic>? needData) async {
-    try {
-      // Use the session ID we already have from AuthProvider
-      if (_currentSessionId.isEmpty) {
-        throw Exception("No session ID available");
-      }
-      
-      if (needData == null || needData.isEmpty) {
-        print('⚠️ No data to save');
-        return;
-      }
-
-      // Get SharedPreferences instance
-      final prefs = await SharedPreferences.getInstance();
-      final key = 'inputs_$_currentSessionId';
-      
-      // Get existing data if any
-      String? existingDataJson = prefs.getString(key);
-      Map<String, dynamic> existingData = {};
-      
-      if (existingDataJson != null && existingDataJson.isNotEmpty) {
-        Map rawData = json.decode(existingDataJson);
-        rawData.forEach((k, v) => existingData[k.toString()] = v);
-      }
-
-      // Merge new data with existing data
-      final mergedData = {
-        ...existingData,
-        ...needData,
-        'session_id': _currentSessionId,
-        'last_updated': DateTime.now().toIso8601String(),
-      };
-
-      // Save merged data back to SharedPreferences
-      await prefs.setString(key, json.encode(mergedData));
-      
-      // Update local cache as well
-      _cachedInputs.addAll(needData);
-      notifyListeners();
-      
-      print('✅ Data saved locally under key "$key"');
-      
-    } catch (e) {
-      print('❌ saveNeedLocally: Failed - $e');
-      throw e;
-    }
-  }
-
-  /* = = = = = = = = =
   Current Session Id
   = = = = = = = = = */
 
@@ -124,29 +72,205 @@ class InputState extends ChangeNotifier {
   }
   
   /* = = = = = = = = =
-  Loading Input
+  Save Input
   = = = = = = = = = */
 
-  Future<Map<String, dynamic>> inputsLoad() async {
+  Future<void> saveInputToRemoteThenLocal(Map<String, dynamic>? needData) async {
     try {
       if (_currentSessionId.isEmpty) {
+        throw Exception("No session ID available");
+      }
+      
+      if (needData == null || needData.isEmpty) {
+        print('⚠️ No data to save');
+        return;
+      }
+
+      // 1. Save to Firestore 'users' collection
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentSessionId)
+          .set({
+            ...needData,
+            'lastUpdated': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+
+      if (kDebugMode) {
+        print('✅ Saved to users/${_currentSessionId}');
+      }
+
+      // 2. Save locally to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'inputs_$_currentSessionId';
+      
+      String? existingDataJson = prefs.getString(key);
+      Map<String, dynamic> existingData = {};
+      
+      if (existingDataJson != null && existingDataJson.isNotEmpty) {
+        Map rawData = json.decode(existingDataJson);
+        rawData.forEach((k, v) => existingData[k.toString()] = v);
+      }
+
+      final mergedData = {
+        ...existingData,
+        ...needData,
+        'session_id': _currentSessionId,
+        'last_updated': DateTime.now().toIso8601String(),
+      };
+
+      await prefs.setString(key, json.encode(mergedData));
+      
+      _cachedInputs.addAll(needData);
+      notifyListeners();
+      
+      if (kDebugMode) {
+        print('✅ Saved locally under key "$key"');
+      }
+      
+    } catch (e) {
+      print('❌ saveInputToRemoteThenLocal: Failed - $e');
+      rethrow;
+    }
+  }
+
+  Future<void> saveInputToRemoteThenLocalInOnboarding(Map<String, dynamic>? needData) async {
+    try {
+      if (_currentSessionId.isEmpty) {
+        throw Exception("No session ID available");
+      }
+      
+      if (needData == null || needData.isEmpty) {
+        print('⚠️ No data to save');
+        return;
+      }
+
+      // 1. Save to Firestore 'users_onboarding' collection
+      await FirebaseFirestore.instance
+          .collection('users_onboarding')
+          .doc(_currentSessionId)
+          .set({
+            ...needData,
+            'lastUpdated': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+
+      if (kDebugMode) {
+        print('✅ Saved to users_onboarding/${_currentSessionId}');
+      }
+
+      // 2. Save locally to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'inputs_$_currentSessionId';
+      
+      String? existingDataJson = prefs.getString(key);
+      Map<String, dynamic> existingData = {};
+      
+      if (existingDataJson != null && existingDataJson.isNotEmpty) {
+        Map rawData = json.decode(existingDataJson);
+        rawData.forEach((k, v) => existingData[k.toString()] = v);
+      }
+
+      final mergedData = {
+        ...existingData,
+        ...needData,
+        'session_id': _currentSessionId,
+        'last_updated': DateTime.now().toIso8601String(),
+      };
+
+      await prefs.setString(key, json.encode(mergedData));
+      
+      _cachedInputs.addAll(needData);
+      notifyListeners();
+      
+      if (kDebugMode) {
+        print('✅ Saved locally under key "$key"');
+      }
+      
+    } catch (e) {
+      print('❌ saveInputToRemoteThenLocalInOnboarding: Failed - $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> saveInputsToLocalFromRemote(String userId) async {
+    try {
+      if (userId.isEmpty) {
+        if (kDebugMode) {
+          print('❌ fetchInputs: No userId provided');
+        }
         return {};
       }
-      
+
+      if (kDebugMode) {
+        print('🔄 fetchInputs: Fetching data for user: $userId');
+      }
+
+      // Fetch from Firestore
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (!doc.exists || doc.data() == null) {
+        if (kDebugMode) {
+          print('⚠️ fetchInputs: No document found for user: $userId');
+        }
+        return {};
+      }
+
+      Map<String, dynamic> userData = doc.data()!;
+
+      if (kDebugMode) {
+        print('✅ fetchInputs: Retrieved ${userData.keys.length} fields from Firestore');
+      }
+
+      // Prepare data for SharedPreferences (remove non-serializable fields)
+      Map<String, dynamic> serializableData = Map<String, dynamic>.from(userData);
+      serializableData.removeWhere((key, value) => 
+        value is Timestamp ||
+        key == 'lastUpdated' ||
+        key.startsWith('_')
+      );
+
+      // Convert any remaining Timestamps to ISO strings
+      serializableData.forEach((key, value) {
+        if (value is Timestamp) {
+          serializableData[key] = value.toDate().toIso8601String();
+        }
+      });
+
+      // Save to SharedPreferences, overwriting existing data
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('inputs_$userId', jsonEncode(serializableData));
+
+      if (kDebugMode) {
+        print('✅ fetchInputs: Saved to SharedPreferences under inputs_$userId');
+      }
+
+      // Update cached inputs and session ID
+      _cachedInputs = serializableData;
+      _currentSessionId = userId;
+      notifyListeners();
+
+      return serializableData;
+
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ fetchInputs: Failed - $e');
+      }
+      return {};
+    }
+  }
+
+  /* = = = = = = = = =
+  Fetch Input
+  = = = = = = = = = */
+
+  Future<Map<String, dynamic>> fetchInputsFromLocal() async {
+    try {
+      if (_currentSessionId.isEmpty) { return {}; }
       final prefs = await SharedPreferences.getInstance();
       final inputsJson = prefs.getString('inputs_$_currentSessionId');
-
-      // if 
-
-      // if
-
-      // if
-      
-      if (inputsJson != null) {
-        return jsonDecode(inputsJson);
-      }
-      
-      // No inputs cached - return empty map
+      if (inputsJson != null) { return jsonDecode(inputsJson); }
       return {};
     } catch (e) {
       print('InputState Error: Failed to get all inputs - $e');
@@ -154,185 +278,7 @@ class InputState extends ChangeNotifier {
     }
   }
 
-
-
-  Future<Map<String, dynamic>> syncInputs({String? fromId, String? toId}) async {
-    try {
-      final sourceId = fromId ?? _currentSessionId;
-      final targetId = toId ?? _currentSessionId;
-      
-      if (sourceId.isEmpty) {
-        print('InputState: No session ID for syncing');
-        return {};
-      }
-      
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Step 1: Always read from SharedPreferences using sourceId
-      Map<String, dynamic> localInputs = {};
-      final inputsJson = prefs.getString('inputs_$sourceId');
-      if (inputsJson != null) {
-        localInputs = jsonDecode(inputsJson);
-      }
-      print('🔍 Local inputs from $sourceId: ${localInputs.keys.toList()}');
-      
-      // Step 2: Get inputs from Firebase (if not a transfer, get from target)
-      Map<String, dynamic> firebaseInputs = {};
-      //if (fromId == null) {  // Only fetch from Firebase if not transferring
-        try {
-          final doc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(targetId)
-              .get();
-          
-          if (doc.exists && doc.data() != null) {
-            firebaseInputs = doc.data()!;
-          }
-        } catch (e) {
-          print('InputState: Error getting Firebase inputs - $e');
-        }
-      //}
-
-      print('🔍 Firebase inputs retrieved: ${firebaseInputs.keys.toList()}');
-      print('📊 Firebase inputs count: ${firebaseInputs.length}');
-      
-      // Step 3: Merge inputs - local takes priority, but get everything from Firebase
-      Map<String, dynamic> mergedInputs = Map<String, dynamic>.from(localInputs);
-
-      // Add all Firebase data, but only for keys that either:
-      // 1. Don't exist locally at all, OR
-      // 2. Have empty local values
-      firebaseInputs.forEach((key, value) {
-        if (!mergedInputs.containsKey(key)) {
-          // Key doesn't exist locally - add it from Firebase
-          mergedInputs[key] = value;
-        } else {
-          // Key exists locally - only replace if local is empty
-          final localValue = mergedInputs[key];
-          if (localValue == null ||
-              (localValue is String && localValue.trim().isEmpty) ||
-              (localValue is List && localValue.isEmpty) ||
-              (localValue is Map && localValue.isEmpty)) {
-            mergedInputs[key] = value;
-          }
-        }
-      });
-
-      print('🔄 Merged inputs keys: ${mergedInputs.keys.toList()}');
-      print('📊 Merged inputs count: ${mergedInputs.length}');
-      
-      // Step 4: Handle photo uploads if transferring or if photos are local
-      if (mergedInputs['photos'] != null && mergedInputs['photos'] is List) {
-        final photos = mergedInputs['photos'] as List;
-        bool needsUpload = photos.any((photo) => 
-          photo is String && (photo.startsWith('data:') || !photo.startsWith('http'))
-        );
-        
-        if (needsUpload) {
-          mergedInputs['photos'] = await _uploadPhotosToStorage(photos, targetId);
-        }
-      }
-      
-      // Step 5: Write to Firebase with target ID
-      try {
-        await FirebaseFirestore.instance
-        .collection('users')
-        .doc(targetId)
-        .set({
-          ...mergedInputs,
-          'userId': targetId,
-          'lastUpdated': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-      } catch (e) {
-        print('InputState: Error updating Firebase - $e');
-      }
-      
-      // Step 6: Save to SharedPreferences with target ID
-      try {
-        Map<String, dynamic> serializableInputs = Map<String, dynamic>.from(mergedInputs);
-        serializableInputs.removeWhere((key, value) => 
-          key == 'lastUpdated' || 
-          value is Timestamp ||
-          key.startsWith('_')
-        );
-        
-        await prefs.setString('inputs_$targetId', jsonEncode(serializableInputs));
-      } catch (e) {
-        print('InputState: Error updating local inputs - $e');
-      }
-      
-      // Step 7: Clean up source if this was a transfer
-      if (fromId != null && fromId != targetId) {
-        await prefs.remove('inputs_$fromId');
-        print('InputState: Cleaned up source data for $fromId');
-      }
-      
-      return mergedInputs;
-      
-    } catch (e) {
-      print('InputState Error: Failed to sync inputs - $e');
-      return {};
-    }
-  }
-
-  Future<List<String>> _uploadPhotosToStorage(List<dynamic> localPhotos, String userId) async {
-    final List<String> uploadedUrls = [];
-    
-    for (int i = 0; i < localPhotos.length; i++) {
-      try {
-        final photo = localPhotos[i];
-        
-        // Skip if already a Firebase URL
-        if (photo is String && photo.startsWith('https://firebasestorage.googleapis.com')) {
-          uploadedUrls.add(photo);
-          continue;
-        }
-        
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('users')
-            .child(userId)
-            .child('photos')
-            .child('photo_$i.jpg');
-        
-        if (kIsWeb && photo is String && photo.startsWith('data:')) {
-          // Web: Convert base64 to bytes and upload
-          final base64String = photo.split(',')[1];
-          final bytes = base64Decode(base64String);
-          
-          final uploadTask = await storageRef.putData(
-            bytes,
-            SettableMetadata(contentType: 'image/jpeg'),
-          );
-          
-          final downloadUrl = await uploadTask.ref.getDownloadURL();
-          uploadedUrls.add(downloadUrl);
-          
-        } else if (!kIsWeb && photo is String) {
-          // Mobile: Upload file from path
-          final file = File(photo);
-          if (await file.exists()) {
-            final uploadTask = await storageRef.putFile(
-              file,
-              SettableMetadata(contentType: 'image/jpeg'),
-            );
-            
-            final downloadUrl = await uploadTask.ref.getDownloadURL();
-            uploadedUrls.add(downloadUrl);
-          }
-        }
-      } catch (e) {
-        print('Error uploading photo $i: $e');
-        // Continue with other photos even if one fails
-      }
-    }
-    
-    return uploadedUrls;
-  }
-
-
-
-  Future<dynamic> getInput(String inputKey) async {
+  Future<dynamic> fetchInputFromLocal(String inputKey) async {
     try {
       if (_currentSessionId.isEmpty) {
         print('InputState: No session ID for getting input');
@@ -349,34 +295,9 @@ class InputState extends ChangeNotifier {
         if (inputs[inputKey] != null) {
           final value = inputs[inputKey];
           
-          // If it's an empty list, treat it as not found and fetch from Firebase
-          if (value is List && value.isEmpty) {
-            print('InputState: $inputKey exists but is empty, fetching from Firebase');
-            await fetchSpecificInputs([inputKey]);
-            
-            // Re-read after fetch
-            final updatedJson = prefs.getString('inputs_$_currentSessionId');
-            if (updatedJson != null) {
-              final updated = jsonDecode(updatedJson);
-              return updated[inputKey];
-            }
-            return null;
-          }
-          
           // Value exists and is not empty
           return value;
         }
-      }
-      
-      // Input not found in cache at all - fetch from Firebase
-      print('InputState: $inputKey not in cache, fetching from Firebase');
-      await fetchSpecificInputs([inputKey]);
-      
-      // Try to get it again after fetching
-      final updatedJson = prefs.getString('inputs_$_currentSessionId');
-      if (updatedJson != null) {
-        final updated = jsonDecode(updatedJson);
-        return updated[inputKey];
       }
       
       return null;
@@ -386,115 +307,8 @@ class InputState extends ChangeNotifier {
     }
   }
 
-  Future<void> fetchSpecificInputs(List<String> inputKeys) async {
-    try {
-      if (_currentSessionId.isEmpty || inputKeys.isEmpty) return;
-      
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Get existing cached inputs
-      Map<String, dynamic> existing = {};
-      final existingJson = prefs.getString('inputs_$_currentSessionId');
-      if (existingJson != null) {
-        existing = jsonDecode(existingJson);
-      }
-      
-      // Fetch from Firebase
-      final docSnap = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_currentSessionId)
-          .get();
-      
-      if (!docSnap.exists) {
-        print('InputState: No Firebase doc for $_currentSessionId');
-        return;
-      }
-      
-      final firebaseData = docSnap.data()!;
-      
-      // Extract only requested inputs
-      Map<String, dynamic> fetched = {};
-      for (String key in inputKeys) {
-        if (firebaseData[key] != null) {
-          // Handle special cases for lists stored as JSON strings
-          if (key == 'currentSessionList' || key == 'currentSeshList' || 
-              key == 'ignoreList' || key == 'deniedList') {
-            // Try to decode if it's a JSON string
-            final value = firebaseData[key];
-            if (value is String) {
-              try {
-                fetched[key] = jsonDecode(value);
-              } catch (_) {
-                fetched[key] = value;
-              }
-            } else {
-              fetched[key] = value;
-            }
-          } else {
-            fetched[key] = firebaseData[key];
-          }
-        }
-      }
-      
-      // Merge with existing and save
-      final merged = {...existing, ...fetched};
-      await prefs.setString('inputs_$_currentSessionId', jsonEncode(merged));
-      
-      // Update local state if these are our tracked lists
-      if (inputKeys.contains('currentSessionList')) {
-        currentSessionList = List<String>.from(fetched['currentSessionList'] ?? []);
-      }
-      if (inputKeys.contains('ignoreList')) {
-        ignoreList = List<String>.from(fetched['ignoreList'] ?? []);
-      }
-      if (inputKeys.contains('deniedList')) {
-        deniedList = List<String>.from(fetched['deniedList'] ?? []);
-      }
-      
-      notifyListeners();
-      
-      print('InputState: Fetched ${inputKeys.join(", ")} from Firebase');
-      print('InputState: Here is what currentSessionIds looks like $currentSessionList');
-      
-    } catch (e) {
-      print('InputState Error: Failed to fetch inputs - $e');
-    }
-  }
-
-  Future<dynamic> getSpecificInputForUserQuery(String inputKey) async {
-    try {
-      if (_currentSessionId.isEmpty) return null;
-      
-      // First check SharedPreferences cache
-      final prefs = await SharedPreferences.getInstance();
-      final existingJson = prefs.getString('inputs_$_currentSessionId');
-      
-      if (existingJson != null) {
-        final cached = jsonDecode(existingJson);
-        if (cached[inputKey] != null) {
-          return cached[inputKey];  // Return cached value
-        }
-      }
-      
-      // If not cached, fetch from Firebase
-      final docSnap = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_currentSessionId)
-          .get();
-      
-      if (!docSnap.exists) return null;
-      
-      final firebaseData = docSnap.data()!;
-      return firebaseData[inputKey];  // Return the specific value
-      
-    } catch (e) {
-      print('InputState Error: Failed to get input - $e');
-      return null;
-    }
-  }
-
   /* = = = = = = = = =
-  Photo Save/Load 
+  Save/Fetch Photo 
   = = = = = = = = = */
 
   Future<void> savePhotosLocally() async {
@@ -596,25 +410,74 @@ class InputState extends ChangeNotifier {
     }
   }
 
+  Future<List<String>> _uploadPhotosToStorage(List<dynamic> localPhotos, String userId) async {
+    final List<String> uploadedUrls = [];
+    
+    for (int i = 0; i < localPhotos.length; i++) {
+      try {
+        final photo = localPhotos[i];
+        
+        // Skip if already a Firebase URL
+        if (photo is String && photo.startsWith('https://firebasestorage.googleapis.com')) {
+          uploadedUrls.add(photo);
+          continue;
+        }
+        
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('users')
+            .child(userId)
+            .child('photos')
+            .child('photo_$i.jpg');
+        
+        if (kIsWeb && photo is String && photo.startsWith('data:')) {
+          // Web: Convert base64 to bytes and upload
+          final base64String = photo.split(',')[1];
+          final bytes = base64Decode(base64String);
+          
+          final uploadTask = await storageRef.putData(
+            bytes,
+            SettableMetadata(contentType: 'image/jpeg'),
+          );
+          
+          final downloadUrl = await uploadTask.ref.getDownloadURL();
+          uploadedUrls.add(downloadUrl);
+          
+        } else if (!kIsWeb && photo is String) {
+          // Mobile: Upload file from path
+          final file = File(photo);
+          if (await file.exists()) {
+            final uploadTask = await storageRef.putFile(
+              file,
+              SettableMetadata(contentType: 'image/jpeg'),
+            );
+            
+            final downloadUrl = await uploadTask.ref.getDownloadURL();
+            uploadedUrls.add(downloadUrl);
+          }
+        }
+      } catch (e) {
+        print('Error uploading photo $i: $e');
+        // Continue with other photos even if one fails
+      }
+    }
+    
+    return uploadedUrls;
+  }
+
   /* = = = = = = = = =
   Compatibility
   = = = = = = = = = */
 
-  Future<void> checkAndUpdateMissingCompatibility(InputState inputState) async {
-    if (_currentSessionId == null) return;
-    
+  Future<List<Map<String, dynamic>>> generateCompatibility(List<Map<String, dynamic>> users) async {
+    if (_currentSessionId.isEmpty) return users;
+  
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final usersList = prefs.getStringList('users_$_currentSessionId') ?? [];
-      final currentUserData = await inputState.inputsLoad();
+      final currentUserData = await fetchInputsFromLocal();
+      final List<Map<String, dynamic>> processedUsers = [];
       
-      bool hasUpdates = false;
-      List<String> updatedUsers = [];
-      
-      for (int i = 0; i < usersList.length; i++) {
-        final userData = jsonDecode(usersList[i]);
-        
-        // Check if compatibility is missing or incomplete (no category data)
+      for (var userData in users) {
+        // Check if compatibility is missing
         if (userData['compatibility'] == null) {
           // Calculate compatibility
           final result = MatchCalculationService().calculateMatch(
@@ -656,9 +519,7 @@ class InputState extends ChangeNotifier {
               'reason': result.breakdown['goals']?.reason ?? '',
             },
             
-            // NEW: Complete archetype analysis
             'archetypes': result.archetypeAnalysis != null ? {
-              // Primary archetypes
               'personality': result.archetypeAnalysis!['personalityArchetype'] != null ? {
                 'name': result.archetypeAnalysis!['personalityArchetype']['name'],
                 'description': result.archetypeAnalysis!['personalityArchetype']['description'],
@@ -672,10 +533,8 @@ class InputState extends ChangeNotifier {
                 'idealDate': result.archetypeAnalysis!['relationshipStyle']['idealDate'],
                 'longTermOutlook': result.archetypeAnalysis!['relationshipStyle']['longTermOutlook'],
               } : null,
-              // Summary data
               'summary': result.archetypeAnalysis!['summary'],
               'narrative': result.archetypeAnalysis!['narrative'],
-              // Distribution analysis
               'traitDistribution': result.archetypeAnalysis!['traitDistribution'],
               'dynamicsPattern': result.archetypeAnalysis!['dynamicsPattern'],
             } : null,
@@ -683,25 +542,21 @@ class InputState extends ChangeNotifier {
             'calculatedAt': DateTime.now().toIso8601String(),
           };
           
-          updatedUsers.add(jsonEncode(userData));
-          hasUpdates = true;
-          
           if (kDebugMode) {
             print('Updated compatibility for ${userData['userId']}');
           }
-        } else {
-          updatedUsers.add(usersList[i]);
         }
+        
+        processedUsers.add(userData);
       }
       
-      if (hasUpdates) {
-        await prefs.setStringList('users_$_currentSessionId', updatedUsers);
-        notifyListeners();
-      }
+      return processedUsers;
+      
     } catch (e) {
       if (kDebugMode) {
         print('Error checking compatibility: $e');
       }
+      return users;
     }
   }
 

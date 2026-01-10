@@ -132,6 +132,8 @@ class AppRoutes {
         return const ResetPassword();
       case guideRequestSent:
         return const GuideRequestSent();
+      case guideAvailableMatches:
+        return const GuideAvailableMatches();
       case loading:
         return const RefreshLoadingScreen();
       default:
@@ -173,6 +175,8 @@ class AppRoutes {
         return SubscriptionPage();
       case guideRequestSent:
         return const GuideRequestSent();
+      case loading:
+        return const RefreshLoadingScreen();
       case home:
         return const MyHomePage(title: 'Landing Page',);
       default:

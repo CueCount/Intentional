@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../providers/authState.dart';
+import '../../providers/inputState.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/bottomNavigationBar.dart';
 import '../../../../styles.dart';
@@ -63,7 +64,8 @@ class _LoginPageState extends State<LoginPage> {
           buttonIcon: Icons.arrow_forward,
           onPressed: () async {
             final authProvider = Provider.of<AppAuthProvider>(context, listen: false);
-            await authProvider.signIn(_emailController.text, _passwordController.text);
+            final inputState = Provider.of<InputState>(context, listen: false);
+            await authProvider.signIn(_emailController.text, _passwordController.text, inputState);
           },
         );
       }(),

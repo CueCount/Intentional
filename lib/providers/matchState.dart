@@ -48,7 +48,7 @@ class MatchSyncProvider extends ChangeNotifier {
   }
   
   /* = = = = = = = = = 
-  Lister for Sent Requests:
+  Listener for Sent Requests:
   Listen for acceptance of match requests
   Changes status to "active" for Match Doc
   Notifies Listeners

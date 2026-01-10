@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import '/router/router.dart';
 import '../../styles.dart';
 import '../../providers/userState.dart';
 import '../../providers/inputState.dart';
+import '../../providers/userState.dart';
 
 class GuideAvailableMatches extends StatefulWidget {
   const GuideAvailableMatches({super.key});
@@ -15,33 +17,31 @@ class GuideAvailableMatches extends StatefulWidget {
 
 class _GuideAvailableMatches extends State<GuideAvailableMatches> {
   bool _isLoading = true;
+  bool _isLoggedIn = false;
   List<String?> _userPhotos = [];
 
   @override
   void initState() {
     super.initState();
-    _loadInitialUsers();
+    _isLoggedIn = FirebaseAuth.instance.currentUser != null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadInitialUsers();
+    });
   }
 
   Future<void> _loadInitialUsers() async {
-    final userProvider = Provider.of<UserSyncProvider>(context, listen: false);
+    final userSync = Provider.of<UserSyncProvider>(context, listen: false);
     final inputState = Provider.of<InputState>(context, listen: false);
-    
-    await userProvider.fetchInitialUsers(inputState);
-    
-    final prefs = await SharedPreferences.getInstance();
-    final currentSessionId = inputState.userId;
-    final usersList = prefs.getStringList('users_$currentSessionId') ?? [];
+    final users = await userSync.loadUsers(inputState);
     
     List<String?> photos = [];
-    for (String userJson in usersList) {
-      final userData = jsonDecode(userJson);
+    for (Map<String, dynamic> userData in users) {
       if (userData['photos'] != null && 
           userData['photos'] is List && 
           (userData['photos'] as List).isNotEmpty) {
         photos.add(userData['photos'][0]);
       } else {
-        photos.add(null); // Placeholder for users without photos
+        photos.add(null); 
       }
     }
     
@@ -80,9 +80,11 @@ class _GuideAvailableMatches extends State<GuideAvailableMatches> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Send match requests\nonce you verify your identity.',
+                      _isLoggedIn
+                          ? 'Your new potential matches\nhave been found!'
+                          : 'Send match requests\nonce you verify your identity.',
                       style: AppTextStyles.headingSmall.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white,
                         fontSize: 18,
                       ),
                       textAlign: TextAlign.center,
@@ -90,13 +92,17 @@ class _GuideAvailableMatches extends State<GuideAvailableMatches> {
                     const SizedBox(height: 16),
                     TextButton.icon(
                       onPressed: () {
-                        Navigator.pushNamed(context, AppRoutes.photos);
+                        if (_isLoggedIn) {
+                          Navigator.pushNamed(context, AppRoutes.matches);
+                        } else {
+                          Navigator.pushNamed(context, AppRoutes.photos);
+                        }
                       },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       ),
                       icon: Text(
-                        'Verify Yourself',
+                        _isLoggedIn ? 'Start Exploring' : 'Verify Yourself',
                         style: AppTextStyles.headingMedium.copyWith(
                           color: Colors.white,
                           fontSize: 24,

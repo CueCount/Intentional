@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +15,7 @@ class UserSyncProvider extends ChangeNotifier {
   // Private variables
   String? _currentUserId;
   bool _isListening = false;
+  final isLoggedIn = FirebaseAuth.instance.currentUser != null;
   
   // Public getters
   bool get isListening => _isListening;
@@ -23,7 +25,7 @@ class UserSyncProvider extends ChangeNotifier {
     _currentUserId = userId;
   }
 
-  /* = = = = = = = = = 
+  /* = = = = = = = = =
   Load Current Users
   = = = = = = = = = */
 
@@ -31,29 +33,27 @@ class UserSyncProvider extends ChangeNotifier {
     if (kDebugMode) {print('loadUsers called, currentUserId: $_currentUserId');}
 
     try {
-      var sessionUserIds = await _fetchSessionListWithRetry(inputState);
-    
-      // If no session list or it's empty, fetch it from Firebase
-      if (sessionUserIds == null || (sessionUserIds is List && sessionUserIds.isEmpty)) {
-
-        if (kDebugMode) {print('User Provider: No session list found locally, fetching from Firebase');}
-        
-        // Fetch currentSessionList from Firebase
-        await inputState.fetchSpecificInputs(['currentSessionList']);
-        
-        // Try to get it again after fetching
-        sessionUserIds = await inputState.getInput('currentSessionList');
-        
-        if (kDebugMode) {print('User Provider: Successfully fetched ${sessionUserIds?.length} user IDs from Firebase');}
-        
-      }
+      final prefs = await SharedPreferences.getInstance();
+      final inputsJson = prefs.getString('inputs_$_currentUserId');
       
-      if (kDebugMode) {print('User Provider: Loading ${sessionUserIds?.length} users from $_currentUserId');}
+      List<String>? sessionUserIds;
+      if (inputsJson != null) {
+        final inputs = Map<String, dynamic>.from(jsonDecode(inputsJson));
+        final sessionList = inputs['currentSessionList'];
+        if (sessionList != null && sessionList is List) {
+          sessionUserIds = List<String>.from(sessionList);
+        }
+      }
+
+      if (sessionUserIds == null || sessionUserIds.isEmpty) {
+        if (kDebugMode) {print('User Provider: No users in currentSessionList');}
+        return [];
+      }
 
       final List<Map<String, dynamic>> loadedUsers = [];
 
       // Process each user ID in the session
-      for (String userId in sessionUserIds!) {
+      for (String userId in sessionUserIds) {
         try {
           // Try to get user data from SharedPreferences cache
           Map<String, dynamic>? userData = await getUserFromCache(userId, _currentUserId!);
@@ -62,21 +62,16 @@ class UserSyncProvider extends ChangeNotifier {
             loadedUsers.add(userData);
             if (kDebugMode) {print('User Provider: Loaded $userId from cache');}
           } else {
-            if (kDebugMode) {print('User Provider: User $userId missing, fetching from Firebase');}
+            if (kDebugMode) {
+              print('User Provider: User $userId missing, fetching from Firebase');
+            }
             
-            userData = await getUserByID(userId, _currentUserId);
+            userData = await getUserByID(userId, _currentUserId, inputState);
             
-            if (userData != null) {
-              await storeUserInCache(userData, _currentUserId!);
-              loadedUsers.add(userData);
-              
-              if (kDebugMode) {
-                print('User Provider: Fetched and cached $userId from Firebase');
-              }
-            } else {
-              if (kDebugMode) {
-                print('User Provider Warning: Could not fetch user $userId from Firebase');
-              }
+            loadedUsers.add(userData!);
+            
+            if (kDebugMode) {
+              print('User Provider: Fetched and cached $userId from Firebase');
             }
           }
         } catch (e) {
@@ -89,14 +84,11 @@ class UserSyncProvider extends ChangeNotifier {
       }
 
       if (loadedUsers.isNotEmpty) {
-        await inputState.checkAndUpdateMissingCompatibility(inputState);
+        final updatedUsers = await inputState.generateCompatibility(loadedUsers);
         
-        // Re-load users after compatibility update
-        final prefs = await SharedPreferences.getInstance();
-        final updatedUsersList = prefs.getStringList('users_$_currentUserId') ?? [];
-        final updatedUsers = updatedUsersList.map((userJson) {
-          return Map<String, dynamic>.from(jsonDecode(userJson));
-        }).toList();
+        for (var user in updatedUsers) {
+          await storeUserInCache(user, _currentUserId!);
+        }
         
         if (kDebugMode) {
           print('User Provider: Returning ${updatedUsers.length} users with compatibility');
@@ -115,85 +107,12 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<List<String>?> _fetchSessionListWithRetry(InputState inputState, {
-    int maxRetries = 5,
-    Duration initialDelay = const Duration(milliseconds: 500),
-    double backoffMultiplier = 1.5,
-  }) async {
-    var sessionUserIds = await inputState.getInput('currentSessionList');
-    
-    // If already available, return immediately
-    if (sessionUserIds != null && sessionUserIds is List && sessionUserIds.isNotEmpty) {
-      if (kDebugMode) {
-        print('User Provider: Session list already available with ${sessionUserIds.length} users');
-      }
-      return List<String>.from(sessionUserIds);
-    }
-    
-    // Retry logic
-    Duration currentDelay = initialDelay;
-    
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
-      if (kDebugMode) {
-        print('User Provider: Attempt $attempt/$maxRetries to fetch currentSessionList');
-      }
-      
-      try {
-        // Fetch currentSessionList from Firebase
-        await inputState.fetchSpecificInputs(['currentSessionList']);
-        
-        // Try to get it after fetching
-        sessionUserIds = await inputState.getInput('currentSessionList');
-        
-        // Check if we got valid data
-        if (sessionUserIds != null && sessionUserIds is List && sessionUserIds.isNotEmpty) {
-          if (kDebugMode) {
-            print('User Provider: Successfully fetched ${sessionUserIds.length} user IDs on attempt $attempt');
-          }
-          return List<String>.from(sessionUserIds);
-        }
-        
-        // If not the last attempt, wait before retrying
-        if (attempt < maxRetries) {
-          if (kDebugMode) {
-            print('User Provider: No data yet, waiting ${currentDelay.inMilliseconds}ms before retry...');
-          }
-          await Future.delayed(currentDelay);
-          
-          // Increase delay for next attempt (exponential backoff)
-          currentDelay = Duration(
-            milliseconds: (currentDelay.inMilliseconds * backoffMultiplier).round()
-          );
-        }
-        
-      } catch (e) {
-        if (kDebugMode) {
-          print('User Provider Error: Attempt $attempt failed - $e');
-        }
-        
-        // If not the last attempt, wait before retrying
-        if (attempt < maxRetries) {
-          await Future.delayed(currentDelay);
-          currentDelay = Duration(
-            milliseconds: (currentDelay.inMilliseconds * backoffMultiplier).round()
-          );
-        }
-      }
-    }
-    
-    if (kDebugMode) {
-      print('User Provider: Failed to fetch currentSessionList after $maxRetries attempts');
-    }
-    
-    return null;
-  }
-
   Future<Map<String, dynamic>?> getUserFromCache(String userId, String currentSessionId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       
       // Get the StringList of all users for this session
-      final usersList = prefs.getStringList('users_$currentSessionId') ?? [];
+      final usersList = prefs.getStringList('users') ?? [];
       
       // Search through the list for the specific user
       for (String userJson in usersList) {
@@ -221,7 +140,7 @@ class UserSyncProvider extends ChangeNotifier {
       
       if (userId != null) {
         // Get existing list or create empty
-        List<String> usersList = prefs.getStringList('users_$currentSessionId') ?? [];
+        List<String> usersList = prefs.getStringList('users') ?? [];
         
         // Check if user already exists and update, or add new
         bool found = false;
@@ -239,10 +158,10 @@ class UserSyncProvider extends ChangeNotifier {
         }
         
         // Save updated list
-        await prefs.setStringList('users_$currentSessionId', usersList);
+        await prefs.setStringList('users', usersList);
         
         if (kDebugMode) {
-          print('User Provider: Stored $userId -> users_$currentSessionId (${usersList.length} users total)');
+          print('User Provider: Stored $userId -> users (${usersList.length} users total)');
         }
       }
     } catch (e) {
@@ -252,7 +171,7 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> getUserByID(String userId, currentSessionId) async {
+  Future<Map<String, dynamic>?> getUserByID(String userId, String? currentSessionId, InputState inputState) async {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -266,53 +185,12 @@ class UserSyncProvider extends ChangeNotifier {
         final userData = _convertTimestampsToStrings(data);
         userData['userId'] = doc.id;
         
-        // Calculate compatibility for this single user
-        final prefs = await SharedPreferences.getInstance();
-        final inputsJson = prefs.getString('inputs_$currentSessionId');
+        // Store user in cache first
+        await storeUserInCache(userData, currentSessionId!);
         
-        if (inputsJson != null) {
-          final currentUserData = jsonDecode(inputsJson);
-          final result = MatchCalculationService().calculateMatch(
-            currentUser: currentUserData,
-            potentialMatch: userData,
-          );
-          
-          // Add compatibility to user data
-          userData['compatibility'] = {
-            'percentage': result.percentage,
-            'matchQuality': result.matchQuality,
-            'topReasons': result.topReasons,
-            'personality': {
-              'score': result.breakdown['personality']?.score ?? 0,
-              'percentage': result.breakdown['personality']?.percentage ?? 0,
-              'matches': result.breakdown['personality']?.matches ?? [],
-              'reason': result.breakdown['personality']?.reason ?? '',
-            },
-            'relationship': {
-              'score': result.breakdown['relationship']?.score ?? 0,
-              'percentage': result.breakdown['relationship']?.percentage ?? 0,
-              'matches': result.breakdown['relationship']?.matches ?? [],
-              'reason': result.breakdown['relationship']?.reason ?? '',
-            },
-            'interests': {
-              'score': result.breakdown['interests']?.score ?? 0,
-              'percentage': result.breakdown['interests']?.percentage ?? 0,
-              'matches': result.breakdown['interests']?.matches ?? [],
-              'reason': result.breakdown['interests']?.reason ?? '',
-            },
-            'goals': {
-              'score': result.breakdown['goals']?.score ?? 0,
-              'percentage': result.breakdown['goals']?.percentage ?? 0,
-              'matches': result.breakdown['goals']?.matches ?? [],
-              'reason': result.breakdown['goals']?.reason ?? '',
-            },
-            'calculatedAt': DateTime.now().toIso8601String(),
-          };
-          
-          return userData;
-        }
-        return null;
+        return userData;
       }
+      return null;
     } catch (e) {
       if (kDebugMode) {
         print('User Provider Error: Failed to get user $userId by ID - $e');
@@ -322,52 +200,10 @@ class UserSyncProvider extends ChangeNotifier {
   }
 
   /* = = = = = = = = = 
-  Fetching New Users
+  Fetching New Users for Match
   = = = = = = = = = */
-    
-  Future<void> fetchInitialUsers(InputState inputState) async {
-    try {
-      final currentSessionId = inputState.userId;
-      final ignoreIds = await inputState.getInput('ignoreList') ?? [];
-      final ignoreIdsList = List<String>.from(ignoreIds);
-      
-      if (currentSessionId.isEmpty) {
-        print('User Provider: No session ID for fetching initial users');
-        return;
-      }
-      
-      // Step 4: Query for users with retry logic (no ignoreList for initial fetch)
-      //final collectedUsers = await _fetchInitialUsersWithFilters();
-      final collectedUsers = await _queryWithRetryLogic(inputState, ignoreIdsList.toSet());
-      
-      if (collectedUsers.isEmpty) {
-        print('User Provider: No users found during initial fetch');
-        return;
-      }
-      
-      // Step 5: Store users in local storage
-      final prefs = await SharedPreferences.getInstance();
-      final usersJson = collectedUsers.map((user) => jsonEncode(user)).toList();
-      await prefs.setStringList('users_$currentSessionId', usersJson);
-      
-      // Step 6: Update currentSessionList with user IDs
-      final userIds = collectedUsers.map((user) => user['userId'] as String).toList();
-      await inputState.inputsSaveOnboarding({
-        'currentSessionList': userIds,
-      });
-      
-      // Sync to Firebase
-      await inputState.syncInputs(fromId: currentSessionId, toId: currentSessionId);
-      
-      print('User Provider: Fetched ${collectedUsers.length} initial users');
-      print('User Provider: Saved to users_$currentSessionId');
-      
-    } catch (e) {
-      print('User Provider Error: Failed to fetch initial users - $e');
-    }
-  }
 
-  Future<void> refreshDiscoverableUsers(BuildContext context) async {
+  Future<void> fetchUsersForMatch(BuildContext context) async {
     if (kDebugMode) {print("🔄 Refresh Triggered");}
     final inputState = Provider.of<InputState>(context, listen: false);
     final matchProvider = Provider.of<MatchSyncProvider>(context, listen: false);
@@ -379,20 +215,14 @@ class UserSyncProvider extends ChangeNotifier {
       Navigator.pushNamed(context, '/loading');
       await Future.delayed(const Duration(milliseconds: 100));
       
-      // Step 1: Clean up currentSessionList
-      final usersToRemove = await _filterAndMoveNonPendingUsers(inputState, matchProvider);
-      
-      // Step 3: Get ignore list
-      final ignoreIds = await inputState.getInput('ignoreList') ?? [];
+      // Get ignore list
+      final ignoreIds = await inputState.fetchInputFromLocal('ignoreList') ?? [];
       final ignoreIdsList = List<String>.from(ignoreIds);
       
-      // Step 4: Query for new users with retry logic
+      // Query for new users with retry logic
       final newUsers = await _queryWithRetryLogic(inputState, ignoreIdsList.toSet());
       
-      // Step 5: Update local storage
-      await _updateLocalUserStorage(newUsers, usersToRemove, context);
-      
-      // Step 6: Update currentSessionList
+      // Update currentSessionList [I should just combine this with the above function]
       await _updateCurrentSessionList(inputState, newUsers);
 
       // Save the timestamp at the beginning of refresh
@@ -400,7 +230,7 @@ class UserSyncProvider extends ChangeNotifier {
       await prefs.setString('last_refresh', DateTime.now().toIso8601String());
       
       // Navigate to matches page
-      Navigator.pushNamed(context, '/matches');
+      Navigator.pushNamed(context, '/guideAvailableMatches');
       
       if (kDebugMode) {print('✅ Refresh complete: Found ${newUsers.length} new users');}
     } catch (e) {
@@ -408,45 +238,7 @@ class UserSyncProvider extends ChangeNotifier {
     }
   }
 
-  // Step 1: Filter and Move Non-Pending Users
-  Future<List<String>> _filterAndMoveNonPendingUsers(
-    InputState inputState,
-    MatchSyncProvider matchProvider
-  ) async {
-    // Get currentSessionList
-    final currentSessionIds = await inputState.getInput('currentSessionList');
-    if (currentSessionIds == null || currentSessionIds.isEmpty) {
-      return [];
-    }
-    final currentSessionList = List<String>.from(currentSessionIds);
-    
-    if (currentSessionList.isNotEmpty) {
-      // Get existing ignore list
-      final existingIgnoreIds = await inputState.getInput('ignoreList') ?? [];
-      final ignoreList = List<String>.from(existingIgnoreIds);
-      
-      // Add non-pending to ignore list
-      ignoreList.addAll(currentSessionList);
-      
-      // Save updated ignore list
-      await inputState.inputsSaveOnboarding({
-        'ignoreList': ignoreList,
-      });
-
-      // Instead of saving anything, just clear the currentSessionList 
-      await inputState.inputsSaveOnboarding({
-        'currentSessionList': [],  // Empty list
-      });
-      
-      if (kDebugMode) {
-        print('📋 Moved ${currentSessionList.length} users to ignore list');
-      }
-    }
-    
-    return currentSessionList;
-  }
-
-  // Step 3: Query With Retry Logic
+  // Query With Retry Logic [combining wiht functon above]
   Future<List<Map<String, dynamic>>> _queryWithRetryLogic(
     InputState inputState,
     Set<String> excludedIds,
@@ -454,13 +246,13 @@ class UserSyncProvider extends ChangeNotifier {
     final List<Map<String, dynamic>> collectedUsers = [];
     const int targetCount = 7;
     const int maxAttempts = 4;
-    final seeking = await inputState.getSpecificInputForUserQuery('Seeking');
+    final seeking = await inputState.fetchInputFromLocal('Seeking');
     
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
       if (collectedUsers.length >= targetCount) break;
       
       try {
-        final randomOffset = attempt * 10;
+        final randomOffset = 10;
         final snapshot = await FirebaseFirestore.instance
             .collection('users')
             .where('Gender', isEqualTo: seeking)
@@ -551,7 +343,7 @@ class UserSyncProvider extends ChangeNotifier {
         // STEP 3: Filter out users below compatibility threshold
         if (newUniqueUsers.isNotEmpty) {
           // Get current user's actual data for matching
-          final currentUserData = await inputState.inputsLoad();
+          final currentUserData = await inputState.fetchInputsFromLocal();
 
           // Add debug logging here
           if (kDebugMode) {
@@ -650,71 +442,24 @@ class UserSyncProvider extends ChangeNotifier {
     return collectedUsers.take(targetCount).toList();
   }
 
-  // Step 4: Update Local User Storage
-  Future<void> _updateLocalUserStorage(
-    List<Map<String, dynamic>> newUsers,
-    List<String> removedUserIds,
-    BuildContext context,
-  ) async {
-    if (_currentUserId == null) return;
-    
-    final prefs = await SharedPreferences.getInstance();
-    
-    // Get existing users
-    final existingUsersList = prefs.getStringList('users_$_currentUserId') ?? [];
-    final existingUsers = existingUsersList
-        .map((json) => Map<String, dynamic>.from(jsonDecode(json)))
-        .toList();
-
-    // Get pending match user IDs (both sent and received)
-    final matchProvider = Provider.of<MatchSyncProvider>(context, listen: false);
-    final pendingUserIds = <String>{};
-    
-    // Add users from sent requests (where current user is requester)
-    for (var match in matchProvider.sentRequests) {
-      if (match['status'] == 'pending') {
-        pendingUserIds.add(match['requestedUserId'] as String);
-      }
-    }
-    
-    // Add users from received requests (where current user is requested)
-    for (var match in matchProvider.receivedRequests) {
-      if (match['status'] == 'pending') {
-        pendingUserIds.add(match['requesterUserId'] as String);
-      }
-    }
-    
-    // Keep only pending match users from existing users
-    final pendingUsers = existingUsers
-        .where((user) => pendingUserIds.contains(user['userId']))
-        .toList();
-    
-    // Start with pending users and add new users
-    final updatedUsers = [...pendingUsers, ...newUsers];
-    
-    // Save back
-    final usersJson = updatedUsers.map((user) => jsonEncode(user)).toList();
-    await prefs.setStringList('users_$_currentUserId', usersJson);
-    
-    if (kDebugMode) {
-      print('💾 Updated user storage: ${pendingUsers.length} pending + ${newUsers.length} new = ${updatedUsers.length} total');
-    }
-  }
-
-  // Step 5: Update Current Session List
+  // Update Current Session List [combinging this with function above]
   Future<void> _updateCurrentSessionList(
     InputState inputState,
     List<Map<String, dynamic>> newUsers,
   ) async {
     final newUserIds = newUsers.map((user) => user['userId'] as String).toList();
-  
-    // Save ONLY the new user IDs
-    await inputState.inputsSaveOnboarding({
+
+    // Save user IDs and last_refresh timestamp together
+    final dataToSave = {
       'currentSessionList': newUserIds,
-    });
-    
-    // Sync everything to Firebase
-    await inputState.syncInputs(fromId: _currentUserId, toId: _currentUserId);
+      'last_refresh': DateTime.now().toIso8601String(),
+    };
+
+    if (isLoggedIn) {
+      await inputState.saveInputToRemoteThenLocal(dataToSave);
+    } else {
+      await inputState.saveInputToRemoteThenLocalInOnboarding(dataToSave);
+    }
     
     if (kDebugMode) {
       print('📝 Updated session list: ${newUserIds.length} users');
@@ -725,6 +470,7 @@ class UserSyncProvider extends ChangeNotifier {
   Helpers
   = = = = = = = = = */
 
+  // probably deleting and using function from inputState
   Map<String, dynamic> _convertTimestampsToStrings(Map<String, dynamic> data) {
     final Map<String, dynamic> result = {};
     

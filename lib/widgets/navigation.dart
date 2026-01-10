@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../router/router.dart';
 import '../providers/userState.dart';
 import '../providers/matchState.dart';
+import '../providers/inputState.dart';
 import 'menu.dart';
 
 class CustomStatusBar extends StatefulWidget {
@@ -40,8 +40,8 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
   }
 
   Future<void> _checkRefreshStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastRefreshString = prefs.getString('last_refresh');
+    final inputState = Provider.of<InputState>(context, listen: false);
+    final lastRefreshString = await inputState.fetchInputFromLocal('last_refresh');
     
     if (lastRefreshString == null) {
       // Never refreshed before, allow refresh
@@ -135,19 +135,7 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SizedBox(width: 48); 
               }
-              
-              /*
-              if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                return IconButton(
-                  icon: const Icon(
-                    Icons.chat_bubble_outline, color: ColorPalette.peach
-                  ),
-                  onPressed: () {
-                     Navigator.pushNamed(context, AppRoutes.chat, arguments: {'matchId': matchId, 'otherUserName': targetUserId,});
-                  },
-                );
-              }*/
-              
+
               // Otherwise, show refresh button
               return Row(
                 children: [
@@ -172,7 +160,7 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
                       onPressed: _canRefresh 
                       ? () async {
                           final userSync = Provider.of<UserSyncProvider>(context, listen: false);
-                          await userSync.refreshDiscoverableUsers(context);
+                          await userSync.fetchUsersForMatch(context);
                           _checkRefreshStatus();
                         } 
                       : null,
@@ -199,7 +187,7 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
                       onPressed: _canRefresh 
                       ? () async {
                           final userSync = Provider.of<UserSyncProvider>(context, listen: false);
-                          await userSync.refreshDiscoverableUsers(context);
+                          await userSync.fetchUsersForMatch(context);
                           _checkRefreshStatus();
                         } 
                       : null,

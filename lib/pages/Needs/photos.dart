@@ -24,7 +24,7 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final inputState = Provider.of<InputState>(context, listen: false);
-      final photoPaths = await inputState.getInput('photos');
+      final photoPaths = await inputState.fetchInputFromLocal('photos');
       if (photoPaths != null && photoPaths is List) {
         inputState.photoInputs.clear();
         for (String path in photoPaths) {
