@@ -97,7 +97,7 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       // Save nameFirst and email to InputState BEFORE calling signUp
-      await inputProvider.saveInputToRemoteThenLocal({
+      await inputProvider.saveInputToRemoteThenLocalInOnboarding({
         'nameFirst': name,
         'email': email,
       });

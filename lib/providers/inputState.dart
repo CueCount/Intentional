@@ -410,7 +410,7 @@ class InputState extends ChangeNotifier {
     }
   }
 
-  Future<List<String>> _uploadPhotosToStorage(List<dynamic> localPhotos, String userId) async {
+  Future<List<String>> uploadPhotosToStorage(List<dynamic> localPhotos, String userId) async {
     final List<String> uploadedUrls = [];
     
     for (int i = 0; i < localPhotos.length; i++) {
@@ -569,11 +569,17 @@ class InputState extends ChangeNotifier {
       title: "basics",
       possibleValues: [
         "Short Term Exploration",
-        "Long Term, Taking My Time",
-        "Long Term and Ready",
+        "Long Term But Taking My Time",
+        "Long Term & Ready for Relationship Now",
+      ],
+      type: "checkbox"
+    ),
+    Input(
+      title: "relationshipType",
+      possibleValues: [
         "Monogamous",
         "Polyamerous",
-        "Monogamous & Open"
+        "Monogamous + Open"
       ],
       type: "checkbox"
     ),

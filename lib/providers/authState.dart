@@ -342,6 +342,25 @@ class AppAuthProvider extends ChangeNotifier {
         if (kDebugMode) {
           print('📥 Retrieved ${onboardingData.keys.length} fields from users_onboarding');
         }
+
+        // NEW: Upload photos to Firebase Storage
+        List<String> photoUrls = [];
+        if (inputProvider.photoInputs.isNotEmpty) {
+          if (kDebugMode) {
+            print('📸 Uploading ${inputProvider.photoInputs.length} photos to Storage...');
+          }
+          
+          // Get local photo data (base64 strings or file paths)
+          final localPhotos = await inputProvider.fetchInputFromLocal('photos') ?? [];
+          
+          if (localPhotos.isNotEmpty) {
+            photoUrls = await inputProvider.uploadPhotosToStorage(localPhotos, authenticatedUserId);
+            
+            if (kDebugMode) {
+              print('✅ Uploaded ${photoUrls.length} photos');
+            }
+          }
+        }
         
         // Write data to users/{authenticatedUserId}
         await FirebaseFirestore.instance
@@ -356,6 +375,9 @@ class AppAuthProvider extends ChangeNotifier {
         if (kDebugMode) {
           print('✅ Data transferred to users/$authenticatedUserId');
         }
+
+        // Sync Firestore data back to local storage with new user ID 
+        await inputProvider.saveInputsToLocalFromRemote(authenticatedUserId);
         
       } catch (e) {
         if (kDebugMode) {

@@ -147,12 +147,14 @@ class RequestCard extends StatelessWidget {
     double daysLeft = 1.0 - daysElapsed;
     
     if (daysLeft <= 0) {
-      final matchProvider = Provider.of<MatchSyncProvider>(context, listen: false);
-      final matchId = request['id'] ?? request['matchId'];
-      
-      if (matchId != null) {
-        matchProvider.ignore(matchId);
-      }
+      // Schedule the ignore call for after build completes
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final matchProvider = Provider.of<MatchSyncProvider>(context, listen: false);
+        final matchId = request['id'] ?? request['matchId'];
+        if (matchId != null) {
+          matchProvider.ignore(matchId);
+        }
+      });
       return 'Expired';
     } else if (daysLeft < 1) {
       int hoursLeft = (daysLeft * 24).round();

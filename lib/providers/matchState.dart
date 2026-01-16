@@ -241,6 +241,32 @@ class MatchSyncProvider extends ChangeNotifier {
   Accept, Reject. UnMatch Match
   = = = = = = = = = */
 
+  Future<Map<String, dynamic>> updateMatchStatus(String matchId, String newStatus) async {
+    try {
+      // Update Firebase
+      await FirebaseFirestore.instance
+          .collection('matches')
+          .doc(matchId)
+          .update({
+        'status': newStatus,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      return {
+        'success': true,
+        'message': 'Match status updated successfully!',
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating match status: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Failed to update match status',
+      };
+    }
+  }
+
   Future<Map<String, dynamic>> acceptMatch(String matchId, String currentUserId, String otherUserId) async {
     try {
       // Update match status to active
@@ -248,25 +274,64 @@ class MatchSyncProvider extends ChangeNotifier {
       
       // Create Stream Chat channel
       final chatService = StreamChatService();
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Get current user's data
+      final currentUserJson = prefs.getString('inputs_$currentUserId');
+      final currentUserData = currentUserJson != null ? jsonDecode(currentUserJson) : {};
+      final currentUserName = currentUserData['nameFirst'] ?? 'User';
+      final currentUserImage = currentUserData['photos']?[0];
+      
+      // Get other user's data from users cache
+      String otherUserName = 'User';
+      String? otherUserImage;
+      
+      final usersList = prefs.getStringList('users') ?? [];
+      for (String userJson in usersList) {
+        final user = jsonDecode(userJson);
+        if (user['userId'] == otherUserId) {
+          otherUserName = user['nameFirst'] ?? 'User';
+          otherUserImage = user['photos']?[0];
+          break;
+        }
+      }
+      
+      // If not found in cache, try fetching from Firebase
+      if (otherUserName == 'User') {
+        try {
+          final doc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(otherUserId)
+              .get();
+          
+          if (doc.exists) {
+            final data = doc.data() as Map<String, dynamic>;
+            otherUserName = data['nameFirst'] ?? 'User';
+            otherUserImage = data['photos']?[0];
+          }
+        } catch (e) {
+          print('Error fetching other user data: $e');
+        }
+      }
       
       // Connect current user if not connected
       if (!chatService.isUserConnected()) {
-        final prefs = await SharedPreferences.getInstance();
-        final userJson = prefs.getString('inputs_$currentUserId');
-        final userData = userJson != null ? jsonDecode(userJson) : {};
-        
         await chatService.connectUser(
           userId: currentUserId,
-          userName: userData['nameFirst'] ?? 'User',
-          userImage: userData['photos']?[0],
+          userName: currentUserName,
+          userImage: currentUserImage,
         );
       }
       
-      // Create the chat channel
+      // Create the chat channel with both users' names
       final channel = await chatService.createMatchChannel(
         matchId: matchId,
         currentUserId: currentUserId,
         otherUserId: otherUserId,
+        currentUserName: currentUserName,
+        otherUserName: otherUserName,
+        currentUserImage: currentUserImage,
+        otherUserImage: otherUserImage,
       );
       
       // Save channel ID to match document
@@ -353,32 +418,6 @@ class MatchSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> updateMatchStatus(String matchId, String newStatus) async {
-    try {
-      // Update Firebase
-      await FirebaseFirestore.instance
-          .collection('matches')
-          .doc(matchId)
-          .update({
-        'status': newStatus,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      return {
-        'success': true,
-        'message': 'Match status updated successfully!',
-      };
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error updating match status: $e');
-      }
-      return {
-        'success': false,
-        'message': 'Failed to update match status',
-      };
-    }
-  }
-    
   /* = = = = = = = = = 
   Get Active User for Match Page
   = = = = = = = = = */

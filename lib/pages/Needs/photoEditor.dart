@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../providers/inputState.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../functions/photoService.dart';
 import '../../functions/photo_service_web.dart' if (dart.library.io) '../../functions/photo_service_mobile.dart';
 import '../../router/router.dart';
 
@@ -65,23 +66,30 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
 
   Future<void> _saveEditedImage(Uint8List editedBytes) async {
     try {
+      // COMPRESS FOR WEB BEFORE SAVING
+      Uint8List processedBytes = editedBytes;
+      if (kIsWeb) {
+        print('🔄 Compressing image for web storage...');
+        processedBytes = await PhotoService.compressImageForWeb(editedBytes);
+      }
+
       String? localPath;
 
       if (kIsWeb) {
         // Web: Create blob URL
-        localPath = PhotoServicePlatform.createObjectUrl(editedBytes);
+        localPath = PhotoServicePlatform.createObjectUrl(processedBytes);
       } else {
         // Mobile: Save to app directory
         final appDir = await getApplicationDocumentsDirectory();
         final fileName = 'edited_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final file = File('${appDir.path}/$fileName');
-        await file.writeAsBytes(editedBytes);
+        await file.writeAsBytes(processedBytes);
         localPath = file.path;
       }
 
       // Create InputPhoto and return to gallery
       final inputPhoto = InputPhoto(
-        croppedBytes: editedBytes,
+        croppedBytes: processedBytes,
         localPath: localPath,
       );
 

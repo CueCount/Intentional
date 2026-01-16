@@ -172,7 +172,7 @@ class MatchCTA extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Column(
+                  Row(
                     children: [
                       Expanded(
                         child: TextButton(

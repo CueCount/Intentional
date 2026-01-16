@@ -34,6 +34,14 @@ class _EditNeedsState extends State<EditNeeds> {
                     Column(
                       children: [
                         LinkWidget(
+                          title: 'Relationship Type',
+                          description: 'What type of relationship you need',
+                          onTap: () {
+                            // Navigate to chemistry page
+                            Navigator.pushNamed(context, AppRoutes.basics);
+                          },
+                        ),
+                        LinkWidget(
                           title: 'Chemistry',
                           description: 'Define your relationship chemistry preferences',
                           onTap: () {

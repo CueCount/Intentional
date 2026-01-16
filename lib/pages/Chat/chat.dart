@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../functions/chatService.dart';
+import '../../providers/userState.dart';
+import '../../providers/inputState.dart';
 
 class ChatScreen extends StatefulWidget {
   final String matchId;
@@ -22,6 +27,8 @@ class _ChatScreenState extends State<ChatScreen> {
   Channel? _channel;
   bool _isLoading = true;
   String? _error;
+  String? _otherUserDisplayName;
+  String? _otherUserImageUrl;
   
   @override
   void initState() {
@@ -31,8 +38,35 @@ class _ChatScreenState extends State<ChatScreen> {
   
   Future<void> _loadChannel() async {
     try {
+      final chatService = StreamChatService();
+      
+      // Ensure user is connected to Stream Chat
+      if (!chatService.isUserConnected()) {
+        final inputState = Provider.of<InputState>(context, listen: false);
+        final currentUserId = inputState.userId;
+        
+        if (currentUserId.isEmpty) {
+          setState(() {
+            _error = 'User not logged in';
+            _isLoading = false;
+          });
+          return;
+        }
+        
+        // Get current user's data for connection
+        final prefs = await SharedPreferences.getInstance();
+        final userJson = prefs.getString('inputs_$currentUserId');
+        final userData = userJson != null ? jsonDecode(userJson) : {};
+        
+        await chatService.connectUser(
+          userId: currentUserId,
+          userName: userData['nameFirst'] ?? 'User',
+          userImage: userData['photos']?[0],
+        );
+      }
+      
       // Get channel using match ID
-      final channel = await StreamChatService().getChannelByMatchId(widget.matchId);
+      final channel = await chatService.getChannelByMatchId(widget.matchId);
       
       if (channel == null) {
         setState(() {
@@ -42,8 +76,42 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
       
+      // Extract the other user's ID from channel members
+      final currentUserId = chatService.client.state.currentUser?.id;
+      final members = channel.state?.members ?? [];
+      final otherMember = members.where((m) => m.userId != currentUserId).firstOrNull;
+      
+      String? displayName = otherMember?.user?.name;
+      String? imageUrl = otherMember?.user?.image;
+      
+      // If Stream doesn't have the name (or it's just the userId), fetch from cache/Firebase
+      if ((displayName == null || displayName == otherMember?.userId) && otherMember?.userId != null) {
+        final userSync = Provider.of<UserSyncProvider>(context, listen: false);
+        
+        // Try cache first
+        Map<String, dynamic>? userData = await userSync.getUserFromCache(
+          otherMember!.userId!, 
+          currentUserId!,
+        );
+        
+        // If not in cache, fetch from Firebase
+        if (userData == null) {
+          final inputState = Provider.of<InputState>(context, listen: false);
+          userData = await userSync.getUserByID(
+            otherMember.userId!, 
+            currentUserId,
+            inputState,
+          );
+        }
+        
+        displayName = userData?['nameFirst'] ?? widget.otherUserName;
+        imageUrl = imageUrl ?? userData?['photoURL'];
+      }
+      
       setState(() {
         _channel = channel;
+        _otherUserDisplayName = displayName ?? widget.otherUserName;
+        _otherUserImageUrl = imageUrl ?? widget.otherUserImage;
         _isLoading = false;
       });
       
@@ -60,7 +128,10 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(widget.otherUserName),
+          title: Text(
+            _otherUserDisplayName ?? widget.otherUserName,
+            style: const TextStyle(color: Colors.white),
+          ),
           backgroundColor: Theme.of(context).primaryColor,
         ),
         body: Center(
@@ -72,7 +143,10 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_error != null || _channel == null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(widget.otherUserName),
+          title: Text(
+            _otherUserDisplayName ?? widget.otherUserName,
+            style: const TextStyle(color: Colors.white),
+          ),
           backgroundColor: Theme.of(context).primaryColor,
         ),
         body: Center(
@@ -101,13 +175,16 @@ class _ChatScreenState extends State<ChatScreen> {
           appBar: AppBar(
             title: Row(
               children: [
-                if (widget.otherUserImage != null)
+                if (_otherUserImageUrl != null)
                   CircleAvatar(
-                    backgroundImage: NetworkImage(widget.otherUserImage!),
+                    backgroundImage: NetworkImage(_otherUserImageUrl!),
                     radius: 16,
                   ),
                 SizedBox(width: 8),
-                Text(widget.otherUserName),
+                Text(
+                  _otherUserDisplayName ?? widget.otherUserName,
+                  style: const TextStyle(color: Colors.white),
+                ),
               ],
             ),
             backgroundColor: Theme.of(context).primaryColor,

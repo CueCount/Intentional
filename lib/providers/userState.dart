@@ -15,7 +15,7 @@ class UserSyncProvider extends ChangeNotifier {
   // Private variables
   String? _currentUserId;
   bool _isListening = false;
-  final isLoggedIn = FirebaseAuth.instance.currentUser != null;
+  bool get isLoggedIn => FirebaseAuth.instance.currentUser != null;
   
   // Public getters
   bool get isListening => _isListening;
@@ -224,10 +224,6 @@ class UserSyncProvider extends ChangeNotifier {
       
       // Update currentSessionList [I should just combine this with the above function]
       await _updateCurrentSessionList(inputState, newUsers);
-
-      // Save the timestamp at the beginning of refresh
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_refresh', DateTime.now().toIso8601String());
       
       // Navigate to matches page
       Navigator.pushNamed(context, '/guideAvailableMatches');
@@ -246,8 +242,18 @@ class UserSyncProvider extends ChangeNotifier {
     final List<Map<String, dynamic>> collectedUsers = [];
     const int targetCount = 7;
     const int maxAttempts = 4;
-    final seeking = await inputState.fetchInputFromLocal('Seeking');
-    
+
+    final seeking = await inputState.fetchInputFromLocal('Seeking');       // What gender I want
+    final myGender = await inputState.fetchInputFromLocal('Gender');       // My gender (for reciprocal match)
+    final ageRange = await inputState.fetchInputFromLocal('ageRange');         // My preferred age range [min, max]
+    final myBasics = await inputState.fetchInputFromLocal('basics');
+    final myRelationshipType = await inputState.fetchInputFromLocal('relationshipType');
+
+    // Convert age range to birthdate range (milliseconds since epoch)
+    final now = DateTime.now();
+    final maxBirthDate = DateTime(now.year - ageRange[0] as int, now.month, now.day).millisecondsSinceEpoch;
+    final minBirthDate = DateTime(now.year - ageRange[1] as int, now.month, now.day).millisecondsSinceEpoch;
+
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
       if (collectedUsers.length >= targetCount) break;
       
@@ -256,6 +262,11 @@ class UserSyncProvider extends ChangeNotifier {
         final snapshot = await FirebaseFirestore.instance
             .collection('users')
             .where('Gender', isEqualTo: seeking)
+            .where('Seeking', isEqualTo: myGender)
+            .where('birthDate', isGreaterThanOrEqualTo: minBirthDate)
+            .where('birthDate', isLessThanOrEqualTo: maxBirthDate)
+            .where('basics', isEqualTo: myBasics)
+            .where('relationshipType', isEqualTo: myRelationshipType)
             .limit(7 + randomOffset)
             .get();
         

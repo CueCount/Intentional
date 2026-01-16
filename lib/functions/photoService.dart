@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import '../providers/inputState.dart';
 import '../pages/Needs/photoEditor.dart';
@@ -200,39 +199,6 @@ class PhotoService {
           SnackBar(content: Text('Error removing photo: ${e.toString()}')),
         );
       }
-    }
-  }
-
-  static Future<InputPhoto?> saveEditedImage(Uint8List editedBytes) async {
-    try {
-      // COMPRESS FOR WEB BEFORE SAVING
-      Uint8List processedBytes = editedBytes;
-      if (kIsWeb) {
-        print('🔄 Compressing image for web storage...');
-        processedBytes = await compressImageForWeb(editedBytes);
-      }
-      
-      String? localPath;
-
-      if (kIsWeb) {
-        // Web: Create blob URL from compressed bytes
-        localPath = PhotoServicePlatform.createObjectUrl(processedBytes);
-      } else {
-        // Mobile: Save to app directory (original bytes)
-        final appDir = await getApplicationDocumentsDirectory();
-        final fileName = 'edited_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final file = File('${appDir.path}/$fileName');
-        await file.writeAsBytes(processedBytes);
-        localPath = file.path;
-      }
-
-      return InputPhoto(
-        croppedBytes: processedBytes,  // Use compressed bytes
-        localPath: localPath,
-      );
-    } catch (e) {
-      print('Error saving edited image: $e');
-      return null;
     }
   }
 

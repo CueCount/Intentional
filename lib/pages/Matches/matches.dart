@@ -50,7 +50,8 @@ class _Matches extends State<Matches> {
       final activeMatchUser = await matchSync.getActiveMatchUser();
       
       if (activeMatchUser.isNotEmpty) {
-        _userData = activeMatchUser;
+        //_userData = activeMatchUser;
+        _userData = await inputState.generateCompatibility(activeMatchUser);
       } else {
         _userData = await userSync.loadUsers(inputState);
       }
