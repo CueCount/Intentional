@@ -49,21 +49,31 @@ class _RequestReceivedState extends State<RequestReceived> {
     final receivedRequests = matchSync.receivedRequests;
     
     for (var request in receivedRequests) {
-      final requesterUserId = request['requesterUserId']; // Get requester, not requested
+      if (!mounted) return;  // <-- ADD THIS CHECK
+      
+      final requesterUserId = request['requesterUserId'];
       if (!_userDataCache.containsKey(requesterUserId)) {
-        // Try to get from cache first
         final userData = await userProvider.getUserFromCache(requesterUserId, inputState.userId);
+        
+        if (!mounted) return;  // <-- ADD THIS CHECK
         
         if (userData != null) {
           setState(() {
             _userDataCache[requesterUserId] = userData;
           });
         } else {
-          // Fetch from Firebase if not in cache
-          final firebaseData = await userProvider.getUserByID(requesterUserId, inputState.userId);
+          final firebaseData = await userProvider.getUserByID(requesterUserId, inputState.userId, inputState);
+          
+          if (!mounted) return;  // <-- ADD THIS CHECK
+          
           if (firebaseData != null) {
+            final usersWithCompatibility = await inputState.generateCompatibility([firebaseData]);
+            await userProvider.storeUserInCache(usersWithCompatibility.first, inputState.userId);
+            
+            if (!mounted) return;  // <-- ADD THIS CHECK
+            
             setState(() {
-              _userDataCache[requesterUserId] = firebaseData;
+              _userDataCache[requesterUserId] = usersWithCompatibility.first;
             });
           }
         }

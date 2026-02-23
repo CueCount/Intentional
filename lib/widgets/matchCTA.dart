@@ -172,7 +172,7 @@ class MatchCTA extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Column(
+                  Row(
                     children: [
                       Expanded(
                         child: TextButton(
@@ -306,6 +306,48 @@ class MatchCTA extends StatelessWidget {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 14), 
+
+                  TextButton(
+                    onPressed: () async {
+                      if (targetUserId.isNotEmpty) {
+                        try {
+                          await inputState.saveByAddingToArrayToRemoteThenLocal('ignoreList', targetUserId);
+                          
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('User filtered from future matches')),
+                            );
+                            Navigator.pop(context);
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      overlayColor: Colors.transparent,
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Not My Type Filter Out in Future Refreshes',
+                          style: AppTextStyles.headingSmall.copyWith(
+                            color: ColorPalette.peach,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.person_off, color: ColorPalette.peach, size: 24),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             );

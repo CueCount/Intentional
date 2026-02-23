@@ -63,7 +63,7 @@ class _RequestSentState extends State<RequestSent> {
           });
         } else {
           // Fetch from Firebase if not in cache
-          final firebaseData = await userProvider.getUserByID(requestedUserId, inputState.userId);
+          final firebaseData = await userProvider.getUserByID(requestedUserId, inputState.userId, inputState);
           if (firebaseData != null) {
             setState(() {
               _userDataCache[requestedUserId] = firebaseData;

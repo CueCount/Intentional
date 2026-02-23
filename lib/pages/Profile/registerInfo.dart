@@ -42,8 +42,8 @@ class _RegisterInfoState extends State<RegisterInfo> {
       final user = FirebaseAuth.instance.currentUser;
       
       // Get existing values from InputState/SharedPreferences
-      final existingName = await inputState.getInput('nameFirst');
-      final existingEmail = await inputState.getInput('email');
+      final existingName = await inputState.fetchInputFromLocal('nameFirst');
+      final existingEmail = await inputState.fetchInputFromLocal('email');
       
       // Set the text controllers with existing values
       if (existingName != null && existingName is String) {
@@ -97,7 +97,7 @@ class _RegisterInfoState extends State<RegisterInfo> {
       String newName = _nameController.text.trim();
       
       // Save name to InputState
-      await inputState.inputsSaveOnboarding({
+      await inputState.saveInputToRemoteThenLocal({
         'nameFirst': newName,
         'email': newEmail,
       });

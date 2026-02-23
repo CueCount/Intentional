@@ -31,7 +31,7 @@ class _Age extends State<Age> {
     
     try {
       // Load existing birthDate
-      final existingBirthDate = await inputState.getInput('birthDate');
+      final existingBirthDate = await inputState.fetchInputFromLocal('birthDate');
       if (existingBirthDate != null) {
         setState(() {
           _selectedDate = DateTime.fromMillisecondsSinceEpoch(existingBirthDate);
@@ -39,7 +39,7 @@ class _Age extends State<Age> {
       }
       
       // Load existing age range
-      final existingAgeRange = await inputState.getInput('ageRange');
+      final existingAgeRange = await inputState.fetchInputFromLocal('ageRange');
       if (existingAgeRange != null && existingAgeRange is List) {
         setState(() {
           _ageRange = [
@@ -199,12 +199,12 @@ class _Age extends State<Age> {
 
           onPressed: () async {
             if (isLoggedIn) {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocal(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocalInOnboarding(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.basics);
               }

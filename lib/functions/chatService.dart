@@ -1,7 +1,5 @@
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 import 'apis/streamChat.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class StreamChatService {
   static final StreamChatService _instance = StreamChatService._internal();
@@ -72,21 +70,39 @@ class StreamChatService {
     required String matchId,
     required String currentUserId,
     required String otherUserId,
+    required String currentUserName,
+    required String otherUserName,
+    String? currentUserImage,
+    String? otherUserImage,
   }) async {
     try {
+      // Update both users in Stream with their names
+      await client.updateUser(User(
+        id: currentUserId,
+        name: currentUserName,
+        image: currentUserImage,
+      ));
+      
+      await client.updateUser(User(
+        id: otherUserId,
+        name: otherUserName,
+        image: otherUserImage,
+      ));
+      
       // Use matchId as the channel ID for consistency
+      // Include 'members' in extraData to add both users on creation
       final channel = client.channel(
         'messaging',
         id: matchId, 
-        extraData: {
-          'matchId': matchId,
-          'members': [currentUserId, otherUserId],
-          'createdAt': DateTime.now().toIso8601String(),
-        },
       );
       
-      // Create and watch the channel
+      // Create the channel first
       await channel.create();
+      
+      // Then explicitly add both users as members
+      await channel.addMembers([currentUserId, otherUserId]);
+      
+      // Watch for updates
       await channel.watch();
       
       // Send initial match message (optional)

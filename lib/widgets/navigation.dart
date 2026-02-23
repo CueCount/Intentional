@@ -3,10 +3,10 @@ import 'package:intentional_demo_01/styles.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../router/router.dart';
 import '../providers/userState.dart';
 import '../providers/matchState.dart';
+import '../providers/inputState.dart';
+import '../router/router.dart';
 import 'menu.dart';
 
 class CustomStatusBar extends StatefulWidget {
@@ -40,8 +40,8 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
   }
 
   Future<void> _checkRefreshStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastRefreshString = prefs.getString('last_refresh');
+    final inputState = Provider.of<InputState>(context, listen: false);
+    final lastRefreshString = await inputState.fetchInputFromLocal('last_refresh');
     
     if (lastRefreshString == null) {
       // Never refreshed before, allow refresh
@@ -115,6 +115,7 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+
           /* = = = = = = = = = = 
           Menu Button
           = = = = = = = = = = */
@@ -128,26 +129,56 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
           /* = = = = = = = = = = 
           Refresh/Chat Button
           = = = = = = = = = = */
-          FutureBuilder<List<Map<String, dynamic>>>(
-            future: Provider.of<MatchSyncProvider>(context, listen: false).getActiveMatchUser(),
-            builder: (context, snapshot) {
-              // While loading, show nothing or a loading indicator
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox(width: 48); 
-              }
+          Consumer<MatchSyncProvider>(
+            builder: (context, matchSync, child) {
+              final inputState = Provider.of<InputState>(context, listen: false);
+              final currentUserId = inputState.userId;
               
-              /*
-              if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                return IconButton(
-                  icon: const Icon(
-                    Icons.chat_bubble_outline, color: ColorPalette.peach
+              // Find active match the same way matchCTA does
+              final activeMatch = matchSync.allMatches.firstWhere(
+                (match) => match['status'] == 'active',
+                orElse: () => <String, dynamic>{},
+              );
+
+              // If there's an active match, show chat button
+              if (activeMatch.isNotEmpty) {
+                final matchId = activeMatch['matchId'];
+                
+                // Determine the other user's ID
+                final otherUserId = activeMatch['requesterUserId'] == currentUserId
+                    ? activeMatch['requestedUserId']
+                    : activeMatch['requesterUserId'];
+                
+                return TextButton.icon(
+                  icon: Text(
+                    'Go to Chat',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: ColorPalette.peach,
+                    ),
+                  ),
+                  label: Icon(
+                    Icons.chat_bubble_outline,
+                    color: ColorPalette.peach,
+                    size: 24,
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   onPressed: () {
-                     Navigator.pushNamed(context, AppRoutes.chat, arguments: {'matchId': matchId, 'otherUserName': targetUserId,});
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.chat,
+                      arguments: {
+                        'matchId': matchId,
+                        'otherUserName': otherUserId,
+                      },
+                    );
                   },
                 );
-              }*/
-              
+              }
+
               // Otherwise, show refresh button
               return Row(
                 children: [
@@ -172,7 +203,7 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
                       onPressed: _canRefresh 
                       ? () async {
                           final userSync = Provider.of<UserSyncProvider>(context, listen: false);
-                          await userSync.refreshDiscoverableUsers(context);
+                          await userSync.fetchUsersForMatch(context);
                           _checkRefreshStatus();
                         } 
                       : null,
@@ -199,7 +230,7 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
                       onPressed: _canRefresh 
                       ? () async {
                           final userSync = Provider.of<UserSyncProvider>(context, listen: false);
-                          await userSync.refreshDiscoverableUsers(context);
+                          await userSync.fetchUsersForMatch(context);
                           _checkRefreshStatus();
                         } 
                       : null,

@@ -138,8 +138,11 @@ class AppMenuOverlay extends StatelessWidget {
                       ),
 
                       // commented out debug print button
-                      //const SizedBox(height: 16),
-                      //_buildDebugMenuItem(context),
+                      const SizedBox(height: 16),
+                      _buildDebugMenuItem(context),
+
+                      const SizedBox(height: 16),
+                      _buildDebugChatMenuItem(context),
                     ],
                   ),
                 ),
@@ -279,4 +282,29 @@ class AppMenuOverlay extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildDebugChatMenuItem(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pop();
+        Navigator.pushNamed(context, AppRoutes.debugChat);
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        decoration: BoxDecoration(
+          color: Colors.red.shade100,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          'Delete Chat Channel',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: Colors.red.shade700,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
 }

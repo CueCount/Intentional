@@ -28,6 +28,7 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
   AnimationController? _photo4Controller;
   AnimationController? _goalsController;
   AnimationController? _ctaController;
+  AnimationController? _miscinfoController;
 
   @override
   void initState() {
@@ -44,6 +45,7 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
     _photo4Controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _goalsController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _ctaController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _miscinfoController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final Map<String, dynamic>? profileData = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
@@ -58,7 +60,7 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
       });
 
       final inputState = Provider.of<InputState>(context, listen: false);
-      final photos = await inputState.getInput('photos');
+      final photos = await inputState.fetchInputFromLocal('photos');
       
       if (photos != null && photos is List && photos.isNotEmpty) {
         setState(() {
@@ -115,6 +117,7 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
     _photo4Controller?.dispose();
     _goalsController?.dispose();
     _ctaController?.dispose();
+    _miscinfoController?.dispose();
     super.dispose();
   }
 
@@ -178,11 +181,12 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                             ),
                           ),
                           Text(
-                            "${profile?['nameFirst'] ?? 'Unknown'}, ${MiscService().calculateAge(profile?['birthDate'])}",
+                            "${profile?['nameFirst'] ?? 'Unknown'}, ${MiscService().calculateAge(profile?['birthDate'])}, \n ${profile?['basics']?[0] ?? 'Unknown'}, ${profile?['relationshipType']?[0] ?? 'Unknown'}",
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: ColorPalette.peach,
                             ),
-                          ),                          
+                            textAlign: TextAlign.center,
+                          ),                        
                         ],
                       ),
                     ),
@@ -277,35 +281,57 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            Text(
-                              "${profile?['compatibility']?['archetypes']?['title'] ?? ''}",
-                              style: AppTextStyles.headingMedium.copyWith(
-                                color: ColorPalette.peach,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "${profile?['compatibility']?['archetypes']?['narrative'] ?? ''}",
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: ColorPalette.peach,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
+
                             // Summary
-                            if (profile?['compatibility']?['archetypes']?['summary'] != null)
+                            if (profile?['compatibility']?['archetypes']?['summary']['title'] != null)
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Summary",
+                                    "Summary:",
                                     style: AppTextStyles.headingSmall.copyWith(
                                       color: ColorPalette.peach,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
+
                                   Text(
-                                    "${profile!['compatibility']['archetypes']['summary']}",
+                                    "${profile!['compatibility']['archetypes']['summary']['title']}",
+                                    style: AppTextStyles.headingMedium.copyWith(
+                                      color: ColorPalette.peach,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  Text(
+                                    "Compatibility Type:",
+                                    style: AppTextStyles.headingSmall.copyWith(
+                                      color: ColorPalette.peach,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+
+                                  Text(
+                                    "${profile!['compatibility']['archetypes']['traitDistribution']['distribution']}",
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: ColorPalette.peach,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  Text(
+                                    "Dynamics Call Out:",
+                                    style: AppTextStyles.headingSmall.copyWith(
+                                      color: ColorPalette.peach,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+
+                                  Text(
+                                    "${profile!['compatibility']['archetypes']['dynamicsPattern']['pattern']}",
                                     style: AppTextStyles.bodyMedium.copyWith(
                                       color: ColorPalette.peach,
                                     ),
@@ -313,51 +339,111 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                                   const SizedBox(height: 16),
                                 ],
                               ),
-                            // Personality Strengths (handling as array)
-                            if (profile?['compatibility']?['archetypes']?['personality']?['strengths'] != null &&
-                                (profile!['compatibility']['archetypes']['personality']['strengths'] as List).isNotEmpty)
+                            
+                            
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    /* = = = = = = = = = 
+                    Relationship Match
+                    = = = = = = = = = = */
+                    _buildAnimatedSection(
+                      key: 'relationship',
+                      controller: _chemistryController,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: ColorPalette.peach,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${profile?['compatibility']?['relationship']?['percentage']?.toInt() ?? 0}%',
+                              style: AppTextStyles.headingLarge.copyWith(
+                                color: ColorPalette.white,
+                              ),
+                            ),
+                            Text(
+                              'Relationship Match',
+                              style: AppTextStyles.headingMedium.copyWith(
+                                color: ColorPalette.white,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            
+                            // Display the reason
+                            if (profile?['compatibility']?['relationship']?['reason'] != null)
+                              Column(
+                                children: [
+                                  PillText(
+                                    text: profile!['compatibility']['relationship']['reason'],
+                                    colorVariant: "peachMedium"
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
+                            
+                            // Display all matches (not just the first one)
+                            if (profile?['compatibility']?['relationship']?['matches'] != null)
+                              ...((profile!['compatibility']['relationship']['matches'] as List).map((match) => 
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: PillText(
+                                    text: match, 
+                                    colorVariant: "peachMedium"
+                                  ),
+                                ),
+                              ).toList()),
+                            
+                            const SizedBox(height: 12),
+                            const Divider( height: 1, thickness: 2, color: ColorPalette.white, ),
+                            const SizedBox(height: 12),
+
+                            // Relationship Summary
+                            if (profile?['compatibility']?['archetypes']?['relationship'] != null)
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Strengths",
+                                    "Relationship Compatibility:",
                                     style: AppTextStyles.headingSmall.copyWith(
-                                      color: ColorPalette.peach,
+                                      color: ColorPalette.white,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  ...((profile!['compatibility']['archetypes']['personality']['strengths'] as List).map((strength) => 
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 4),
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text("• ", style: AppTextStyles.bodyMedium.copyWith(color: ColorPalette.peach)),
-                                          Expanded(
-                                            child: Text(
-                                              strength.toString(),
-                                              style: AppTextStyles.bodyMedium.copyWith(
-                                                color: ColorPalette.peach,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                  Text(
+                                    "${profile!['compatibility']['archetypes']['relationship']['name']}",
+                                    style: AppTextStyles.headingMedium.copyWith(
+                                      color: ColorPalette.white,
                                     ),
-                                  ).toList()),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "${profile!['compatibility']['archetypes']['relationship']['description']}",
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: ColorPalette.white,
+                                    ),
+                                  ),
                                   const SizedBox(height: 16),
                                 ],
                               ),
+                            
                             if (profile?['compatibility']?['archetypes']?['personality']?['watchOuts'] != null &&
                                 (profile!['compatibility']['archetypes']['personality']['watchOuts'] as List).isNotEmpty)
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Watch Outs",
+                                    "Watch Outs:",
                                     style: AppTextStyles.headingSmall.copyWith(
-                                      color: ColorPalette.peach,
+                                      color: ColorPalette.white,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -368,12 +454,12 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                                       child: Row(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text("• ", style: AppTextStyles.bodyMedium.copyWith(color: ColorPalette.peach)),
+                                          Text("• ", style: AppTextStyles.bodyMedium.copyWith(color: ColorPalette.white)),
                                           Expanded(
                                             child: Text(
                                               watchOut.toString(),
                                               style: AppTextStyles.bodyMedium.copyWith(
-                                                color: ColorPalette.peach,
+                                                color: ColorPalette.white,
                                               ),
                                             ),
                                           ),
@@ -381,22 +467,9 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                                       ),
                                     ),
                                   ).toList()),
-                                  const SizedBox(height: 16),
                                 ],
                               ),
-                            Text(
-                              "Ideal Date: \n${profile?['compatibility']?['archetypes']?['idealDate'] ?? ''}",
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: ColorPalette.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              "Long Term Outlook: \n${profile?['compatibility']?['archetypes']?['longTermOutlook'] ?? ''}",
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: ColorPalette.grey,
-                              ),
-                            ),
+                            
                           ],
                         ),
                       ),
@@ -462,65 +535,6 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                     ),*/
 
                     /* = = = = = = = = = 
-                    Relationship Match
-                    = = = = = = = = = = */
-                    _buildAnimatedSection(
-                      key: 'relationship',
-                      controller: _chemistryController,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
-                        margin: const EdgeInsets.only(bottom: 20),
-                        decoration: BoxDecoration(
-                          color: ColorPalette.peach,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${profile?['compatibility']?['relationship']?['percentage']?.toInt() ?? 0}%',
-                              style: AppTextStyles.headingLarge.copyWith(
-                                color: ColorPalette.white,
-                              ),
-                            ),
-                            Text(
-                              'Relationship Match',
-                              style: AppTextStyles.headingMedium.copyWith(
-                                color: ColorPalette.white,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            
-                            // Display the reason
-                            if (profile?['compatibility']?['relationship']?['reason'] != null)
-                              Column(
-                                children: [
-                                  PillText(
-                                    text: profile!['compatibility']['relationship']['reason'],
-                                    colorVariant: "peachMedium"
-                                  ),
-                                  const SizedBox(height: 8),
-                                ],
-                              ),
-                            
-                            // Display all matches (not just the first one)
-                            if (profile?['compatibility']?['relationship']?['matches'] != null)
-                              ...((profile!['compatibility']['relationship']['matches'] as List).map((match) => 
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: PillText(
-                                    text: match, 
-                                    colorVariant: "peachMedium"
-                                  ),
-                                ),
-                              ).toList()),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    /* = = = = = = = = = 
                     Personality Match
                     = = = = = = = = = = */       
                     _buildAnimatedSection(
@@ -571,6 +585,77 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                                   ),
                                 ),
                               ).toList()),
+
+                            const SizedBox(height: 12),
+                            const Divider( height: 1, thickness: 2, color: ColorPalette.white, ),
+                            const SizedBox(height: 12),
+
+                            // Personality Summary
+                            if (profile?['compatibility']?['archetypes']?['personality'] != null)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Personality Compatibility:",
+                                    style: AppTextStyles.headingSmall.copyWith(
+                                      color: ColorPalette.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "${profile!['compatibility']['archetypes']['personality']['name']}",
+                                    style: AppTextStyles.headingMedium.copyWith(
+                                      color: ColorPalette.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "${profile!['compatibility']['archetypes']['personality']['description']}",
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: ColorPalette.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+                              ),
+                            
+                            // Personality Strengths (handling as array)
+                            if (profile?['compatibility']?['archetypes']?['personality']?['strengths'] != null &&
+                                (profile!['compatibility']['archetypes']['personality']['strengths'] as List).isNotEmpty)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Strengths:",
+                                    style: AppTextStyles.headingSmall.copyWith(
+                                      color: ColorPalette.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  ...((profile!['compatibility']['archetypes']['personality']['strengths'] as List).map((strength) => 
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text("• ", style: AppTextStyles.bodyMedium.copyWith(color: ColorPalette.white)),
+                                          Expanded(
+                                            child: Text(
+                                              strength.toString(),
+                                              style: AppTextStyles.bodyMedium.copyWith(
+                                                color: ColorPalette.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ).toList()),
+                                ],
+                              ),
+                          
                           ],
                         ),
                       ),
@@ -741,6 +826,61 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
                           ),
                         ),
                       ),
+
+                    /* = = = = = = = = = 
+                    Relationship Archetype Overview
+                    = = = = = = = = = = */
+                    _buildAnimatedSection(
+                      key: 'miscinfo',
+                      controller: _archetypeController,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: ColorPalette.peachLite,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Ideal Date:",
+                              style: AppTextStyles.headingSmall.copyWith(
+                                color: ColorPalette.peach,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            
+                            Text(
+                              "${profile?['compatibility']?['archetypes']?['summary']?['idealDate'] ?? ''}",
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: ColorPalette.peach,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+
+                            Text(
+                              "Long Term Outlook:",
+                              style: AppTextStyles.headingSmall.copyWith(
+                                color: ColorPalette.peach,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+
+                            Text(
+                              "${profile?['compatibility']?['archetypes']?['summary']?['longTermOutlook'] ?? ''}",
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: ColorPalette.peach,
+                              ),
+                            ),
+
+                          ],
+                        ),
+                      ),
+                    ),
 
                     /* = = = = = = = = = 
                     Call to Action

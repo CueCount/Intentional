@@ -19,7 +19,9 @@ class _basics extends State<Basics> {
   VALUES
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
   Map<String, dynamic> inputValues = {};
-  Map<String, bool> selectedValues = {};
+  // Separate maps for each checkbox group
+  Map<String, bool> basicsSelected = {};
+  Map<String, bool> relationshipTypeSelected = {};
   bool _isLoading = true;
   
   @override
@@ -33,22 +35,31 @@ class _basics extends State<Basics> {
   Future<void> _loadExistingValues() async {
     final inputState = Provider.of<InputState>(context, listen: false);
     
-    // Initialize all possible values as false first
-    for (var input in inputState.basics) {
-      for (var value in input.possibleValues) {
-        selectedValues[value] = false; 
-      }
+    // Initialize basics (first input)
+    for (var value in inputState.basics[0].possibleValues) {
+      basicsSelected[value] = false; 
+    }
+    
+    // Initialize relationshipType (second input)
+    for (var value in inputState.basics[1].possibleValues) {
+      relationshipTypeSelected[value] = false; 
     }
     
     try {
-      // Get existing emotional needs from provider
-      final existingBasics = await inputState.getInput('basics');
-      
+      final existingBasics = await inputState.fetchInputFromLocal('basics');
       if (existingBasics != null && existingBasics is List) {
-        // Mark existing selections as true
         for (String selectedValue in existingBasics) {
-          if (selectedValues.containsKey(selectedValue)) {
-            selectedValues[selectedValue] = true;
+          if (basicsSelected.containsKey(selectedValue)) {
+            basicsSelected[selectedValue] = true;
+          }
+        }
+      }
+      
+      final existingRelType = await inputState.fetchInputFromLocal('relationshipType');
+      if (existingRelType != null && existingRelType is List) {
+        for (String selectedValue in existingRelType) {
+          if (relationshipTypeSelected.containsKey(selectedValue)) {
+            relationshipTypeSelected[selectedValue] = true;
           }
         }
       }
@@ -63,16 +74,21 @@ class _basics extends State<Basics> {
 
   Map<String, dynamic> getSelectedAttributes() {
     return {
-      "basics": selectedValues.entries
+      "basics": basicsSelected.entries
           .where((entry) => entry.value)  
           .map((entry) => entry.key)       
-          .toList(),                       
+          .toList(),    
+      "relationshipType": relationshipTypeSelected.entries
+          .where((entry) => entry.value)  
+          .map((entry) => entry.key)       
+          .toList(),                 
     };
   }
 
   bool isFormComplete() {
-    int selectedCount = selectedValues.values.where((v) => v).length;
-    return selectedCount >= 1;
+    int basicsCount = basicsSelected.values.where((v) => v).length;
+    int relTypeCount = relationshipTypeSelected.values.where((v) => v).length;
+    return basicsCount == 1 && relTypeCount == 1;
   }
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -94,7 +110,7 @@ class _basics extends State<Basics> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'What kind of connection are you looking for?',
+                      'What kind of relationship are you looking for?',
                       style: AppTextStyles.headingMedium.copyWith(
                         color: ColorPalette.peach,
                       ),
@@ -106,21 +122,67 @@ class _basics extends State<Basics> {
                       runSpacing: 10.0,
                       children: inputState.basics.isNotEmpty 
                       ? inputState.basics[0].possibleValues.map<Widget>((attribute) {
+                          int selectedCount = basicsSelected.values.where((v) => v).length;
                           return SizedBox(
                             width: MediaQuery.of(context).size.width - 32, // Full width minus padding
                             child: CustomCheckbox(
                               attribute: CheckboxAttribute(
                                 title: attribute,
                                 description: '',
-                                isSelected: selectedValues[attribute] ?? false,
+                                isSelected: basicsSelected[attribute] ?? false,
                               ),
                               isHorizontal: true,
+                              maxSelections: 1,
+                              currentSelectionCount: selectedCount,
                               onChanged: (isSelected) {
                                 setState(() {
-                                  selectedValues[attribute] = isSelected;
+                                  if (isSelected) {
+                                    basicsSelected.updateAll((key, value) => false);
+                                  }
+                                  basicsSelected[attribute] = isSelected;
                                 });
                               },
-                              isSelected: selectedValues[attribute] ?? false,
+                              isSelected: basicsSelected[attribute] ?? false,
+                            ),
+                          );
+                        }).toList()
+                      : [],
+                    ),
+                    const SizedBox(height: 32),
+                    Text(
+                      'And in what partnership style?',
+                      style: AppTextStyles.headingMedium.copyWith(
+                        color: ColorPalette.peach,
+                      ),
+                      textAlign: TextAlign.left,
+                    ),
+                    const SizedBox(height: 20),
+                    Wrap(
+                      spacing: 10.0, 
+                      runSpacing: 10.0,
+                      children: inputState.basics.isNotEmpty 
+                      ? inputState.basics[1].possibleValues.map<Widget>((attribute) {
+                          int selectedCount = relationshipTypeSelected.values.where((v) => v).length;
+                          return SizedBox(
+                            width: MediaQuery.of(context).size.width - 32, // Full width minus padding
+                            child: CustomCheckbox(
+                              attribute: CheckboxAttribute(
+                                title: attribute,
+                                description: '',
+                                isSelected: relationshipTypeSelected[attribute] ?? false,
+                              ),
+                              isHorizontal: true,
+                              maxSelections: 1, 
+                              currentSelectionCount: selectedCount,
+                              onChanged: (isSelected) {
+                                setState(() {
+                                  if (isSelected) {
+                                    relationshipTypeSelected.updateAll((key, value) => false);
+                                  }
+                                  relationshipTypeSelected[attribute] = isSelected;
+                                });
+                              },
+                              isSelected: relationshipTypeSelected[attribute] ?? false,
                             ),
                           );
                         }).toList()
@@ -147,12 +209,12 @@ class _basics extends State<Basics> {
 
           onPressed: () async {
             if (isLoggedIn) {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocal(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocalInOnboarding(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.guideOnboardingNeeds);
               }

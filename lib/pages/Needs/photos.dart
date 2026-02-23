@@ -24,7 +24,7 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final inputState = Provider.of<InputState>(context, listen: false);
-      final photoPaths = await inputState.getInput('photos');
+      final photoPaths = await inputState.fetchInputFromLocal('photos');
       if (photoPaths != null && photoPaths is List) {
         inputState.photoInputs.clear();
         for (String path in photoPaths) {
@@ -58,7 +58,7 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
         return Scaffold(
           body: SafeArea(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 const CustomStatusBar(),
                 const SizedBox(height: 20),
@@ -118,13 +118,39 @@ class _PhotoUploadPageState extends State<PhotoUploadPage> {
                 isEnabled: isComplete,
 
                 onPressed: () async {
-                  await inputState.savePhotosLocally();
-
                   if (isLoggedIn) {
-                    if (context.mounted) {
-                      Navigator.pushNamed(context, AppRoutes.settings);
+                    setState(() => _isLoading = true);
+                    
+                    try {
+                      // Get local photo data (base64 strings or file paths)
+                      final localPhotos = await inputState.fetchInputFromLocal('photos') ?? [];
+                      
+                      if (localPhotos.isNotEmpty) {
+                        final userId = FirebaseAuth.instance.currentUser!.uid;
+                        
+                        // Upload to Storage and get URLs
+                        final photoUrls = await inputState.uploadPhotosToStorage(localPhotos, userId);
+                        
+                        // Save URLs to Firestore
+                        await inputState.saveInputToRemoteThenLocal({'photos': photoUrls});
+                      }
+                      
+                      if (context.mounted) {
+                        Navigator.pushNamed(context, AppRoutes.settings);
+                      }
+                    } catch (e) {
+                      print('❌ Failed to upload photos: $e');
+                      // Show error to user
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to save photos. Please try again.')),
+                        );
+                      }
+                    } finally {
+                      setState(() => _isLoading = false);
                     }
                   } else {
+                    await inputState.savePhotosLocally();
                     if (context.mounted) {
                       Navigator.pushNamed(context, AppRoutes.register);
                     }

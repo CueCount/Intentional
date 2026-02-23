@@ -42,7 +42,7 @@ class _chemistry extends State<Chemistry> {
     
     try {
       // Get existing emotional needs from provider
-      final existingPersonality = await inputState.getInput('personality');
+      final existingPersonality = await inputState.fetchInputFromLocal('personality');
       
       if (existingPersonality != null && existingPersonality is List) {
         // Mark existing selections as true
@@ -151,12 +151,12 @@ class _chemistry extends State<Chemistry> {
 
           onPressed: () async {
             if (isLoggedIn) {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocal(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocalInOnboarding(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.relationship);
               }

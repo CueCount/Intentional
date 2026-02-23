@@ -4,6 +4,7 @@ import '/router/router.dart';
 import '../../widgets/bottomNavigationBar.dart';
 import '../../widgets/inputCheckbox.dart';  
 import '../../providers/inputState.dart';
+import '../../providers/userState.dart';
 import '../../styles.dart';
 import '../../widgets/navigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -43,7 +44,7 @@ class _goals extends State<Goals> {
     
     try {
       // Get existing life goal needs from provider
-      final existingLifeGoalNeeds = await inputState.getInput('LifeGoalNeed');
+      final existingLifeGoalNeeds = await inputState.fetchInputFromLocal('LifeGoalNeed');
       
       if (existingLifeGoalNeeds != null && existingLifeGoalNeeds is List) {
         // Mark existing selections as true
@@ -152,15 +153,18 @@ class _goals extends State<Goals> {
           isEnabled: isComplete,
           onPressed: () async {
             if (isLoggedIn) {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocal(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocalInOnboarding(inputData);
+              // Fetch users before navigating - this will show loading and then navigate to guideAvailableMatches
               if (context.mounted) {
-                Navigator.pushNamed(context, AppRoutes.guideAvailableMatches);
+                final userProvider = Provider.of<UserSyncProvider>(context, listen: false);
+                await userProvider.fetchUsersForMatch(context);
               }
+              // Remove the Navigator.pushNamed here - fetchUsersForMatch handles navigation
             }
           },
         );

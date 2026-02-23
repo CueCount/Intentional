@@ -50,7 +50,8 @@ class _Matches extends State<Matches> {
       final activeMatchUser = await matchSync.getActiveMatchUser();
       
       if (activeMatchUser.isNotEmpty) {
-        _userData = activeMatchUser;
+        //_userData = activeMatchUser;
+        _userData = await inputState.generateCompatibility(activeMatchUser);
       } else {
         _userData = await userSync.loadUsers(inputState);
       }
@@ -82,41 +83,41 @@ class _Matches extends State<Matches> {
   Future<List<Map<String, dynamic>>> _getMissingInputs(InputState inputState) async {
     try {
       // Get all saved inputs from SharedPreferences
-      final savedInputs = await inputState.inputsLoad();
+      final savedInputs = await inputState.fetchInputsFromLocal();
       
       // Define all input types to check
-      final allInputTypes = [
-        'personalityQ1',
-        'personalityQ2', 
-        'personalityQ3',
-        // New
-        'personalityQ4',
-        'relationshipQ1',
-        'relationshipQ2',
-        'relationshipQ3',
-        'relationshipQ4',
-
-        'personality',
-        'relationship',
-        'interests',
-        'lifeGoalNeeds',
-      ];
+      final Map<String, List<Input>> additionalInputs = {
+        'personalityQ1': inputState.personalityQ1,
+        'personalityQ2': inputState.personalityQ2,
+        'personalityQ3': inputState.personalityQ3,
+        'personalityQ4': inputState.personalityQ4,
+        'relationshipQ1': inputState.relationshipQ1,
+        'relationshipQ2': inputState.relationshipQ2,
+        'relationshipQ3': inputState.relationshipQ3,
+        'relationshipQ4': inputState.relationshipQ4,
+        
+        'personality': inputState.personality,
+        'relationship': inputState.relationship,
+        'interests': inputState.interests,
+        'lifeGoalNeeds': inputState.lifeGoalNeeds,
+      };
       
       // Find inputs that are not in saved data
       List<Map<String, dynamic>> missingInputs = [];
-      
-      for (String inputType in allInputTypes) {
-        // Check if this input type is not saved or is empty
-        if (!savedInputs.containsKey(inputType) || 
-            (savedInputs[inputType] is List && (savedInputs[inputType] as List).isEmpty)) {
+
+      for (var entry in additionalInputs.entries) {
+        String inputName = entry.key;
+        List<Input> inputList = entry.value;
+        
+        // Check if not saved or empty
+        if (!savedInputs.containsKey(inputName) || 
+            (savedInputs[inputName] is List && (savedInputs[inputName] as List).isEmpty)) {
           
-          // Get the actual Input object from provider
-          Input? input = _getInputByName(inputState, inputType);
-          
-          if (input != null) {
+          if (inputList.isNotEmpty) {
+            Input input = inputList[0];
             missingInputs.add({
               'type': 'input',
-              'inputName': inputType,
+              'inputName': inputName,
               'title': input.title,
               'possibleValues': input.possibleValues,
               'nextRoute': AppRoutes.matches,
@@ -134,28 +135,6 @@ class _Matches extends State<Matches> {
     }
   }
   
-  // Helper method to get Input by name
-  Input? _getInputByName(InputState inputState, String name) {
-    final Map<String, List<Input>> allInputs = {
-      'personalityQ1': inputState.personalityQ1,
-      'personalityQ2': inputState.personalityQ2,
-      'personalityQ3': inputState.personalityQ3,
-      'personalityQ4': inputState.personalityQ4,
-      'relationshipQ1': inputState.relationshipQ1,
-      'relationshipQ2': inputState.relationshipQ2,
-      'relationshipQ3': inputState.relationshipQ3,
-      'relationshipQ4': inputState.relationshipQ4,
-      
-      'personality': inputState.personality,
-      'relationship': inputState.relationship,
-      'interests': inputState.interests,
-      'lifeGoalNeeds': inputState.lifeGoalNeeds,
-    };
-    
-    final inputList = allInputs[name];
-    return (inputList != null && inputList.isNotEmpty) ? inputList[0] : null;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -21,11 +21,13 @@ class RefreshDataWidget extends StatefulWidget {
 class _RefreshDataWidgetState extends State<RefreshDataWidget> {
   bool _isRefreshing = false;
   String? _errorMessage;
+  String _statusMessage = 'Starting refresh...';
 
   Future<void> _performFullRefresh() async {
     setState(() {
       _isRefreshing = true;
       _errorMessage = null;
+      _statusMessage = 'Starting refresh...';
     });
 
     try {
@@ -39,19 +41,16 @@ class _RefreshDataWidgetState extends State<RefreshDataWidget> {
         throw Exception('No user ID found. Please login again.');
       }
 
-      // Step 1: Sync Inputs
-      await inputState.syncInputs(
-        fromId: currentUserId,
-        toId: currentUserId,
-      );
+      // Step 1: Fetch inputs from Firebase and save to local
+      setState(() => _statusMessage = 'Downloading your profile...');
+      await inputState.saveInputsToLocalFromRemote(currentUserId);
 
-      // Step 2: Load Users (this triggers checkAndUpdateMissingCompatibility internally)
+      // Step 2: Load Users
+      setState(() => _statusMessage = 'Loading users...');
       await userProvider.loadUsers(inputState);
 
-      // Step 3: Explicitly check compatibility
-      await inputState.checkAndUpdateMissingCompatibility(inputState);
-
       // Step 4: Force Refresh Matches
+      setState(() => _statusMessage = 'Refreshing matches...');
       await matchProvider.forceRefresh(currentUserId);
 
       // Success - close dialog and call callback
@@ -111,7 +110,7 @@ class _RefreshDataWidgetState extends State<RefreshDataWidget> {
           ] else ...[
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
-            const Text('Please wait while we sync your data...'),
+            Text(_statusMessage),
           ],
         ],
       ),

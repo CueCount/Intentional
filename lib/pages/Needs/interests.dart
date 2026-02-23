@@ -42,7 +42,7 @@ class _interests extends State<Interests> {
     
     try {
       // Get existing logistics/interests from provider using new array format
-      final existingInterests = await inputState.getInput('interests');
+      final existingInterests = await inputState.fetchInputFromLocal('interests');
       
       if (existingInterests != null && existingInterests is List) {
         // Mark existing selections as true
@@ -155,12 +155,12 @@ class _interests extends State<Interests> {
 
           onPressed: () async {
             if (isLoggedIn) {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocal(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.editNeeds, arguments: inputData);
               }
             } else {
-              await inputState.inputsSaveOnboarding(inputData);
+              await inputState.saveInputToRemoteThenLocalInOnboarding(inputData);
               if (context.mounted) {
                 Navigator.pushNamed(context, AppRoutes.goals);
               }
