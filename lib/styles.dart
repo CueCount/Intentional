@@ -29,7 +29,7 @@ class AppTextStyles {
   static TextStyle headingSmall = const TextStyle(
     fontFamily: 'Fraunces',
     fontSize: 16,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w600,
     color: Colors.white,
     height: 1.2,
   );

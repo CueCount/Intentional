@@ -370,6 +370,7 @@ class AppAuthProvider extends ChangeNotifier {
               ...onboardingData,
               'createdAt': FieldValue.serverTimestamp(),
               'lastUpdated': FieldValue.serverTimestamp(),
+              'randomSeed': Random().nextDouble(),
             });
         
         if (kDebugMode) {

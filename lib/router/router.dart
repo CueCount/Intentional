@@ -26,6 +26,7 @@ import '../pages/Profile/registerInfo.dart';
 import '../pages/Profile/resetPassword.dart';
 import '../pages/loading.dart';
 import '../pages/Chat/debugChat.dart';
+import '../pages/Profile/unansweredQuestions.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -61,6 +62,7 @@ class AppRoutes {
   static const String loading = '/loading';
   static const String resetPassword = '/resetPassword';
   static const String debugChat = 'debugChat';
+  static const String unansweredQuestions = 'unansweredQuestions';
 
   static Route<dynamic> generateRoute(RouteSettings settings, bool isLoggedIn) {
     final arguments = settings.arguments;
@@ -136,6 +138,8 @@ class AppRoutes {
         return const GuideRequestSent();
       case guideAvailableMatches:
         return const GuideAvailableMatches();
+      case unansweredQuestions:
+        return const UnansweredQuestionsPage();
       case debugChat:
         return const DebugChatPage();
       case loading:

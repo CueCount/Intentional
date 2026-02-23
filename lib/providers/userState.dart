@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'dart:async';
+import 'dart:math';
 import 'inputState.dart';
 import 'matchState.dart';
 import '../functions/compatibilityCalcService.dart';
@@ -243,9 +244,9 @@ class UserSyncProvider extends ChangeNotifier {
     const int targetCount = 7;
     const int maxAttempts = 4;
 
-    final seeking = await inputState.fetchInputFromLocal('Seeking');       // What gender I want
-    final myGender = await inputState.fetchInputFromLocal('Gender');       // My gender (for reciprocal match)
-    final ageRange = await inputState.fetchInputFromLocal('ageRange');         // My preferred age range [min, max]
+    final seeking = await inputState.fetchInputFromLocal('Seeking');
+    final myGender = await inputState.fetchInputFromLocal('Gender');
+    final ageRange = await inputState.fetchInputFromLocal('ageRange');
     final myBasics = await inputState.fetchInputFromLocal('basics');
     final myRelationshipType = await inputState.fetchInputFromLocal('relationshipType');
 
@@ -254,12 +255,16 @@ class UserSyncProvider extends ChangeNotifier {
     final maxBirthDate = DateTime(now.year - ageRange[0] as int, now.month, now.day).millisecondsSinceEpoch;
     final minBirthDate = DateTime(now.year - ageRange[1] as int, now.month, now.day).millisecondsSinceEpoch;
 
+    final randomStart = Random().nextDouble();
+
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
       if (collectedUsers.length >= targetCount) break;
       
       try {
-        final randomOffset = 10;
-        final snapshot = await FirebaseFirestore.instance
+        List<QueryDocumentSnapshot<Map<String, dynamic>>> docs = [];
+        
+        // === QUERY 1: From randomStart to 1.0 ===
+        final snapshot1 = await FirebaseFirestore.instance
             .collection('users')
             .where('Gender', isEqualTo: seeking)
             .where('Seeking', isEqualTo: myGender)
@@ -267,10 +272,34 @@ class UserSyncProvider extends ChangeNotifier {
             .where('birthDate', isLessThanOrEqualTo: maxBirthDate)
             .where('basics', isEqualTo: myBasics)
             .where('relationshipType', isEqualTo: myRelationshipType)
-            .limit(7 + randomOffset)
+            .orderBy('birthDate')
+            .orderBy('randomSeed')
+            .where('randomSeed', isGreaterThanOrEqualTo: randomStart)
+            .limit(12)
             .get();
         
-        final queryResults = snapshot.docs
+        docs.addAll(snapshot1.docs);
+        
+        // === QUERY 2: Wrap around (0 to randomStart) if needed ===
+        if (docs.length < 12) {
+          final snapshot2 = await FirebaseFirestore.instance
+              .collection('users')
+              .where('Gender', isEqualTo: seeking)
+              .where('Seeking', isEqualTo: myGender)
+              .where('birthDate', isGreaterThanOrEqualTo: minBirthDate)
+              .where('birthDate', isLessThanOrEqualTo: maxBirthDate)
+              .where('basics', isEqualTo: myBasics)
+              .where('relationshipType', isEqualTo: myRelationshipType)
+              .orderBy('birthDate')
+              .orderBy('randomSeed')
+              .where('randomSeed', isLessThan: randomStart)
+              .limit(12 - docs.length)
+              .get();
+          
+          docs.addAll(snapshot2.docs);
+        }
+        
+        final queryResults = docs
             .where((doc) => !excludedIds.contains(doc.id))
             .where((doc) => doc.id != _currentUserId)
             .map((doc) {

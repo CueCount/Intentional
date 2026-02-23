@@ -261,6 +261,70 @@ class InputState extends ChangeNotifier {
     }
   }
 
+  Future<void> saveByAddingToArrayToRemoteThenLocal(String fieldName, dynamic value) async {
+    try {
+      if (_currentSessionId.isEmpty) {
+        throw Exception("No session ID available");
+      }
+
+      // 1. Append to Firestore array using arrayUnion (no duplicates)
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentSessionId)
+          .set({
+            fieldName: FieldValue.arrayUnion([value]),
+            'lastUpdated': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+
+      if (kDebugMode) {
+        print('✅ Appended "$value" to $fieldName in users/$_currentSessionId');
+      }
+
+      // 2. Update locally in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'inputs_$_currentSessionId';
+      
+      String? existingDataJson = prefs.getString(key);
+      Map<String, dynamic> existingData = {};
+      
+      if (existingDataJson != null && existingDataJson.isNotEmpty) {
+        Map rawData = json.decode(existingDataJson);
+        rawData.forEach((k, v) => existingData[k.toString()] = v);
+      }
+
+      // Get current array or create new one
+      List<dynamic> currentArray = [];
+      if (existingData[fieldName] != null && existingData[fieldName] is List) {
+        currentArray = List<dynamic>.from(existingData[fieldName]);
+      }
+      
+      // Add if not already present (mirror arrayUnion behavior)
+      if (!currentArray.contains(value)) {
+        currentArray.add(value);
+      }
+
+      final mergedData = {
+        ...existingData,
+        fieldName: currentArray,
+        'session_id': _currentSessionId,
+        'last_updated': DateTime.now().toIso8601String(),
+      };
+
+      await prefs.setString(key, json.encode(mergedData));
+      
+      _cachedInputs[fieldName] = currentArray;
+      notifyListeners();
+      
+      if (kDebugMode) {
+        print('✅ Updated $fieldName locally under key "$key"');
+      }
+      
+    } catch (e) {
+      print('❌ appendToArrayField: Failed - $e');
+      rethrow;
+    }
+  }
+
   /* = = = = = = = = =
   Fetch Input
   = = = = = = = = = */

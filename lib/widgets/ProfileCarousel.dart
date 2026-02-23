@@ -60,16 +60,9 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
       // Add profile card
       carouselItems.add(_buildProfileCard(profiles[i], context));
     }
-    
-    // If we have fewer than 4 profiles but still have inputs, add them at the end
-    if (profiles.length < 4 && inputIndex < inputs.length) {
-      while (inputIndex < inputs.length && inputIndex < 2) {
-        carouselItems.add(_buildInputCard(inputs[inputIndex], context));
-        inputIndex++;
-      }
-    }
 
     carouselItems.add(_buildRefreshCard(context));
+    carouselItems.add(_buildQuestionsCard(context));
     carouselItems.add(_buildFeedbackCard(context));
 
     return CarouselSlider(
@@ -519,6 +512,91 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
         ),
       ),
     );
+  }
+
+  Widget _buildQuestionsCard(BuildContext context) {    
+     return Align(
+          alignment: Alignment.center,
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 30),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  ColorPalette.violet,
+                  ColorPalette.peach,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(30),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Unlock Better Matches',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.headingMedium.copyWith(
+                      color: Colors.white,
+                      fontSize: 28,
+                    ),
+                  ),
+                                
+                  const Spacer(),
+                  
+                  Text(
+                    'The more we know about you, the better we can find your perfect match.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                  
+                  const Spacer(),
+                 
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, AppRoutes.unansweredQuestions);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: ColorPalette.peach,
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Answer Questions',
+                          style: AppTextStyles.headingMedium.copyWith(
+                            color: ColorPalette.peach,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.arrow_forward,
+                          color: ColorPalette.peach,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+    
   }
 
 }
