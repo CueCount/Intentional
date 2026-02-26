@@ -16,7 +16,8 @@ class Match extends StatefulWidget {
 }
 
 class _Match extends State<Match>  with TickerProviderStateMixin {
-  Map<String, dynamic>? profile; 
+  Map<String, dynamic>? matchInstance;
+  Map<String, dynamic>? profile;
   String? currentUserImage;
   AnimationController? _photoController;
   AnimationController? _archetypeController;
@@ -48,15 +49,16 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
     _miscinfoController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final Map<String, dynamic>? profileData = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
 
-      if (profileData == null) {
-        print("❌ Error: Profile data is null!");
+      if (args == null) {
+        print("❌ Error: Arguments are null!");
         return;
       }
 
       setState(() {
-        profile = profileData;
+        matchInstance = args['matchInstance'] as Map<String, dynamic>?;
+        profile = args['profile'] as Map<String, dynamic>?;
       });
 
       final inputState = Provider.of<InputState>(context, listen: false);
@@ -536,7 +538,7 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
 
                     /* = = = = = = = = = 
                     Personality Match
-                    = = = = = = = = = = */       
+                    = = = = = = = = = = */      
                     _buildAnimatedSection(
                       key: 'personality',
                       controller: _physicalController,
@@ -884,14 +886,15 @@ class _Match extends State<Match>  with TickerProviderStateMixin {
 
                     /* = = = = = = = = = 
                     Call to Action
-                    = = = = = = = = = = */ 
+                    = = = = = = = = = = */
                     MatchCTA(
                       targetUserId: profile?['userId'] ?? '',
+                      matchInstance: matchInstance!,
                     ),
 
                     /* = = = = = = = = = 
                     Flag User Button
-                    = = = = = = = = = = */ 
+                    = = = = = = = = = = */
                     const SizedBox(height: 30),
                     TextButton(
                       onPressed: () {

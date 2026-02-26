@@ -16,8 +16,6 @@ import '../pages/Profile/login.dart';
 import '../pages/Profile/register.dart';
 import '../pages/Profile/settings.dart';
 import '../pages/Profile/editneeds.dart';
-import '../pages/Profile/requestsReceived.dart';
-import '../pages/Profile/requestsSent.dart';
 import '../pages/Guides/guideRequestSent.dart';
 import '../pages/Guides/guideAvailableMatches.dart';
 import '../pages/Guides/guideOnboardingNeeds.dart';
@@ -118,10 +116,6 @@ class AppRoutes {
         return const Matches();
       case match:
         return const Match();
-      case requestsReceived:
-        return const RequestReceived();
-      case requestsSent:
-        return const RequestSent();
       case photos:
         return const PhotoUploadPage();
       case subscription:

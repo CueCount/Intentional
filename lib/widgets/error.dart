@@ -48,7 +48,7 @@ class GlobalErrorScreen extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // Route-specific actions
-                  _RouteActions(routeName: routeName),
+                  //_RouteActions(routeName: routeName),
 
                 ],
               ),
@@ -60,7 +60,7 @@ class GlobalErrorScreen extends StatelessWidget {
   }
 }
 
-class _RouteActions extends StatelessWidget {
+/*class _RouteActions extends StatelessWidget {
   final String routeName;
   _RouteActions({required this.routeName});
 
@@ -99,4 +99,4 @@ class _RouteActions extends StatelessWidget {
       label: const Text('Refresh'),
     );
   }
-}
+}*/

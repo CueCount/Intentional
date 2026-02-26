@@ -16,7 +16,7 @@ class GuideAvailableMatches extends StatefulWidget {
 }
 
 class _GuideAvailableMatches extends State<GuideAvailableMatches> {
-  bool _isLoading = true;
+  bool _isLoading = false;
   bool _isLoggedIn = false;
   List<String?> _userPhotos = [];
 
@@ -24,15 +24,15 @@ class _GuideAvailableMatches extends State<GuideAvailableMatches> {
   void initState() {
     super.initState();
     _isLoggedIn = FirebaseAuth.instance.currentUser != null;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    /*WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadInitialUsers();
-    });
+    });*/
   }
 
-  Future<void> _loadInitialUsers() async {
+  /*Future<void> _loadInitialUsers() async {
     final userSync = Provider.of<UserSyncProvider>(context, listen: false);
     final inputState = Provider.of<InputState>(context, listen: false);
-    final users = await userSync.loadUsers(inputState);
+    final users = await userSync.loadUsers(inputState, );
     
     List<String?> photos = [];
     for (Map<String, dynamic> userData in users) {
@@ -49,7 +49,7 @@ class _GuideAvailableMatches extends State<GuideAvailableMatches> {
       _userPhotos = photos;
       _isLoading = false;
     });
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +66,7 @@ class _GuideAvailableMatches extends State<GuideAvailableMatches> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     // Overlapping profile images
-                    _buildOverlappingProfiles(),
+                    //_buildOverlappingProfiles(),
                     const SizedBox(height: 16),
                     Text(
                       'Potential\nMatches are\nWaiting!',

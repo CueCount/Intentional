@@ -71,48 +71,6 @@ class AppMenuOverlay extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       
-                      // Two-column row - disabled if active match exists
-                      FutureBuilder<List<Map<String, dynamic>>>(
-                        future: Provider.of<MatchSyncProvider>(context, listen: false).getActiveMatchUser(),
-                        builder: (context, snapshot) {
-                          final hasActiveMatch = snapshot.hasData && snapshot.data!.isNotEmpty;
-                          
-                          return Row(
-                            children: [
-                              Expanded(
-                                child: _buildSmallMenuItem(
-                                  context,
-                                  'Requests\nReceived',
-                                  'Check if you received any match requests',
-                                  hasActiveMatch 
-                                    ? () {} // No-op when disabled
-                                    : () {
-                                        Navigator.of(context).pop();
-                                        Navigator.pushNamed(context, AppRoutes.requestsReceived);
-                                      },
-                                  isDisabled: hasActiveMatch,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _buildSmallMenuItem(
-                                  context,
-                                  'Requests\nSent',
-                                  'Check the status of your sent match requests',
-                                  hasActiveMatch 
-                                    ? () {} // No-op when disabled
-                                    : () {
-                                        Navigator.of(context).pop();
-                                        Navigator.pushNamed(context, AppRoutes.requestsSent);
-                                      },
-                                  isDisabled: hasActiveMatch,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
                       
                       _buildLargeMenuItem(
                         context,

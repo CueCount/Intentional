@@ -89,20 +89,9 @@ class _ChatScreenState extends State<ChatScreen> {
         final userSync = Provider.of<UserSyncProvider>(context, listen: false);
         
         // Try cache first
-        Map<String, dynamic>? userData = await userSync.getUserFromCache(
+        Map<String, dynamic>? userData = await userSync.getUser(
           otherMember!.userId!, 
-          currentUserId!,
         );
-        
-        // If not in cache, fetch from Firebase
-        if (userData == null) {
-          final inputState = Provider.of<InputState>(context, listen: false);
-          userData = await userSync.getUserByID(
-            otherMember.userId!, 
-            currentUserId,
-            inputState,
-          );
-        }
         
         displayName = userData?['nameFirst'] ?? widget.otherUserName;
         imageUrl = imageUrl ?? userData?['photoURL'];

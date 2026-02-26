@@ -533,94 +533,73 @@ class InputState extends ChangeNotifier {
   Compatibility
   = = = = = = = = = */
 
-  Future<List<Map<String, dynamic>>> generateCompatibility(List<Map<String, dynamic>> users) async {
-    if (_currentSessionId.isEmpty) return users;
-  
+  Future<Map<String, dynamic>?> generateCompatibility(Map<String, dynamic> userData) async {
+    if (_currentSessionId.isEmpty) return userData;
+
     try {
       final currentUserData = await fetchInputsFromLocal();
-      final List<Map<String, dynamic>> processedUsers = [];
-      
-      for (var userData in users) {
-        // Check if compatibility is missing
-        if (userData['compatibility'] == null) {
-          // Calculate compatibility
-          final result = MatchCalculationService().calculateMatch(
-            currentUser: currentUserData,
-            potentialMatch: userData,
-            includeArchetypes: true,
-          );
-          
-          // Full data structure with complete archetype analysis
-          userData['compatibility'] = {
-            // Core compatibility data
-            'percentage': result.percentage,
-            'matchQuality': result.matchQuality,
-            'topReasons': result.topReasons,
-            
-            // Category breakdowns
-            'personality': {
-              'score': result.breakdown['personality']?.score ?? 0,
-              'percentage': result.breakdown['personality']?.percentage ?? 0,
-              'matches': result.breakdown['personality']?.matches ?? [],
-              'reason': result.breakdown['personality']?.reason ?? '',
-            },
-            'relationship': {
-              'score': result.breakdown['relationship']?.score ?? 0,
-              'percentage': result.breakdown['relationship']?.percentage ?? 0,
-              'matches': result.breakdown['relationship']?.matches ?? [],
-              'reason': result.breakdown['relationship']?.reason ?? '',
-            },
-            'interests': {
-              'score': result.breakdown['interests']?.score ?? 0,
-              'percentage': result.breakdown['interests']?.percentage ?? 0,
-              'matches': result.breakdown['interests']?.matches ?? [],
-              'reason': result.breakdown['interests']?.reason ?? '',
-            },
-            'goals': {
-              'score': result.breakdown['goals']?.score ?? 0,
-              'percentage': result.breakdown['goals']?.percentage ?? 0,
-              'matches': result.breakdown['goals']?.matches ?? [],
-              'reason': result.breakdown['goals']?.reason ?? '',
-            },
-            
-            'archetypes': result.archetypeAnalysis != null ? {
-              'personality': result.archetypeAnalysis!['personalityArchetype'] != null ? {
-                'name': result.archetypeAnalysis!['personalityArchetype']['name'],
-                'description': result.archetypeAnalysis!['personalityArchetype']['description'],
-                'strengths': result.archetypeAnalysis!['personalityArchetype']['strengths'] ?? [],
-                'watchOuts': result.archetypeAnalysis!['personalityArchetype']['watchOuts'] ?? [],
-              } : null,
-              'relationship': result.archetypeAnalysis!['relationshipStyle'] != null ? {
-                'name': result.archetypeAnalysis!['relationshipStyle']['name'],
-                'description': result.archetypeAnalysis!['relationshipStyle']['description'],
-                'characteristics': result.archetypeAnalysis!['relationshipStyle']['characteristics'] ?? [],
-                'idealDate': result.archetypeAnalysis!['relationshipStyle']['idealDate'],
-                'longTermOutlook': result.archetypeAnalysis!['relationshipStyle']['longTermOutlook'],
-              } : null,
-              'summary': result.archetypeAnalysis!['summary'],
-              'narrative': result.archetypeAnalysis!['narrative'],
-              'traitDistribution': result.archetypeAnalysis!['traitDistribution'],
-              'dynamicsPattern': result.archetypeAnalysis!['dynamicsPattern'],
-            } : null,
-            
-            'calculatedAt': DateTime.now().toIso8601String(),
-          };
-          
-          if (kDebugMode) {
-            print('Updated compatibility for ${userData['userId']}');
-          }
-        }
-        
-        processedUsers.add(userData);
-      }
-      
-      return processedUsers;
-      
+
+      final result = MatchCalculationService().calculateMatch(
+        currentUser: currentUserData,
+        potentialMatch: userData,
+        includeArchetypes: true,
+      );
+
+      userData['compatibility'] = {
+        'percentage': result.percentage,
+        'matchQuality': result.matchQuality,
+        'topReasons': result.topReasons,
+        'personality': {
+          'score': result.breakdown['personality']?.score ?? 0,
+          'percentage': result.breakdown['personality']?.percentage ?? 0,
+          'matches': result.breakdown['personality']?.matches ?? [],
+          'reason': result.breakdown['personality']?.reason ?? '',
+        },
+        'relationship': {
+          'score': result.breakdown['relationship']?.score ?? 0,
+          'percentage': result.breakdown['relationship']?.percentage ?? 0,
+          'matches': result.breakdown['relationship']?.matches ?? [],
+          'reason': result.breakdown['relationship']?.reason ?? '',
+        },
+        'interests': {
+          'score': result.breakdown['interests']?.score ?? 0,
+          'percentage': result.breakdown['interests']?.percentage ?? 0,
+          'matches': result.breakdown['interests']?.matches ?? [],
+          'reason': result.breakdown['interests']?.reason ?? '',
+        },
+        'goals': {
+          'score': result.breakdown['goals']?.score ?? 0,
+          'percentage': result.breakdown['goals']?.percentage ?? 0,
+          'matches': result.breakdown['goals']?.matches ?? [],
+          'reason': result.breakdown['goals']?.reason ?? '',
+        },
+        'archetypes': result.archetypeAnalysis != null ? {
+          'personality': result.archetypeAnalysis!['personalityArchetype'] != null ? {
+            'name': result.archetypeAnalysis!['personalityArchetype']['name'],
+            'description': result.archetypeAnalysis!['personalityArchetype']['description'],
+            'strengths': result.archetypeAnalysis!['personalityArchetype']['strengths'] ?? [],
+            'watchOuts': result.archetypeAnalysis!['personalityArchetype']['watchOuts'] ?? [],
+          } : null,
+          'relationship': result.archetypeAnalysis!['relationshipStyle'] != null ? {
+            'name': result.archetypeAnalysis!['relationshipStyle']['name'],
+            'description': result.archetypeAnalysis!['relationshipStyle']['description'],
+            'characteristics': result.archetypeAnalysis!['relationshipStyle']['characteristics'] ?? [],
+            'idealDate': result.archetypeAnalysis!['relationshipStyle']['idealDate'],
+            'longTermOutlook': result.archetypeAnalysis!['relationshipStyle']['longTermOutlook'],
+          } : null,
+          'summary': result.archetypeAnalysis!['summary'],
+          'narrative': result.archetypeAnalysis!['narrative'],
+          'traitDistribution': result.archetypeAnalysis!['traitDistribution'],
+          'dynamicsPattern': result.archetypeAnalysis!['dynamicsPattern'],
+        } : null,
+        'calculatedAt': DateTime.now().toIso8601String(),
+      };
+
+      return userData;
+
     } catch (e) {
-      if (kDebugMode) {
-        print('Error checking compatibility: $e');
-      }
-      return users;
+      if (kDebugMode) print('Error generating compatibility: $e');
+      return userData;
     }
   }
 

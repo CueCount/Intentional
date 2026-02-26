@@ -3,49 +3,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:async';
-import 'userState.dart';
 import '../functions/chatService.dart';
 
 class MatchSyncProvider extends ChangeNotifier {
   // Private variables
-  StreamSubscription<QuerySnapshot>? _outgoingMatchesListener;
-  StreamSubscription<QuerySnapshot>? _incomingMatchesListener;
+  StreamSubscription<QuerySnapshot>? _matchInstancesListener;
   String? _currentUserId;
   bool _isListening = false;
-  bool _isBatchUpdating = false; // Add flag to batch updates
-  
   // Public getters
   bool get isListening => _isListening;
   String? get currentUserId => _currentUserId;
-  
-  // Cached match data
-  List<Map<String, dynamic>> _sentRequests = [];
-  List<Map<String, dynamic>> _receivedRequests = [];
-  List<Map<String, dynamic>> _allMatches = [];
-  
-  // Getters for cached data
-  List<Map<String, dynamic>> get sentRequests => List.from(_sentRequests);
-  List<Map<String, dynamic>> get receivedRequests => List.from(_receivedRequests);
-  List<Map<String, dynamic>> get allMatches => List.from(_allMatches);
-
-  // Batch notification helper
-  void _notifyIfNotBatching() {
-    if (!_isBatchUpdating) {
-      notifyListeners();
-    }
-  }
-  
-  // Batch update wrapper
-  Future<T> _batchUpdate<T>(Future<T> Function() operation) async {
-    _isBatchUpdating = true;
-    try {
-      final result = await operation();
-      return result;
-    } finally {
-      _isBatchUpdating = false;
-      notifyListeners(); // Single notification after batch
-    }
-  }
+  // Cached match instance data — fed by the single listener
+  List<Map<String, dynamic>> _allMatchInstances = [];
+  List<Map<String, dynamic>> get allMatchInstances => List.from(_allMatchInstances);
+  Completer<void>? _firstSnapshotCompleter;
+  Future<void> get firstSnapshotReady => _firstSnapshotCompleter?.future ?? Future.value();
   
   /* = = = = = = = = = 
   Listener for Sent Requests:
@@ -61,204 +33,120 @@ class MatchSyncProvider extends ChangeNotifier {
       }
       return;
     }
-    
-    // Batch all startup operations
-    await _batchUpdate(() async {
-      await stopListening();
-      
-      _currentUserId = currentSessionId;
-      
-      try {
-        // Start real-time listeners
-        _startSentRequestListener(currentSessionId);
-        _startReceivedRequestListener(currentSessionId);
-        
-        _isListening = true;
-        
-        if (kDebugMode) {
-          print('🎧 Started match listeners for user: $currentSessionId');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('❌ Error starting listeners: $e');
-        }
+
+    await stopListening();
+    _currentUserId = currentSessionId;
+    _firstSnapshotCompleter = Completer<void>();
+
+    try {
+      _matchInstancesListener = FirebaseFirestore.instance
+          .collection('match_instances')
+          .where('userIds', arrayContains: currentSessionId)
+          .where('status', whereIn: ['active', 'chat_requested', 'matched'])
+          .snapshots()
+          .listen(
+            (snapshot) => _handleMatchInstanceChanges(snapshot),
+            onError: (error) {
+              if (kDebugMode) {
+                print('❌ Match instances listener error: $error');
+              }
+            },
+          );
+
+      _isListening = true;
+
+      if (kDebugMode) {
+        print('🎧 Started match_instances listener for: $currentSessionId');
       }
-    });
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error starting listener: $e');
+      }
+    }
   }
-  
+
   Future<void> stopListening() async {
-    await _outgoingMatchesListener?.cancel();
-    await _incomingMatchesListener?.cancel();
-    
-    _outgoingMatchesListener = null;
-    _incomingMatchesListener = null;
+    await _matchInstancesListener?.cancel();
+    _matchInstancesListener = null;
     _currentUserId = null;
     _isListening = false;
-    
-    // Only notify if not part of a batch operation
-    _notifyIfNotBatching();
-    
+    _allMatchInstances = [];
+
     if (kDebugMode) {
-      print('🔇 Stopped match listeners');
+      print('🔇 Stopped match_instances listener');
     }
   }
-  
-  void _startSentRequestListener(String userId) {
-    _outgoingMatchesListener = FirebaseFirestore.instance
-        .collection('matches')
-        .where('requesterUserId', isEqualTo: userId)
-        .snapshots()
-        .listen(
-          (snapshot) => _handleMatchChanges(snapshot, userId),
-          onError: (error) {
-            if (kDebugMode) {
-              print('❌ Outgoing listener error: $error');
-            }
-          },
-        );
-  }
-  
-  void _startReceivedRequestListener(String userId) {
-    _incomingMatchesListener = FirebaseFirestore.instance
-        .collection('matches')
-        .where('requestedUserId', isEqualTo: userId)
-        .snapshots()
-        .listen(
-          (snapshot) => _handleMatchChanges(snapshot, userId),
-          onError: (error) {
-            if (kDebugMode) {
-              print('❌ Incoming listener error: $error');
-            }
-          },
-        );
-  }
-  
+
   /* = = = = = = = = =
-  Handle Changes
+  Handle Incoming Changes from Firebase
   = = = = = = = = = */
 
-  Future<void> _handleMatchChanges(QuerySnapshot snapshot, String currentSessionId) async {
+  Future<void> _handleMatchInstanceChanges(QuerySnapshot snapshot) async {
     try {
-      final List<Map<String, dynamic>> matches = [];
-      
+      final List<Map<String, dynamic>> instances = [];
+
       for (var doc in snapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        
-        final match = {
-          'matchId': doc.id,
-          'requestedUserId': data['requestedUserId'],
-          'requesterUserId': data['requesterUserId'],
-          'status': data['status'],
-          'createdAt': data['createdAt']?.toDate()?.toIso8601String() ?? DateTime.now().toIso8601String(),
-          'updatedAt': data['updatedAt']?.toDate()?.toIso8601String() ?? DateTime.now().toIso8601String(),
-        };
-        
-        matches.add(match);
+
+        instances.add({
+          'matchInstanceId': doc.id,
+          'userIds': List<String>.from(data['userIds'] ?? []),
+          'status': data['status'] ?? 'active',
+          'log': List<Map<String, dynamic>>.from(
+            (data['log'] ?? []).map((e) => Map<String, dynamic>.from(e)),
+          ),
+          'channelId': data['channelId'],
+        });
       }
-      
-      await _mergeMatchesToSharedPrefs(matches, currentSessionId);
-      
-      // Only notify if not part of initial sync
-      _notifyIfNotBatching();
-      
-      print('Match Provider: Updated ${matches.length} matches');
-    } catch (e) {
-      print('Match Provider Error: Failed to handle match changes - $e');
-    }
-  }
 
-  // Merge match data, serves _handleMatchChanges
-  Future<void> _mergeMatchesToSharedPrefs(List<Map<String, dynamic>> newMatches, String currentSessionId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Get existing matches
-      final existingJson = prefs.getStringList('matches_$currentSessionId') ?? [];
-      List<Map<String, dynamic>> allMatches = existingJson
-          .map((json) => Map<String, dynamic>.from(jsonDecode(json)))
-          .toList();
-      
-      // Update or add new matches
-      for (var newMatch in newMatches) {
-        final matchId = newMatch['matchId'];
-        final existingIndex = allMatches.indexWhere((m) => m['matchId'] == matchId);
-        
-        if (existingIndex >= 0) {
-          allMatches[existingIndex] = newMatch; // Update existing
-        } else {
-          allMatches.add(newMatch); // Add new
-        }
+      _allMatchInstances = instances;
+
+      if (_firstSnapshotCompleter != null && !_firstSnapshotCompleter!.isCompleted) {
+        _firstSnapshotCompleter!.complete();
       }
-      
-      // Save back to SharedPreferences
-      await _saveToSharedPrefs('matches_$currentSessionId', allMatches);
 
-      // Update local arrays by filtering
-      _updateLocalArrays(allMatches, currentSessionId);
-    } catch (e) {
-      print('Error merging matches to cache: $e');
-    }
-  }
-   
-  // Fetching Data, serves _mergeMatchesToSharedPrefs
-  void _updateLocalArrays(List<Map<String, dynamic>> allMatches, String currentSessionId) {
-    _allMatches = List.from(allMatches);
+      notifyListeners();
 
-    _sentRequests = allMatches.where((match) => 
-      match['requesterUserId'] == currentSessionId &&
-      match['status'] == 'pending' 
-    ).toList();
-    
-    _receivedRequests = allMatches.where((match) => 
-      match['requestedUserId'] == currentSessionId &&
-      match['status'] == 'pending' 
-    ).toList();
-  }
-  
-  // Saving Data, serves _mergeMatchesToSharedPrefs 
-  Future<void> _saveToSharedPrefs(String key, List<Map<String, dynamic>> matches) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Convert list of match objects to list of JSON strings
-      final matchesJson = matches.map((match) => jsonEncode(match)).toList();
-      
-      // Save as StringList with session-based key
-      // Note: key should already be 'matches_$currentSessionId' when passed in
-      await prefs.setStringList(key, matchesJson);
-      
       if (kDebugMode) {
-        print('💾 Saved ${matchesJson.length} matches to $key');
+        print('📡 Match instances updated: ${instances.length} total');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error saving to SharedPreferences: $e');
+        print('❌ Error handling match instance changes: $e');
       }
     }
   }
-  
+
   /* = = = = = = = = = 
-  Accept, Reject. UnMatch Match
+  Write Match Instance Changes to Firebase
   = = = = = = = = = */
 
-  Future<Map<String, dynamic>> updateMatchStatus(String matchId, String newStatus) async {
+  Future<Map<String, dynamic>> updateMatchStatus(
+    String matchInstanceId, 
+    String newStatus,
+  ) async {
     try {
-      // Update Firebase
       await FirebaseFirestore.instance
-          .collection('matches')
-          .doc(matchId)
+          .collection('match_instances')
+          .doc(matchInstanceId)
           .update({
         'status': newStatus,
-        'updatedAt': FieldValue.serverTimestamp(),
+        'log': FieldValue.arrayUnion([
+          {
+            'timestamp': DateTime.now().toIso8601String(),
+            'status': newStatus,
+            'by': _currentUserId,
+          }
+        ]),
       });
 
       return {
         'success': true,
-        'message': 'Match status updated successfully!',
+        'message': 'Status updated to $newStatus',
       };
     } catch (e) {
       if (kDebugMode) {
-        print('Error updating match status: $e');
+        print('Error updating match instance status: $e');
       }
       return {
         'success': false,
@@ -267,10 +155,27 @@ class MatchSyncProvider extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> chatRequest(String matchId) async {
+    try {
+      await updateMatchStatus(matchId, 'chat_requested');
+      
+      return {
+        'success': true,
+        'message': 'Unmatched successfully',
+      };
+    } catch (e) {
+      print('Error unmatching: $e');
+      return {
+        'success': false,
+        'message': 'Failed to unmatch',
+      };
+    }
+  }
+
   Future<Map<String, dynamic>> acceptMatch(String matchId, String currentUserId, String otherUserId) async {
     try {
       // Update match status to active
-      await updateMatchStatus(matchId, 'active');
+      await updateMatchStatus(matchId, 'matched');
       
       // Create Stream Chat channel
       final chatService = StreamChatService();
@@ -360,16 +265,7 @@ class MatchSyncProvider extends ChangeNotifier {
   Future<Map<String, dynamic>> rejectMatch(String matchId, String otherUserId) async {
     try {
       // Update match status
-      await updateMatchStatus(matchId, 'rejected');
-      
-      // Add to ignore list
-      final prefs = await SharedPreferences.getInstance();
-      final ignoreListJson = prefs.getStringList('ignoreList_$_currentUserId') ?? [];
-      
-      if (!ignoreListJson.contains(otherUserId)) {
-        ignoreListJson.add(otherUserId);
-        await prefs.setStringList('ignoreList_$_currentUserId', ignoreListJson);
-      }
+      await updateMatchStatus(matchId, 'blocked');
 
       return {
         'success': true,
@@ -419,146 +315,65 @@ class MatchSyncProvider extends ChangeNotifier {
   }
 
   /* = = = = = = = = = 
-  Get Active User for Match Page
+  Write NEW Match Instance to Firebase
   = = = = = = = = = */
 
-  Future<List<Map<String, dynamic>>> getActiveMatchUser() async {
-    if (_currentUserId == null) {
-      print('🔍 getActiveMatchUser: No current user ID');
-      return [];
-    }
-    
-    // Find the active match
-    Map<String, dynamic>? activeMatch;
-    for (var match in _allMatches) {
-      if (match['status'] == 'active' && 
-          (match['requesterUserId'] == _currentUserId || match['requestedUserId'] == _currentUserId)) {
-        activeMatch = match;
-        print('✅ Found active match: ${match['matchId']}');
-        break;
-      }
-    }
-    
-    if (activeMatch == null) {
-      print('⚠️ getActiveMatchUser: No active match found');
-      return [];
-    }
-    
-    // Get the other person's userId
-    final matchedUserId = activeMatch['requesterUserId'] == _currentUserId 
-        ? activeMatch['requestedUserId'] 
-        : activeMatch['requesterUserId'];
-        
+  Future<void> createMatchInstance(
+    String currentSessionId,
+    Map<String, dynamic> user,
+  ) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      // FIX: Get the list properly as List<String>
-      final usersJsonList = prefs.getStringList('users_$_currentUserId');
-      
-      if (usersJsonList != null) {
-        // Check in the users list cache
-        for (String userJson in usersJsonList) {
-          final user = jsonDecode(userJson) as Map<String, dynamic>;
-          if (user['userId'] == matchedUserId) {
-            print('✅ Found matched user in cache');
-            return [user];
+      await FirebaseFirestore.instance.collection('match_instances').doc().set({
+        'userIds': [currentSessionId, user['userId']],
+        'status': 'active',
+        'compatibility': user['compatibility'],
+        'log': [
+          {
+            'timestamp': DateTime.now().toIso8601String(),
+            'status': 'active',
+            'by': currentSessionId,
           }
-        }
-      }
-      
-      print('📱 Matched user not in cache, fetching from Firebase...');
-      
-      // Fallback to Firebase if not in cache
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(matchedUserId)
-          .get();
-      
-      if (doc.exists) {
-        final data = doc.data() as Map<String, dynamic>;
-        final userData = {
-          'userId': doc.id,
-          ...data, // Include all user data
-        };
-        print('✅ Retrieved matched user from Firebase');
-        return [userData];
-      } else {
-        print('❌ Matched user document not found in Firebase');
-      }
-      
-    } catch (e) {
-      print('❌ Error getting active match user: $e');
-    }
-    
-    return [];
-  }
-  
-  /* = = = = = = = = = 
-  Helpers for External Functions
-  = = = = = = = = = */
+        ],
+      });
 
-  // used in matchesService for Sending Match request, and in matchCTA for display UI
-  bool hasExceededOutgoingLimit() {
-    final pendingRequests = _sentRequests.where((request) => 
-      request['status'] == 'pending' 
-    ).toList();
-    
-    return pendingRequests.length >= 3;
-  }
-  
-  // for the Requests Sent Page
-  int get pendingRequestsCount {
-    return _sentRequests.where((request) => 
-      request['status'] == 'pending'
-    ).length;
-  }
-  
-  // triggered when data on error widget
-  Future<void> forceRefresh(currentSessionId) async {
-    if (_currentUserId == null) return;
-    
-    await _batchUpdate(() async {
-      try {
-        if (kDebugMode) {
-          print('🔄 Force refreshing match data...');
-        }
-        
-        // Clear all cached match data
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('matches_$_currentUserId');
-        await prefs.remove('last_sync_$_currentUserId');
-        
-        // Clear local arrays
-        _sentRequests = [];
-        _receivedRequests = [];
-        _allMatches = [];
-        
-        // Re-fetch everything from Firebase
-        // Sync from Firebase - no notifications during sync
-        final outgoingSnapshot = await FirebaseFirestore.instance
-            .collection('matches')
-            .where('requesterUserId', isEqualTo: currentSessionId)
-            .get();
-        
-        final incomingSnapshot = await FirebaseFirestore.instance
-            .collection('matches')
-            .where('requestedUserId', isEqualTo: currentSessionId)
-            .get();
-        
-        // Process both snapshots without notifications
-        await _handleMatchChanges(outgoingSnapshot, currentSessionId);
-        await _handleMatchChanges(incomingSnapshot, currentSessionId);
-        
-        if (kDebugMode) {
-          print('✅ Force refresh completed');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('❌ Error during force refresh: $e');
-        }
+      if (kDebugMode) {
+        print('✅ Created match_instance for ${user['userId']}');
       }
-    });
+    } catch (e) {
+      if (kDebugMode) print('❌ Error creating match instance: $e');
+    }
   }
+
+  Future<void> createMatchEventInstance(
+    String currentSessionId,
+    Map<String, dynamic> user,
+    String eventId,
+  ) async {
+    try {
+      await FirebaseFirestore.instance.collection('match_event_instances').doc().set({
+        'userIds': [currentSessionId, user['userId']],
+        'eventId': eventId,
+        'status': 'active',
+        'log': [
+          {
+            'timestamp': DateTime.now().toIso8601String(),
+            'status': 'active',
+            'by': currentSessionId,
+          }
+        ],
+      });
+
+      if (kDebugMode) {
+        print('✅ Created match_event_instance for ${user['userId']} (Event: $eventId)');
+      }
+    } catch (e) {
+      if (kDebugMode) print('❌ Error creating match event instance: $e');
+    }
+  }
+
+  /* = = = = = = = = = 
+  Dispose 
+  = = = = = = = = = */
 
   @override
   void dispose() {

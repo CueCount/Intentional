@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../widgets/profileCarousel.dart';
+import '../../widgets/ProfileCarousel.dart';
 import '../../widgets/navigation.dart';
-import '../../providers/userState.dart'; 
 import '../../providers/matchState.dart'; 
-import '../../providers/inputState.dart';
-import '../../router/router.dart';
 
 class Matches extends StatefulWidget {
   final bool shouldUpdate;
@@ -16,15 +13,14 @@ class Matches extends StatefulWidget {
 }
 
 class _Matches extends State<Matches> {
-  List<Map<String, dynamic>> _userData = [];
-  List<Map<String, dynamic>> _inputData = [];
+  List<Map<String, dynamic>> _matchInstances = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadUsers();
+      _loadMatchInstances();
     });
   }
 
@@ -32,106 +28,36 @@ class _Matches extends State<Matches> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     Provider.of<MatchSyncProvider>(context);
-    if (!_isLoading && _userData.isNotEmpty) {
-      _loadUsers();
+    if (!_isLoading && _matchInstances.isNotEmpty) {
+      _loadMatchInstances();
     }
   }
 
-  void _loadUsers() async {
+  void _loadMatchInstances() async {
     try {
       setState(() {
         _isLoading = true;
       });
 
       final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
-      final userSync = Provider.of<UserSyncProvider>(context, listen: false);
-      final inputState = Provider.of<InputState>(context, listen: false);
-      
-      final activeMatchUser = await matchSync.getActiveMatchUser();
-      
-      if (activeMatchUser.isNotEmpty) {
-        //_userData = activeMatchUser;
-        _userData = await inputState.generateCompatibility(activeMatchUser);
-      } else {
-        _userData = await userSync.loadUsers(inputState);
-      }
 
-      _inputData = await _getMissingInputs(inputState);
-      
+      await matchSync.firstSnapshotReady;
+
+      _matchInstances = matchSync.allMatchInstances;
+
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      print('Error loading match instances: $e');
       if (mounted) {
         setState(() {
-          _userData = [];
+          _matchInstances = [];
           _isLoading = false;
         });
       }
-    }
-  }
-
-  /*
-    Function here to loop through Input Provider, loop through inputs_[currentSessionId] key in shared preferences 
-    Get first 2 Inputs that exist in Input Provider, but are not in inputs_[currentSessionId] key.
-    pass the input names of those 2 Inputs, pass through return inputData
-  */
-
-  Future<List<Map<String, dynamic>>> _getMissingInputs(InputState inputState) async {
-    try {
-      // Get all saved inputs from SharedPreferences
-      final savedInputs = await inputState.fetchInputsFromLocal();
-      
-      // Define all input types to check
-      final Map<String, List<Input>> additionalInputs = {
-        'personalityQ1': inputState.personalityQ1,
-        'personalityQ2': inputState.personalityQ2,
-        'personalityQ3': inputState.personalityQ3,
-        'personalityQ4': inputState.personalityQ4,
-        'relationshipQ1': inputState.relationshipQ1,
-        'relationshipQ2': inputState.relationshipQ2,
-        'relationshipQ3': inputState.relationshipQ3,
-        'relationshipQ4': inputState.relationshipQ4,
-        
-        'personality': inputState.personality,
-        'relationship': inputState.relationship,
-        'interests': inputState.interests,
-        'lifeGoalNeeds': inputState.lifeGoalNeeds,
-      };
-      
-      // Find inputs that are not in saved data
-      List<Map<String, dynamic>> missingInputs = [];
-
-      for (var entry in additionalInputs.entries) {
-        String inputName = entry.key;
-        List<Input> inputList = entry.value;
-        
-        // Check if not saved or empty
-        if (!savedInputs.containsKey(inputName) || 
-            (savedInputs[inputName] is List && (savedInputs[inputName] as List).isEmpty)) {
-          
-          if (inputList.isNotEmpty) {
-            Input input = inputList[0];
-            missingInputs.add({
-              'type': 'input',
-              'inputName': inputName,
-              'title': input.title,
-              'possibleValues': input.possibleValues,
-              'nextRoute': AppRoutes.matches,
-            });
-          }
-          
-          if (missingInputs.length >= 2) break;
-        }
-      }
-      
-      return missingInputs;
-    } catch (e) {
-      print('Error getting missing inputs: $e');
-      return [];
     }
   }
   
@@ -144,8 +70,7 @@ class _Matches extends State<Matches> {
             const CustomStatusBar(),
             Expanded(
               child: ProfileCarousel(
-                userData: _userData,
-                inputData: _inputData,
+                matchInstances: _matchInstances,
                 isLoading: _isLoading,
               ),
             ),

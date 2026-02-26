@@ -47,11 +47,11 @@ class _RefreshDataWidgetState extends State<RefreshDataWidget> {
 
       // Step 2: Load Users
       setState(() => _statusMessage = 'Loading users...');
-      await userProvider.loadUsers(inputState);
+      //await userProvider.loadUsers(inputState, matchProvider);
 
       // Step 4: Force Refresh Matches
       setState(() => _statusMessage = 'Refreshing matches...');
-      await matchProvider.forceRefresh(currentUserId);
+      //await matchProvider.forceRefresh(currentUserId);
 
       // Success - close dialog and call callback
       if (mounted) {

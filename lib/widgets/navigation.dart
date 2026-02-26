@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intentional_demo_01/styles.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:async';
-import '../providers/userState.dart';
 import '../providers/matchState.dart';
-import '../providers/inputState.dart';
-import '../router/router.dart';
 import 'menu.dart';
 
 class CustomStatusBar extends StatefulWidget {
@@ -19,95 +15,24 @@ class CustomStatusBar extends StatefulWidget {
 }
 
 class _CustomStatusBarState extends State<CustomStatusBar> {
-  Timer? _countdownTimer;
-  bool _canRefresh = true;
-  String _countdownText = '';
+  int _previousMatchCount = 0;
+  bool _hasNewProfiles = false;
 
   @override
   void initState() {
     super.initState();
-    _checkRefreshStatus();
-    // Start a timer to update countdown every minute
-    _countdownTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
-      _checkRefreshStatus();
+    // Capture the initial count after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final matchSync = Provider.of<MatchSyncProvider>(context, listen: false);
+      _previousMatchCount = matchSync.allMatchInstances.length;
     });
-  }
-
-  @override
-  void dispose() {
-    _countdownTimer?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _checkRefreshStatus() async {
-    final inputState = Provider.of<InputState>(context, listen: false);
-    final lastRefreshString = await inputState.fetchInputFromLocal('last_refresh');
-    
-    if (lastRefreshString == null) {
-      // Never refreshed before, allow refresh
-      setState(() {
-        _canRefresh = true;
-        _countdownText = '';
-      });
-      return;
-    }
-    
-    try {
-      final lastRefresh = DateTime.parse(lastRefreshString);
-      final now = DateTime.now();
-      final difference = now.difference(lastRefresh);
-      
-      // Check if 10 hours have passed
-      const cooldownDuration = Duration(hours: 10);
-      
-      if (difference >= cooldownDuration) {
-        setState(() {
-          _canRefresh = true;
-          _countdownText = '';
-        });
-      } else {
-        // Calculate remaining time
-        final remaining = cooldownDuration - difference;
-        
-        setState(() {
-          _canRefresh = false;
-          
-          if (remaining.inHours > 0) {
-            // Show hours remaining
-            final hours = remaining.inHours;
-            final minutes = remaining.inMinutes % 60;
-            if (hours == 1 && minutes == 0) {
-              _countdownText = '1 hour';
-            } else if (minutes > 0) {
-              _countdownText = '${hours}h ${minutes}m';
-            } else {
-              _countdownText = '$hours hours';
-            }
-          } else {
-            // Less than an hour, show minutes
-            final minutes = remaining.inMinutes;
-            if (minutes <= 1) {
-              _countdownText = '1 minute';
-            } else {
-              _countdownText = '$minutes minutes';
-            }
-          }
-        });
-      }
-    } catch (e) {
-      // If there's an error parsing, allow refresh
-      setState(() {
-        _canRefresh = true;
-        _countdownText = '';
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      return const Padding(padding: EdgeInsets.all(24)); 
+      return const Padding(padding: EdgeInsets.all(24));
     }
 
     return Padding(
@@ -117,132 +42,119 @@ class _CustomStatusBarState extends State<CustomStatusBar> {
         children: [
 
           /* = = = = = = = = = = 
-          Menu Button
-          = = = = = = = = = = */
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black),
-            onPressed: () { 
-              AppMenuOverlay.show(context); 
-            },
-          ), 
-
-          /* = = = = = = = = = = 
-          Refresh/Chat Button
+          LEFT: Notification / Profile Count
           = = = = = = = = = = */
           Consumer<MatchSyncProvider>(
             builder: (context, matchSync, child) {
-              final inputState = Provider.of<InputState>(context, listen: false);
-              final currentUserId = inputState.userId;
-              
-              // Find active match the same way matchCTA does
-              final activeMatch = matchSync.allMatches.firstWhere(
-                (match) => match['status'] == 'active',
-                orElse: () => <String, dynamic>{},
-              );
+              final currentCount = matchSync.allMatchInstances.length;
 
-              // If there's an active match, show chat button
-              if (activeMatch.isNotEmpty) {
-                final matchId = activeMatch['matchId'];
-                
-                // Determine the other user's ID
-                final otherUserId = activeMatch['requesterUserId'] == currentUserId
-                    ? activeMatch['requestedUserId']
-                    : activeMatch['requesterUserId'];
-                
-                return TextButton.icon(
-                  icon: Text(
-                    'Go to Chat',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: ColorPalette.peach,
-                    ),
-                  ),
-                  label: Icon(
-                    Icons.chat_bubble_outline,
-                    color: ColorPalette.peach,
-                    size: 24,
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.chat,
-                      arguments: {
-                        'matchId': matchId,
-                        'otherUserName': otherUserId,
-                      },
-                    );
-                  },
-                );
+              // Detect if new profiles were added via the listener
+              if (currentCount > _previousMatchCount && _previousMatchCount > 0) {
+                // Schedule the state update for after this build
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && !_hasNewProfiles) {
+                    setState(() => _hasNewProfiles = true);
+                  }
+                });
               }
 
-              // Otherwise, show refresh button
-              return Row(
-                children: [
-                  if (_canRefresh == false)
-                    TextButton.icon(
-                      icon: Text(
-                        _countdownText,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: ColorPalette.grey,
+              return GestureDetector(
+                onTap: () {
+                  // Dismiss the "new" indicator when tapped
+                  if (_hasNewProfiles) {
+                    setState(() {
+                      _hasNewProfiles = false;
+                      _previousMatchCount = currentCount;
+                    });
+                  }
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Profile count badge
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _hasNewProfiles
+                                ? ColorPalette.peach.withOpacity(0.15)
+                                : Colors.grey.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.people_outline,
+                                size: 20,
+                                color: _hasNewProfiles
+                                    ? ColorPalette.peach
+                                    : ColorPalette.grey,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '$currentCount',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: _hasNewProfiles
+                                      ? ColorPalette.peach
+                                      : ColorPalette.grey,
+                                  fontWeight: _hasNewProfiles
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      label: Icon(
-                        Icons.refresh,
-                        color: ColorPalette.grey,
-                        size: 24,
-                      ),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      onPressed: _canRefresh 
-                      ? () async {
-                          final userSync = Provider.of<UserSyncProvider>(context, listen: false);
-                          await userSync.fetchUsersForMatch(context);
-                          _checkRefreshStatus();
-                        } 
-                      : null,
+
+                        // New profile dot indicator
+                        if (_hasNewProfiles)
+                          Positioned(
+                            top: -3,
+                            right: -3,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: ColorPalette.peach,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1.5),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                  
-                  if (_canRefresh == true)
-                    TextButton.icon(
-                      icon: Text(
-                        'New Profiles',
-                        style: AppTextStyles.bodyMedium.copyWith(
+
+                    // "New!" label that appears when new profiles are detected
+                    if (_hasNewProfiles) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        'New!',
+                        style: AppTextStyles.bodySmall.copyWith(
                           color: ColorPalette.peach,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      label: Icon(
-                        Icons.refresh,
-                        color: ColorPalette.peach,
-                        size: 24,
-                      ),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      onPressed: _canRefresh 
-                      ? () async {
-                          final userSync = Provider.of<UserSyncProvider>(context, listen: false);
-                          await userSync.fetchUsersForMatch(context);
-                          _checkRefreshStatus();
-                        } 
-                      : null,
-                    ),
-                ],
+                    ],
+                  ],
+                ),
               );
+            },
+          ),
+
+          /* = = = = = = = = = = 
+          RIGHT: Menu Button
+          = = = = = = = = = = */
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: Colors.black),
+            onPressed: () {
+              AppMenuOverlay.show(context);
             },
           ),
         ],
       ),
     );
   }
-
-  
 }
