@@ -72,7 +72,7 @@ class InputState extends ChangeNotifier {
   }
   
   /* = = = = = = = = =
-  Save Input
+  Save/Fetch Inputs
   = = = = = = = = = */
 
   Future<void> saveInputToRemoteThenLocal(Map<String, dynamic>? needData) async {
@@ -325,10 +325,6 @@ class InputState extends ChangeNotifier {
     }
   }
 
-  /* = = = = = = = = =
-  Fetch Input
-  = = = = = = = = = */
-
   Future<Map<String, dynamic>> fetchInputsFromLocal() async {
     try {
       if (_currentSessionId.isEmpty) { return {}; }
@@ -527,6 +523,67 @@ class InputState extends ChangeNotifier {
     }
     
     return uploadedUrls;
+  }
+
+  /* = = = = = = = = =
+  Save/Fetch Events 
+  = = = = = = = = = */
+
+  Future<void> saveEventsToLocal() async {
+    try {
+      if (_currentSessionId.isEmpty) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      final inputsJson = prefs.getString('inputs_$_currentSessionId');
+      if (inputsJson == null) return;
+
+      final inputsData = jsonDecode(inputsJson);
+      final eventIds = List<String>.from(inputsData['eventIds'] ?? []);
+      if (eventIds.isEmpty) return;
+
+      final List<Map<String, dynamic>> events = [];
+      for (final eventId in eventIds) {
+        final eventDoc = await FirebaseFirestore.instance
+            .collection('events')
+            .doc(eventId)
+            .get();
+
+        if (eventDoc.exists) {
+          final data = eventDoc.data()!;
+          events.add({
+            'eventId': eventDoc.id,
+            'eventName': data['eventName'] ?? 'Event',
+            'eventTimestamp': data['eventTimestamp'],
+            'urlId': data['urlId'],
+          });
+        }
+      }
+
+      await prefs.setString('events_$_currentSessionId', jsonEncode(events));
+
+      if (kDebugMode) {
+        print('✅ Cached ${events.length} events locally for $_currentSessionId');
+      }
+    } catch (e) {
+      if (kDebugMode) print('❌ saveEventsToLocal: Failed - $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchEventsFromLocal() async {
+    try {
+      if (_currentSessionId.isEmpty) return [];
+
+      final prefs = await SharedPreferences.getInstance();
+      final eventsJson = prefs.getString('events_$_currentSessionId');
+      if (eventsJson == null) return [];
+
+      return List<Map<String, dynamic>>.from(
+        jsonDecode(eventsJson).map((e) => Map<String, dynamic>.from(e)),
+      );
+    } catch (e) {
+      if (kDebugMode) print('❌ fetchEventsFromLocal: Failed - $e');
+      return [];
+    }
   }
 
   /* = = = = = = = = =

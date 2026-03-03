@@ -320,21 +320,29 @@ class MatchSyncProvider extends ChangeNotifier {
 
   Future<void> createMatchInstance(
     String currentSessionId,
-    Map<String, dynamic> user,
-  ) async {
+    Map<String, dynamic> user, {
+    String? eventId,
+  }) async {
     try {
-      await FirebaseFirestore.instance.collection('match_instances').doc().set({
+      final status = eventId != null ? 'active_event' : 'active';
+
+      final data = {
         'userIds': [currentSessionId, user['userId']],
-        'status': 'active',
-        'compatibility': user['compatibility'],
+        'status': status,
         'log': [
           {
             'timestamp': DateTime.now().toIso8601String(),
-            'status': 'active',
+            'status': status,
             'by': currentSessionId,
           }
         ],
-      });
+      };
+
+      if (eventId != null) {
+        data['eventId'] = eventId;
+      }
+
+      await FirebaseFirestore.instance.collection('match_instances').doc().set(data);
 
       if (kDebugMode) {
         print('✅ Created match_instance for ${user['userId']}');
@@ -344,36 +352,33 @@ class MatchSyncProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> createMatchEventInstance(
-    String currentSessionId,
-    Map<String, dynamic> user,
-    String eventId,
-  ) async {
-    try {
-      await FirebaseFirestore.instance.collection('match_event_instances').doc().set({
-        'userIds': [currentSessionId, user['userId']],
-        'eventId': eventId,
-        'status': 'active',
-        'log': [
-          {
-            'timestamp': DateTime.now().toIso8601String(),
-            'status': 'active',
-            'by': currentSessionId,
-          }
-        ],
-      });
+  /* = = = = = = = = = 
+  MISC Functions 
+  = = = = = = = = = */
 
-      if (kDebugMode) {
-        print('✅ Created match_event_instance for ${user['userId']} (Event: $eventId)');
+  Future<void> autoIgnoreExpiredMatches() async {
+    final now = DateTime.now();
+
+    for (var instance in _allMatchInstances) {
+      if (instance['status'] != 'active') continue;
+
+      final log = instance['log'] as List<Map<String, dynamic>>?;
+      if (log == null || log.isEmpty) continue;
+
+      final createdAtString = log.first['timestamp'] as String?;
+      if (createdAtString == null) continue;
+
+      final createdAt = DateTime.tryParse(createdAtString);
+      if (createdAt == null) continue;
+
+      if (now.difference(createdAt).inDays >= 3) {
+        await ignore(instance['matchInstanceId']);
+        if (kDebugMode) {
+          print('⏰ Auto-ignored expired match: ${instance['matchInstanceId']}');
+        }
       }
-    } catch (e) {
-      if (kDebugMode) print('❌ Error creating match event instance: $e');
     }
   }
-
-  /* = = = = = = = = = 
-  Dispose 
-  = = = = = = = = = */
 
   @override
   void dispose() {

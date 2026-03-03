@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../pages/Chat/chat.dart';
 import '../pages/Guides/landingPage.dart';
 import '../pages/Matches/matches.dart';
+import '../pages/Matches/events.dart';
+import '../pages/Matches/event.dart';
 import '../pages/Matches/match.dart';
 import '../pages/Needs/qual.dart';
 import '../pages/Needs/age.dart';
@@ -32,10 +34,12 @@ class AppRoutes {
   static const String age = '/age';
   static const String basics = '/basics';
   static const String match = '/match';
+  static const String events = '/events';
   static const String tone = '/tone';
   static const String chat = '/chat';
   static const String verifications= '/verifications';
   static const String matches = '/discover';
+  static const String matchesEvent = '/matchesEvent';
   static const String login = '/login';
   static const String register = '/register';
   static const String basicInfo = '/basic_info';
@@ -114,8 +118,12 @@ class AppRoutes {
         );
       case matches:
         return const Matches();
+      case matchesEvent:
+        return MatchesEvent(eventId: arguments as String);
       case match:
         return const Match();
+      case events:
+        return const Events();
       case photos:
         return const PhotoUploadPage();
       case subscription:

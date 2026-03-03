@@ -132,7 +132,7 @@ class UserSyncProvider extends ChangeNotifier {
               .where('relationshipType', isEqualTo: myRelationshipType);
 
           if (eventId != null) {
-            baseQuery = baseQuery.where('eventIds', arrayContains: eventId);
+            baseQuery = baseQuery.where('events', arrayContains: eventId);
           }
 
           // QUERY 1: From randomStart to 1.0
@@ -194,13 +194,12 @@ class UserSyncProvider extends ChangeNotifier {
           if (newUniqueUsers.isNotEmpty) {
             final userIds = newUniqueUsers.map((u) => u['userId'] as String).toList();
             final disqualifiedIds = <String>{};
-            final matchCollection = eventId != null ? 'match_event_instances' : 'match_instances';
 
             for (var i = 0; i < userIds.length; i += 10) {
               final batch = userIds.skip(i).take(10).toList();
 
               var query = FirebaseFirestore.instance
-                  .collection(matchCollection)
+                  .collection('match_instances')
                   .where('userIds', arrayContainsAny: batch)
                   .where('status', whereIn: ['matched', 'reported']);
 
@@ -223,7 +222,7 @@ class UserSyncProvider extends ChangeNotifier {
                 .toList();
 
             if (kDebugMode && disqualifiedIds.isNotEmpty) {
-              print('Filtered out ${disqualifiedIds.length} users from $matchCollection (matched/reported)');
+              print('Filtered out ${disqualifiedIds.length} users from match_instances (matched/reported)');
             }
           }
 
@@ -246,15 +245,19 @@ class UserSyncProvider extends ChangeNotifier {
       if (newUsers.isNotEmpty) {
         for (var user in newUsers) {
           if (eventId != null) {
-            await matchProvider.createMatchEventInstance(_currentUserId!, user, eventId);
+            await matchProvider.createMatchInstance(_currentUserId!, user, eventId: eventId);
           } else {
             await matchProvider.createMatchInstance(_currentUserId!, user);
           }
         }
       }
 
-      // Navigate to matches page
-      Navigator.pushNamed(context, '/guideAvailableMatches');
+      // Navigate based on context
+      if (eventId != null) {
+        Navigator.pushNamed(context, '/matchesEvent', arguments: eventId);
+      } else {
+        Navigator.pushNamed(context, '/guideAvailableMatches');
+      }
 
       if (kDebugMode) {print('✅ Refresh complete: Created ${newUsers.length} match instances');}
     } catch (e) {

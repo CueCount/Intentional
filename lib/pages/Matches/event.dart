@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../widgets/ProfileCarousel.dart';
+import '../../widgets/eventProfileCarousel.dart';
 import '../../widgets/navigation.dart';
 import '../../providers/inputState.dart';
 
@@ -56,11 +56,11 @@ class _MatchesEventState extends State<MatchesEvent> {
       final inputState = Provider.of<InputState>(context, listen: false);
       final userId = inputState.userId;
 
-      // Query match_event_instances for this event where the current user is involved
       final snapshot = await FirebaseFirestore.instance
-          .collection('match_event_instances')
+          .collection('match_instances')
           .where('eventId', isEqualTo: widget.eventId)
-          .where('users', arrayContains: userId)
+          .where('userIds', arrayContains: userId)
+          .where('status', isEqualTo: 'active_event')
           .get();
 
       final instances = snapshot.docs.map((doc) {
@@ -105,8 +105,9 @@ class _MatchesEventState extends State<MatchesEvent> {
                 ),
               ),
             Expanded(
-              child: ProfileCarousel(
+              child: EventProfileCarousel(
                 matchInstances: _matchEventInstances,
+                eventId: widget.eventId,
                 isLoading: _isLoading,
               ),
             ),

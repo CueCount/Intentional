@@ -12,21 +12,23 @@ import '../widgets/errorDialog.dart';
 import '../widgets/feedback.dart';
 import '../providers/userState.dart';
 
-class ProfileCarousel extends StatefulWidget {
+class EventProfileCarousel extends StatefulWidget {
   final List<Map<String, dynamic>> matchInstances;
+  final String eventId;
   final bool isLoading;
 
-  const ProfileCarousel({
+  const EventProfileCarousel({
     Key? key,
     required this.matchInstances,
+    required this.eventId,
     this.isLoading = false,
   }) : super(key: key);
 
   @override
-  State<ProfileCarousel> createState() => _ProfileCarouselState();
+  State<EventProfileCarousel> createState() => _EventProfileCarouselState();
 }
 
-class _ProfileCarouselState extends State<ProfileCarousel> {
+class _EventProfileCarouselState extends State<EventProfileCarousel> {
   final Map<String, Map<String, dynamic>> _userCache = {};
 
   Timer? _countdownTimer;
@@ -53,7 +55,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
 
   Future<void> _checkRefreshStatus() async {
     final inputState = Provider.of<InputState>(context, listen: false);
-    final lastRefreshString = await inputState.fetchInputFromLocal('last_refresh');
+    final lastRefreshString = await inputState.fetchInputFromLocal('last_refresh_event_${widget.eventId}');
 
     if (lastRefreshString == null) {
       if (mounted) {
@@ -119,7 +121,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     setState(() => _isRefreshing = true);
     try {
       final userSync = Provider.of<UserSyncProvider>(context, listen: false);
-      await userSync.fetchUsersForMatch(context);
+      await userSync.fetchUsersForMatch(context, eventId: widget.eventId);
       await _checkRefreshStatus();
     } finally {
       if (mounted) setState(() => _isRefreshing = false);
@@ -133,7 +135,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     }
 
     final instances = widget.matchInstances;
-    print("ProfileCarousel building with ${instances.length} profiles");
+    print("EventProfileCarousel building with ${instances.length} profiles");
 
     List<Widget> carouselItems = [];
 
@@ -142,7 +144,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     }
 
     carouselItems.add(_buildRefreshCard(context));
-    carouselItems.add(_buildQuestionsCard(context));
+    // TODO: Add card linking to matches.dart page
     carouselItems.add(_buildFeedbackCard(context));
 
     return CarouselSlider(
@@ -198,11 +200,10 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                 ? ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: AspectRatio(
-                    aspectRatio: 1 / 1.15,  // width / height ratio (0.8)
+                    aspectRatio: 1 / 1.15,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // IMAGE
                         Image.network(
                           imageUrl,
                           width: double.infinity,
@@ -216,7 +217,6 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                             );
                           },
                         ),
-                        // GRADIENT
                         Positioned(
                           bottom: 0,
                           left: 0,
@@ -228,8 +228,8 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
                                 colors: [
-                                  Colors.black.withOpacity(0.0),  // Transparent at top
-                                  Colors.black.withOpacity(0.5),  // 50% opacity at bottom
+                                  Colors.black.withOpacity(0.0),
+                                  Colors.black.withOpacity(0.5),
                                 ],
                               ),
                             ),
@@ -241,7 +241,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                 : ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: AspectRatio(
-                    aspectRatio: 1 / 1.25,  // Same ratio for the error state
+                    aspectRatio: 1 / 1.25,
                     child: Container(
                       width: double.infinity,
                       color: Colors.grey[300],
@@ -370,7 +370,7 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
                         Icon(
                           Icons.open_in_full,
                           color: ColorPalette.peach,
-                          size: 24, // Adjust size to match your text style
+                          size: 24,
                         ),
                       ],
                     ),
@@ -406,7 +406,6 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
             children: [
               const Spacer(),
 
-              // Icon changes based on state
               _isRefreshing
                 ? const SizedBox(
                     width: 48,
@@ -424,7 +423,6 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
 
               const SizedBox(height: 16),
 
-              // Title text changes based on refresh availability
               Text(
                 _canRefresh
                     ? 'Ready for New Profiles?'
@@ -447,7 +445,6 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
 
               const Spacer(),
 
-              // Action button — only tappable when refresh is available
               if (_canRefresh)
                 ElevatedButton.icon(
                   onPressed: _isRefreshing ? null : _handleRefresh,
@@ -579,91 +576,6 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
     );
   }
 
-  Widget _buildQuestionsCard(BuildContext context) {    
-     return Align(
-          alignment: Alignment.center,
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 30),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  ColorPalette.violet,
-                  ColorPalette.peach,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(30),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Unlock Better Matches',
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.headingMedium.copyWith(
-                      color: Colors.white,
-                      fontSize: 28,
-                    ),
-                  ),
-                                
-                  const Spacer(),
-                  
-                  Text(
-                    'The more we know about you, the better we can find your perfect match.',
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
-                  ),
-                  
-                  const Spacer(),
-                 
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.unansweredQuestions);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: ColorPalette.peach,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Answer Questions',
-                          style: AppTextStyles.headingMedium.copyWith(
-                            color: ColorPalette.peach,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.arrow_forward,
-                          color: ColorPalette.peach,
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-    
-  }
-
   Widget? _getStatusBadge(Map<String, dynamic> matchInstance) {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final status = matchInstance['status'] as String? ?? 'active';
@@ -691,29 +603,29 @@ class _ProfileCarouselState extends State<ProfileCarousel> {
       bgColor = ColorPalette.pink;
       textColor = Colors.white;
     } else if (status == 'active' && log.isNotEmpty) {
-    final createdAtString = log.first['timestamp'] as String?;
-    if (createdAtString != null) {
-      final createdAt = DateTime.tryParse(createdAtString);
-      if (createdAt != null) {
-        final remaining = const Duration(days: 3) - DateTime.now().difference(createdAt);
-        if (remaining.isNegative) {
-          label = 'Expiring...';
-        } else if (remaining.inHours >= 24) {
-          final days = remaining.inDays;
-          label = '$days day${days == 1 ? '' : 's'} left';
-        } else if (remaining.inHours >= 1) {
-          final hours = remaining.inHours;
-          label = '$hours hour${hours == 1 ? '' : 's'} left';
-        } else {
-          final minutes = remaining.inMinutes;
-          label = '${minutes < 1 ? 1 : minutes} min left';
+      final createdAtString = log.first['timestamp'] as String?;
+      if (createdAtString != null) {
+        final createdAt = DateTime.tryParse(createdAtString);
+        if (createdAt != null) {
+          final remaining = const Duration(days: 3) - DateTime.now().difference(createdAt);
+          if (remaining.isNegative) {
+            label = 'Expiring...';
+          } else if (remaining.inHours >= 24) {
+            final days = remaining.inDays;
+            label = '$days day${days == 1 ? '' : 's'} left';
+          } else if (remaining.inHours >= 1) {
+            final hours = remaining.inHours;
+            label = '$hours hour${hours == 1 ? '' : 's'} left';
+          } else {
+            final minutes = remaining.inMinutes;
+            label = '${minutes < 1 ? 1 : minutes} min left';
+          }
+          icon = Icons.hourglass_bottom;
+          bgColor = Colors.grey;
+          textColor = Colors.white;
         }
-        icon = Icons.hourglass_bottom;
-        bgColor = Colors.grey;
-        textColor = Colors.white;
       }
     }
-  }
 
     if (label == null) return null;
 

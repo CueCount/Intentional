@@ -8,6 +8,7 @@ import 'providers/inputState.dart';
 import 'providers/matchState.dart';
 import 'providers/userState.dart';
 import 'providers/authState.dart';
+import 'providers/eventState.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -81,15 +82,35 @@ class AppRoot extends StatelessWidget {
           update: (_, auth, match) {
             match ??= MatchSyncProvider();
             final uid = auth.userId;
+            final safeMatch = match;
+
+            if (uid != null) {
+              safeMatch.startListening(uid).then((_) async {
+                await safeMatch.firstSnapshotReady;
+                await safeMatch.autoIgnoreExpiredMatches();
+              }).catchError((_) {});
+            } else {
+              safeMatch.stopListening();
+            }
+
+            return safeMatch;
+          },
+        ),
+      
+        ChangeNotifierProxyProvider<AppAuthProvider, EventSyncProvider>(
+          create: (_) => EventSyncProvider(),
+          update: (_, auth, eventSync) {
+            eventSync ??= EventSyncProvider();
+            final uid = auth.userId;
             
             try {
               if (uid != null) {
-                match.startListening(uid);
+                eventSync.startListening(uid);
               } else {
-                match.stopListening();
+                eventSync.stopListening();
               }
             } catch (_) {}
-            return match;
+            return eventSync;
           },
         ),
       ],

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '/router/router.dart';
 import '../styles.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart';
-import '../providers/matchState.dart';
 
 class AppMenuOverlay extends StatelessWidget {
   const AppMenuOverlay({super.key});
@@ -70,7 +68,18 @@ class AppMenuOverlay extends StatelessWidget {
                         isPrimary: true,
                       ),
                       const SizedBox(height: 16),
-                      
+
+                      _buildLargeMenuItem(
+                        context,
+                        'Events',
+                        'View your event matches',
+                        () {
+                          Navigator.of(context).pop();
+                          Navigator.pushNamed(context, AppRoutes.events);
+                        },
+                        isPrimary: true,
+                      ),
+                      const SizedBox(height: 16),
                       
                       _buildLargeMenuItem(
                         context,
@@ -95,7 +104,6 @@ class AppMenuOverlay extends StatelessWidget {
                         isPrimary: false,
                       ),
 
-                      // commented out debug print button
                       const SizedBox(height: 16),
                       _buildDebugMenuItem(context),
 
